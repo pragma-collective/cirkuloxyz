@@ -1,4 +1,4 @@
-import { Shield, Eye, Check, Key } from "lucide-react";
+import { Shield, Eye, Check, Key, Coins } from "lucide-react";
 
 export function TrustSection() {
   const trustItems = [
@@ -14,8 +14,13 @@ export function TrustSection() {
     },
     {
       icon: Eye,
-      title: "Transparent tracking",
-      description: "See every transaction in real-time. Know exactly where your money is and where it's going."
+      title: "Transparent by design",
+      description: "Built on Bitcoin technology, every transaction is permanently recorded and visible to your circle. No fine print, no surprises—just honest, open savings."
+    },
+    {
+      icon: Coins,
+      title: "Bitcoin secure",
+      description: "Protected by the same technology securing over $1 trillion worldwide. Your savings benefit from Bitcoin's proven 15-year track record."
     },
     {
       icon: Check,
@@ -41,7 +46,7 @@ export function TrustSection() {
         </div>
 
         {/* Trust items grid */}
-        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-8">
+        <div className="grid sm:grid-cols-2 lg:grid-cols-5 gap-8">
           {trustItems.map((item) => {
             const Icon = item.icon;
 
@@ -73,10 +78,17 @@ export function TrustSection() {
               Trusted by thousands of friend groups
             </p>
             <p className="text-neutral-600">
-              Xersha uses the same technology that protects billions of dollars in digital assets.
-              Your money is safe, secure, and always under your control.
+              Xersha combines Bitcoin's proven security (protecting over $1 trillion worldwide) with easy-to-use social savings. You get the best of both worlds: cutting-edge protection meets friendly group features.
             </p>
-            <div className="flex items-center justify-center gap-4 pt-4">
+            <div className="flex items-center justify-center gap-4 pt-4 flex-wrap">
+              <div className="flex items-center gap-2 text-sm text-neutral-700">
+                <Check className="size-5 text-success-600" />
+                <span>Bitcoin secured</span>
+              </div>
+              <div className="flex items-center gap-2 text-sm text-neutral-700">
+                <Check className="size-5 text-success-600" />
+                <span>Non-custodial (you control it)</span>
+              </div>
               <div className="flex items-center gap-2 text-sm text-neutral-700">
                 <Check className="size-5 text-success-600" />
                 <span>End-to-end encrypted</span>
@@ -84,10 +96,6 @@ export function TrustSection() {
               <div className="flex items-center gap-2 text-sm text-neutral-700">
                 <Check className="size-5 text-success-600" />
                 <span>Regularly audited</span>
-              </div>
-              <div className="flex items-center gap-2 text-sm text-neutral-700">
-                <Check className="size-5 text-success-600" />
-                <span>FDIC protected</span>
               </div>
             </div>
           </div>
