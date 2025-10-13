@@ -1,22 +1,35 @@
-FROM node:20-alpine AS development-dependencies-env
-COPY . /app
+# Build stage
+FROM node:22-alpine AS builder
+
+# Set working directory
 WORKDIR /app
+
+# Accept build argument for Dynamic environment ID
+ARG VITE_DYNAMIC_ENVIRONMENT_ID
+ENV VITE_DYNAMIC_ENVIRONMENT_ID=$VITE_DYNAMIC_ENVIRONMENT_ID
+
+# Copy package files
+COPY package.json package-lock.json* ./
+
+# Install dependencies
 RUN npm ci
 
-FROM node:20-alpine AS production-dependencies-env
-COPY ./package.json package-lock.json /app/
-WORKDIR /app
-RUN npm ci --omit=dev
+# Copy source code
+COPY . .
 
-FROM node:20-alpine AS build-env
-COPY . /app/
-COPY --from=development-dependencies-env /app/node_modules /app/node_modules
-WORKDIR /app
+# Build the application
 RUN npm run build
 
-FROM node:20-alpine
-COPY ./package.json package-lock.json /app/
-COPY --from=production-dependencies-env /app/node_modules /app/node_modules
-COPY --from=build-env /app/build /app/build
-WORKDIR /app
-CMD ["npm", "run", "start"]
+# Production stage with Caddy
+FROM caddy:2-alpine
+
+# Copy built application from builder stage
+COPY --from=builder /app/build/client /srv
+
+# Copy Caddyfile
+COPY Caddyfile /etc/caddy/Caddyfile
+
+# Expose port
+EXPOSE 3000
+
+# Caddy runs automatically with the Caddyfile
