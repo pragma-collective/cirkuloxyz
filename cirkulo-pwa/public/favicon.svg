@@ -1,0 +1,77 @@
+<svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Base wave - Small (Orange) -->
+  <path
+    d="M4 32 Q10 28 16 32 T28 32 T40 32 T44 32"
+    stroke="url(#wave-gradient-1)"
+    stroke-width="4"
+    fill="none"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+
+  <!-- Middle wave - Medium (Orange-Purple blend) -->
+  <path
+    d="M4 24 Q10 18 16 24 T28 24 T40 24 T44 24"
+    stroke="url(#wave-gradient-2)"
+    stroke-width="5"
+    fill="none"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+
+  <!-- Top wave - Large (Purple) -->
+  <path
+    d="M4 14 Q10 6 16 14 T28 14 T40 14 T44 14"
+    stroke="url(#wave-gradient-3)"
+    stroke-width="6"
+    fill="none"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+
+  <!-- Accent dots showing momentum -->
+  <circle cx="16" cy="14" r="2" fill="oklch(0.70 0.14 290)" opacity="0.8" />
+  <circle cx="28" cy="14" r="2.5" fill="oklch(0.60 0.17 290)" />
+  <circle cx="40" cy="14" r="3" fill="oklch(0.52 0.16 290)" />
+
+  <defs>
+    <linearGradient
+      id="wave-gradient-1"
+      x1="4"
+      y1="32"
+      x2="44"
+      y2="32"
+      gradientUnits="userSpaceOnUse"
+    >
+      <stop stop-color="oklch(0.75 0.14 45)" />
+      <stop offset="0.5" stop-color="oklch(0.65 0.17 45)" />
+      <stop offset="1" stop-color="oklch(0.70 0.15 90)" />
+    </linearGradient>
+
+    <linearGradient
+      id="wave-gradient-2"
+      x1="4"
+      y1="24"
+      x2="44"
+      y2="24"
+      gradientUnits="userSpaceOnUse"
+    >
+      <stop stop-color="oklch(0.72 0.15 60)" />
+      <stop offset="0.5" stop-color="oklch(0.68 0.16 167)" />
+      <stop offset="1" stop-color="oklch(0.65 0.16 240)" />
+    </linearGradient>
+
+    <linearGradient
+      id="wave-gradient-3"
+      x1="4"
+      y1="14"
+      x2="44"
+      y2="14"
+      gradientUnits="userSpaceOnUse"
+    >
+      <stop stop-color="oklch(0.68 0.15 200)" />
+      <stop offset="0.5" stop-color="oklch(0.60 0.17 290)" />
+      <stop offset="1" stop-color="oklch(0.52 0.16 290)" />
+    </linearGradient>
+  </defs>
+</svg>
