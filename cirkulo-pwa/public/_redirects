@@ -1,0 +1,10 @@
+# SPA fallback for Netlify
+/*    /index.html   200
+
+# PWA specific redirects
+/manifest.json  /manifest.json  200
+/sw.js          /sw.js          200
+/offline.html   /offline.html   200
+
+# API routes (if any in the future)
+/api/*          /api/*          404
