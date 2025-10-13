@@ -4,6 +4,7 @@ import { HeroSection } from "app/components/landing/hero-section";
 import { HowItWorks } from "app/components/landing/how-it-works";
 import { UseCases } from "app/components/landing/use-cases";
 import { FeaturesSection } from "app/components/landing/features-section";
+import { CryptoValueSection } from "app/components/landing/crypto-value-section";
 import { SocialFeedShowcase } from "app/components/landing/social-feed-showcase";
 import { TrustSection } from "app/components/landing/trust-section";
 import { Testimonials } from "app/components/landing/testimonials";
@@ -58,6 +59,9 @@ export default function Home() {
 
         {/* Features - social feed, automation, celebrations */}
         <FeaturesSection />
+
+        {/* Crypto value proposition - why Bitcoin makes us better */}
+        <CryptoValueSection />
 
         {/* Social feed showcase - visual mockup */}
         <SocialFeedShowcase />

@@ -9,6 +9,7 @@ export function Footer() {
     product: [
       { label: "How it works", href: "#how-it-works" },
       { label: "Use cases", href: "#use-cases" },
+      { label: "Why Bitcoin?", href: "/why-bitcoin" },
       { label: "Pricing", href: "/pricing" },
       { label: "FAQ", href: "/faq" }
     ],

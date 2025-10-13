@@ -29,8 +29,8 @@ export function UseCases() {
     {
       emoji: "📈",
       icon: TrendingUp,
-      title: "Investment learning group",
-      description: "Learn about investing with friends. Start small, grow your confidence together.",
+      title: "Crypto learning circle",
+      description: "Explore Bitcoin and digital assets with friends. Start with just $10, learn together, and build confidence in the future of finance.",
       color: "primary"
     },
     {

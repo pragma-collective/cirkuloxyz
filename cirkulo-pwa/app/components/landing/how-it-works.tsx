@@ -13,7 +13,7 @@ export function HowItWorks() {
       number: "2",
       icon: Target,
       title: "Set your goal",
-      description: "Vacation fund? Emergency savings? Investment club? Choose what you're saving for together.",
+      description: "Vacation fund? Emergency savings? Choose what you're saving for and how—Bitcoin, digital dollars, or other assets. Your circle, your choice.",
       color: "secondary"
     },
     {
