@@ -21,6 +21,18 @@ export const links: Route.LinksFunction = () => [
     rel: "stylesheet",
     href: "https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap",
   },
+  // Favicon - Modern SVG (best quality)
+  { rel: "icon", type: "image/svg+xml", href: "/favicon.svg" },
+  // Favicon - PNG fallbacks
+  { rel: "icon", type: "image/png", sizes: "32x32", href: "/favicon-32x32.png" },
+  { rel: "icon", type: "image/png", sizes: "16x16", href: "/favicon-16x16.png" },
+  // Apple touch icon for iOS
+  { rel: "apple-touch-icon", sizes: "180x180", href: "/apple-touch-icon.png" },
+  // Android chrome icons for PWA
+  { rel: "icon", type: "image/png", sizes: "192x192", href: "/android-chrome-192x192.png" },
+  { rel: "icon", type: "image/png", sizes: "512x512", href: "/android-chrome-512x512.png" },
+  // Web App Manifest
+  { rel: "manifest", href: "/manifest.json" },
 ];
 
 export function Layout({ children }: { children: React.ReactNode }) {
@@ -31,7 +43,9 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 
         {/* PWA Meta Tags */}
-        <meta name="theme-color" content="oklch(0.65 0.17 45)" />
+        <meta name="application-name" content="Xersha" />
+        <meta name="description" content="Join savings circles with friends. Pool funds, reach goals faster, and build wealth together." />
+        <meta name="theme-color" content="#ea7c3f" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
         <meta name="apple-mobile-web-app-title" content="Xersha" />
