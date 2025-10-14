@@ -1,120 +1,137 @@
+import * as React from "react";
 import type { Route } from "./+types/dashboard";
-import { useAuth } from "app/context/auth-context";
-import { XershaLogo } from "app/components/xersha-logo";
-import { Button } from "app/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "app/components/ui/card";
-import { CheckCircle2, User } from "lucide-react";
+import { AuthenticatedLayout } from "app/components/layouts/authenticated-layout";
+import { LeftSidebar } from "app/components/dashboard/left-sidebar";
+import { RightSidebar } from "app/components/dashboard/right-sidebar";
+import { FeedContainer } from "app/components/dashboard/feed-container";
+import { mockUserStats, mockCircles, mockFeedItems } from "app/lib/mock-data";
+import type { FeedFilter } from "app/types/feed";
+import { Home, Compass, PlusCircle, Bell, User } from "lucide-react";
 
 export function meta({}: Route.MetaArgs) {
   return [
     { title: "Dashboard - Xersha" },
     {
       name: "description",
-      content: "Your Xersha dashboard",
+      content: "Your Xersha dashboard - track savings, view activity, and manage your circles",
     },
   ];
 }
 
 export default function Dashboard() {
-  const { user } = useAuth();
+  const [feedFilter, setFeedFilter] = React.useState<FeedFilter>("all");
+  const [feedItems, setFeedItems] = React.useState(mockFeedItems);
+
+  // Handle like action
+  const handleLike = React.useCallback((itemId: string) => {
+    setFeedItems((items) =>
+      items.map((item) =>
+        item.id === itemId
+          ? {
+              ...item,
+              isLiked: !item.isLiked,
+              likeCount: item.isLiked ? item.likeCount - 1 : item.likeCount + 1,
+            }
+          : item
+      )
+    );
+  }, []);
+
+  // Handle comment action (placeholder)
+  const handleComment = React.useCallback((itemId: string) => {
+    console.log("Comment on item:", itemId);
+    // TODO: Implement comment functionality
+  }, []);
+
+  // Handle share action (placeholder)
+  const handleShare = React.useCallback((itemId: string) => {
+    console.log("Share item:", itemId);
+    // TODO: Implement share functionality
+  }, []);
+
+  // Filter feed items based on selected filter
+  const filteredItems = React.useMemo(() => {
+    if (feedFilter === "all") return feedItems;
+    if (feedFilter === "contributions") {
+      return feedItems.filter((item) => item.type === "contribution");
+    }
+    if (feedFilter === "milestones") {
+      return feedItems.filter(
+        (item) => item.type === "milestone" || item.type === "goal-completed"
+      );
+    }
+    if (feedFilter === "social") {
+      return feedItems.filter(
+        (item) => item.type === "celebration" || item.type === "comment"
+      );
+    }
+    return feedItems; // my-circles - TODO: implement circle filtering
+  }, [feedItems, feedFilter]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary-50 via-white to-secondary-50 relative overflow-hidden">
-      {/* Decorative background blobs */}
-      <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
-        <div className="absolute -top-20 -left-20 w-96 h-96 bg-primary-500/10 rounded-full blur-3xl" />
-        <div className="absolute top-1/3 -right-32 w-[500px] h-[500px] bg-secondary-500/10 rounded-full blur-3xl" />
-        <div className="absolute -bottom-32 left-1/4 w-96 h-96 bg-primary-400/10 rounded-full blur-3xl" />
-      </div>
+    <AuthenticatedLayout
+      notificationCount={3}
+      onNotificationClick={() => console.log("Notifications clicked")}
+      onProfileClick={() => console.log("Profile clicked")}
+      onNewContribution={() => console.log("New contribution clicked")}
+      navItems={[
+        {
+          icon: <Home className="size-6" />,
+          label: "Home",
+          active: true,
+          to: "/dashboard",
+        },
+        {
+          icon: <Compass className="size-6" />,
+          label: "Explore",
+          to: "/explore",
+        },
+        {
+          icon: <PlusCircle className="size-6" />,
+          label: "Create",
+          onClick: () => console.log("Create circle"),
+        },
+        {
+          icon: <Bell className="size-6" />,
+          label: "Alerts",
+          badge: 0,
+        },
+        {
+          icon: <User className="size-6" />,
+          label: "Profile",
+          onClick: () => console.log("Profile clicked"),
+        },
+      ]}
+    >
+      {/* Dashboard Layout */}
+      <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] xl:grid-cols-[280px_1fr_320px] gap-6">
+          {/* Left Sidebar - Hidden on mobile/tablet, visible on desktop */}
+          <LeftSidebar
+            stats={mockUserStats}
+            onNewContribution={() => console.log("New contribution")}
+            onCreateCircle={() => console.log("Create circle")}
+            onSettings={() => console.log("Settings")}
+          />
 
-      {/* Main content */}
-      <div className="relative z-10 min-h-screen p-4 sm:p-6 lg:p-8">
-        {/* Header */}
-        <header className="max-w-7xl mx-auto mb-8">
-          <div className="flex items-center justify-between">
-            <XershaLogo size="sm" />
-            <Button variant="outline" size="sm">
-              <User className="size-4" />
-              Profile
-            </Button>
-          </div>
-        </header>
+          {/* Main Feed */}
+          <FeedContainer
+            items={filteredItems}
+            filter={feedFilter}
+            onFilterChange={setFeedFilter}
+            onLike={handleLike}
+            onComment={handleComment}
+            onShare={handleShare}
+          />
 
-        {/* Content */}
-        <div className="max-w-4xl mx-auto space-y-8">
-          {/* Welcome message */}
-          <div className="text-center space-y-4">
-            <div className="flex justify-center mb-4">
-              <div className="size-20 rounded-full bg-success-100 flex items-center justify-center">
-                <CheckCircle2 className="size-10 text-success-600" />
-              </div>
-            </div>
-            <h1 className="text-3xl sm:text-4xl font-bold text-neutral-900">
-              Welcome to Xersha, {user?.name || "Friend"}!
-            </h1>
-            <p className="text-lg text-neutral-600 max-w-2xl mx-auto">
-              Your profile has been created successfully. You're ready to start saving
-              with your circles.
-            </p>
-          </div>
-
-          {/* Profile card */}
-          {user?.hasProfile && (
-            <Card className="border-0 shadow-xl bg-white/90 backdrop-blur-sm">
-              <CardHeader>
-                <CardTitle className="text-xl">Your Profile</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <p className="text-sm font-medium text-neutral-700">Name</p>
-                  <p className="text-base text-neutral-900">{user.name}</p>
-                </div>
-
-                <div className="space-y-2">
-                  <p className="text-sm font-medium text-neutral-700">
-                    Lens Username
-                  </p>
-                  <p className="text-base text-neutral-900">@{user.lensUsername}</p>
-                </div>
-
-                {user.bio && (
-                  <div className="space-y-2">
-                    <p className="text-sm font-medium text-neutral-700">Bio</p>
-                    <p className="text-base text-neutral-900">{user.bio}</p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Coming soon section */}
-          <Card className="border-0 shadow-xl bg-white/90 backdrop-blur-sm">
-            <CardHeader>
-              <CardTitle className="text-xl">Coming Soon</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3 text-neutral-600">
-                <div className="flex items-start gap-3">
-                  <CheckCircle2 className="size-5 text-primary-600 shrink-0 mt-0.5" />
-                  <span>Create and join savings circles</span>
-                </div>
-                <div className="flex items-start gap-3">
-                  <CheckCircle2 className="size-5 text-primary-600 shrink-0 mt-0.5" />
-                  <span>Set and track savings goals</span>
-                </div>
-                <div className="flex items-start gap-3">
-                  <CheckCircle2 className="size-5 text-primary-600 shrink-0 mt-0.5" />
-                  <span>Earn yields on your contributions</span>
-                </div>
-                <div className="flex items-start gap-3">
-                  <CheckCircle2 className="size-5 text-primary-600 shrink-0 mt-0.5" />
-                  <span>Celebrate milestones with your circle</span>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+          {/* Right Sidebar - Hidden on mobile/tablet/small desktop, visible on XL */}
+          <RightSidebar
+            circles={mockCircles}
+            onCircleClick={(circleId) => console.log("Circle clicked:", circleId)}
+            onCreateCircle={() => console.log("Create circle")}
+          />
         </div>
       </div>
-    </div>
+    </AuthenticatedLayout>
   );
 }
