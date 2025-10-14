@@ -1,4 +1,5 @@
 import type { Route } from "./+types/login";
+import { useNavigate } from "react-router";
 import { XershaLogo } from "app/components/xersha-logo";
 import { Button } from "app/components/ui/button";
 import {
@@ -9,7 +10,8 @@ import {
 	CardHeader,
 	CardTitle,
 } from "app/components/ui/card";
-import { Mail, Users, TrendingUp, Shield } from "lucide-react";
+import { useAuth } from "app/context/auth-context";
+import { Mail, Users, TrendingUp, Shield, Loader2 } from "lucide-react";
 
 export function meta({}: Route.MetaArgs) {
 	return [
@@ -22,14 +24,41 @@ export function meta({}: Route.MetaArgs) {
 }
 
 export default function Login() {
-	const handleSocialLogin = () => {
-		// TODO: Integrate with Dynamic.xyz social login
-		console.log("Social login clicked");
+	const navigate = useNavigate();
+	const { login, isLoading } = useAuth();
+
+	const handleSocialLogin = async () => {
+		try {
+			// Call login from auth context
+			const user = await login();
+
+			// Navigate based on profile status
+			if (!user.hasProfile) {
+				navigate("/onboarding");
+			} else {
+				navigate("/dashboard");
+			}
+		} catch (error) {
+			console.error("Social login failed:", error);
+			// In a real app, you'd show an error message here
+		}
 	};
 
-	const handleEmailLogin = () => {
-		// TODO: Integrate with Dynamic.xyz email login
-		console.log("Email login clicked");
+	const handleEmailLogin = async () => {
+		try {
+			// Call login from auth context
+			const user = await login();
+
+			// Navigate based on profile status
+			if (!user.hasProfile) {
+				navigate("/onboarding");
+			} else {
+				navigate("/dashboard");
+			}
+		} catch (error) {
+			console.error("Email login failed:", error);
+			// In a real app, you'd show an error message here
+		}
 	};
 
 	return (
@@ -83,9 +112,19 @@ export default function Login() {
 									size="lg"
 									className="w-full text-base"
 									onClick={handleSocialLogin}
+									disabled={isLoading}
 								>
-									<Users className="size-5" />
-									Continue with Social
+									{isLoading ? (
+										<>
+											<Loader2 className="size-5 animate-spin" />
+											Signing in...
+										</>
+									) : (
+										<>
+											<Users className="size-5" />
+											Continue with Social
+										</>
+									)}
 								</Button>
 
 								<Button
@@ -93,9 +132,19 @@ export default function Login() {
 									variant="outline"
 									className="w-full text-base"
 									onClick={handleEmailLogin}
+									disabled={isLoading}
 								>
-									<Mail className="size-5" />
-									Continue with Email
+									{isLoading ? (
+										<>
+											<Loader2 className="size-5 animate-spin" />
+											Signing in...
+										</>
+									) : (
+										<>
+											<Mail className="size-5" />
+											Continue with Email
+										</>
+									)}
 								</Button>
 							</div>
 
