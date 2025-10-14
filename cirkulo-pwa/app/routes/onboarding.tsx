@@ -203,11 +203,6 @@ export default function Onboarding() {
     }
   };
 
-  // Handle skip
-  const handleSkip = () => {
-    navigate("/dashboard");
-  };
-
   // Character count for bio
   const bioCharCount = formData.bio.length;
   const bioMaxChars = 280;
@@ -228,9 +223,6 @@ export default function Onboarding() {
           <div className="flex flex-col items-center space-y-2">
             <XershaLogo size="md" />
           </div>
-
-          {/* Progress indicator */}
-          <ProgressIndicator currentStep={1} totalSteps={4} />
 
           {/* Onboarding card */}
           <Card className="border-0 shadow-2xl bg-white/90 backdrop-blur-sm">
@@ -362,17 +354,6 @@ export default function Onboarding() {
                 </Button>
               </form>
             </CardContent>
-
-            <CardFooter className="flex flex-col space-y-2">
-              <button
-                type="button"
-                onClick={handleSkip}
-                className="text-sm text-neutral-600 hover:text-neutral-900 underline underline-offset-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                disabled={isSubmitting || isSuccess}
-              >
-                Skip for now
-              </button>
-            </CardFooter>
           </Card>
 
           {/* Trust indicator */}
@@ -383,45 +364,6 @@ export default function Onboarding() {
             </div>
           </div>
         </div>
-      </div>
-    </div>
-  );
-}
-
-// Progress Indicator Component
-function ProgressIndicator({
-  currentStep,
-  totalSteps,
-}: {
-  currentStep: number;
-  totalSteps: number;
-}) {
-  return (
-    <div className="flex flex-col items-center space-y-2">
-      {/* Step text */}
-      <p className="text-sm font-medium text-neutral-600">
-        Step {currentStep} of {totalSteps}
-      </p>
-
-      {/* Progress dots */}
-      <div className="flex gap-2">
-        {Array.from({ length: totalSteps }, (_, index) => {
-          const stepNumber = index + 1;
-          const isActive = stepNumber === currentStep;
-          const isCompleted = stepNumber < currentStep;
-
-          return (
-            <div
-              key={stepNumber}
-              className={cn(
-                "h-2 rounded-full transition-all duration-300",
-                isActive && "w-8 bg-primary-600",
-                isCompleted && "w-2 bg-primary-400",
-                !isActive && !isCompleted && "w-2 bg-neutral-300"
-              )}
-            />
-          );
-        })}
       </div>
     </div>
   );
