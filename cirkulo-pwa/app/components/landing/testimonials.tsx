@@ -87,18 +87,18 @@ export function Testimonials() {
 
         {/* Bottom social proof */}
         <div className="mt-16 text-center">
-          <div className="inline-flex items-center gap-6 px-8 py-4 bg-white rounded-2xl shadow-lg border border-neutral-200">
-            <div className="text-center">
+          <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6 px-4 sm:px-8 py-4 bg-white rounded-2xl shadow-lg border border-neutral-200 w-full sm:w-auto sm:inline-flex">
+            <div className="text-center w-full sm:w-auto">
               <div className="text-3xl font-bold text-primary-600">1,000+</div>
               <div className="text-sm text-neutral-600">Circles created</div>
             </div>
-            <div className="w-px h-12 bg-neutral-200" />
-            <div className="text-center">
+            <div className="w-px h-12 bg-neutral-200 hidden sm:block" />
+            <div className="text-center w-full sm:w-auto">
               <div className="text-3xl font-bold text-primary-600">$2M+</div>
               <div className="text-sm text-neutral-600">Saved together</div>
             </div>
-            <div className="w-px h-12 bg-neutral-200" />
-            <div className="text-center">
+            <div className="w-px h-12 bg-neutral-200 hidden sm:block" />
+            <div className="text-center w-full sm:w-auto">
               <div className="text-3xl font-bold text-primary-600">95%</div>
               <div className="text-sm text-neutral-600">Goal success rate</div>
             </div>
