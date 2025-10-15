@@ -1,69 +1,98 @@
 # Cirkulo API
 
-API backend for Cirkulo built with Hono.js and Bun.
+API backend for Cirkulo built with Hono.js, OpenAPI, and Bun.
 
-## Project Structure
+## 🚀 Quick Start
 
-```
-src/
-├── index.ts              # Main application entry point
-├── lib/
-│   └── auth.ts          # JWT validation helper functions
-└── routes/
-    ├── index.ts         # Routes aggregator
-    └── auth.ts          # Authentication routes
-```
-
-## Setup
-
-To install dependencies:
-```sh
-bun install
-```
-
-Set your Dynamic Environment ID:
 ```bash
-export DYNAMIC_ENV_ID="your-env-id-here"
-```
+# Install dependencies
+bun install
 
-To run:
-```sh
+# Set up environment
+cp .env.example .env
+
+# Run development server
 bun run dev
 ```
 
-open http://localhost:3000
+Visit http://localhost:3000/swagger for interactive API documentation.
 
-## API Endpoints
+## 📚 Documentation
 
-### Health Check
-- `GET /` - API health check
+Comprehensive documentation is available in the [`docs/`](./docs) folder:
 
-### Authentication
-- `GET /api/auth/validate` - Validate JWT token
+- **[Getting Started](./docs/GETTING_STARTED.md)** - Setup, installation, and first steps
+- **[API Standards](./docs/API_STANDARDS.md)** - Development standards and guidelines
+- **[Examples](./docs/EXAMPLES.md)** - Copy-paste ready code examples
+- **[Documentation Overview](./docs/README.md)** - Navigation and quick reference
 
-## Adding New Routes
+## 🔗 Key Endpoints
 
-1. Create a new route file in `src/routes/`:
-```typescript
-// src/routes/example.ts
-import { Hono } from 'hono'
+| Endpoint | Description |
+|----------|-------------|
+| `/swagger` | Interactive API documentation (Swagger UI) |
+| `/doc` | OpenAPI specification (JSON) |
+| `/` | Health check |
+| `/api/auth/validate` | JWT token validation |
 
-const example = new Hono()
+## 🛠️ Tech Stack
 
-example.get('/', async (c) => {
-  // Your logic here
-  return c.json({ message: 'Example route' })
-})
+- **[Hono](https://hono.dev/)** - Fast, lightweight web framework
+- **[OpenAPI 3.1](https://swagger.io/specification/)** - API specification
+- **[Zod](https://zod.dev/)** - Schema validation
+- **[Bun](https://bun.sh/)** - JavaScript runtime and package manager
+- **JWT** - Authentication
 
-export default example
+## 📁 Project Structure
+
+```
+cirkulo-api/
+├── src/
+│   ├── index.ts         # Main app entry, Swagger setup
+│   ├── routes/          # API route handlers
+│   │   ├── index.ts     # Routes aggregator
+│   │   └── auth.ts      # Auth endpoints
+│   ├── schemas/         # OpenAPI schemas (Zod)
+│   │   └── auth.ts      # Auth schemas
+│   └── lib/             # Shared utilities
+│       └── auth.ts      # Auth helpers
+├── docs/                # Documentation
+│   ├── README.md        # Documentation overview
+│   ├── GETTING_STARTED.md
+│   ├── API_STANDARDS.md
+│   └── EXAMPLES.md
+├── package.json
+└── tsconfig.json
 ```
 
-2. Import and mount in `src/routes/index.ts`:
-```typescript
-import example from './example'
-routes.route('/example', example)
+## 🧑‍💻 Development
+
+```bash
+# Start dev server with hot reload
+bun run dev
+
+# Run linter
+bun run lint
+
+# Format code
+bun run format:write
+
+# Check and fix code style
+bun run check:write
 ```
 
-## Environment Variables
+## 🔑 Environment Variables
 
 - `DYNAMIC_ENV_ID` - Your Dynamic Environment ID from the dashboard
+
+See `.env.example` for all available variables.
+
+## 📖 Learn More
+
+- **New to the project?** Start with [Getting Started](./docs/GETTING_STARTED.md)
+- **Building features?** Check [API Standards](./docs/API_STANDARDS.md) and [Examples](./docs/EXAMPLES.md)
+- **Need help?** See the [docs/](./docs) folder
+
+---
+
+Built with ❤️ for EthOnline 2025
