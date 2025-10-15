@@ -28,12 +28,12 @@ export async function sendInviteEmail(params: SendInviteEmailParams) {
 
 	// Determine greeting text
 	const inviterText = inviterName
-		? `${inviterName} has invited you to join their pool on Cirkulo`
-		: "You've been invited to join Cirkulo";
+		? `${inviterName} has invited you to join their circle on Xersha`
+		: "You've been invited to join Xersha";
 
 	const subjectLine = inviterName
-		? `${inviterName} invited you to join Cirkulo`
-		: "You're invited to join Cirkulo";
+		? `${inviterName} invited you to join Xersha`
+		: "You're invited to join Xersha";
 
 	try {
 		const data = await resend.emails.send({
@@ -46,13 +46,13 @@ export async function sendInviteEmail(params: SendInviteEmailParams) {
           <head>
             <meta charset="utf-8">
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>Join Cirkulo</title>
+            <title>Join Xersha</title>
           </head>
           <body style="font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #2d2d2d; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #fafaf9;">
             <!-- Header with Citrea-inspired gradient -->
             <div style="background: linear-gradient(135deg, #e67e22 0%, #d35400 100%); padding: 40px 30px; border-radius: 16px 16px 0 0; text-align: center; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">
-              <h1 style="color: white; margin: 0; font-size: 32px; font-weight: 700; letter-spacing: -0.5px;">Welcome to Cirkulo</h1>
-              <p style="color: rgba(255, 255, 255, 0.95); margin: 8px 0 0 0; font-size: 16px;">Join the pool community</p>
+              <h1 style="color: white; margin: 0; font-size: 32px; font-weight: 700; letter-spacing: -0.5px;">Welcome to Xersha</h1>
+              <p style="color: rgba(255, 255, 255, 0.95); margin: 8px 0 0 0; font-size: 16px;">Join the circle community</p>
             </div>
             
             <!-- Main content -->
@@ -60,14 +60,14 @@ export async function sendInviteEmail(params: SendInviteEmailParams) {
               <h2 style="color: #1f1f1f; margin-top: 0; font-size: 24px; font-weight: 600;">You've been invited!</h2>
               
               <p style="font-size: 16px; color: #525252; margin: 20px 0; line-height: 1.7;">
-                ${inviterText}. Cirkulo is a decentralized platform for creating and managing community pools.
+                ${inviterText}. Xersha is a decentralized platform for creating and managing community circles.
               </p>
               
               ${
 								inviterName
 									? `<div style="background: linear-gradient(135deg, #fef3e2 0%, #fde8cc 100%); padding: 20px; border-radius: 12px; border-left: 4px solid #e67e22; margin: 25px 0;">
                 <p style="margin: 0; color: #78350f; font-size: 15px;">
-                  <strong style="color: #92400e;">${inviterName}</strong> thinks you'd be a great addition to their pool community!
+                  <strong style="color: #92400e;">${inviterName}</strong> thinks you'd be a great addition to their circle community!
                 </p>
               </div>`
 									: ""
@@ -111,7 +111,7 @@ export async function sendInviteEmail(params: SendInviteEmailParams) {
                 If you didn't expect this invitation, you can safely ignore this email.
               </p>
               <p style="font-size: 11px; color: #d4d4d4; margin: 10px 0 0 0;">
-                © ${new Date().getFullYear()} Cirkulo. All rights reserved.
+                © ${new Date().getFullYear()} Xersha. All rights reserved.
               </p>
             </div>
           </body>
@@ -121,16 +121,16 @@ export async function sendInviteEmail(params: SendInviteEmailParams) {
 			text: `
 ${inviterText}!
 
-${inviterName ? `${inviterName} thinks you'd be a great addition to their pool community.` : ""}
+${inviterName ? `${inviterName} thinks you'd be a great addition to their circle community.` : ""}
 
-Cirkulo is a decentralized platform for creating and managing community pools.
+Xersha is a decentralized platform for creating and managing community circles.
 
 Click the link below to accept your invitation and create your account:
 ${inviteLink}
 
 If you didn't expect this invitation, you can safely ignore this email.
 
-© ${new Date().getFullYear()} Cirkulo. All rights reserved.
+© ${new Date().getFullYear()} Xersha. All rights reserved.
       `,
 		});
 

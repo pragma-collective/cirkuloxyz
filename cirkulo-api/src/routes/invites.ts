@@ -27,7 +27,7 @@ invites.openapi(inviteUserRoute, async (c) => {
 				: user.given_name || user.alias || user.email || "Someone";
 
 		console.log(
-			`User ${user.sub} (${inviterName}) is inviting ${email} to join their pool`,
+			`User ${user.sub} (${inviterName}) is inviting ${email} to join their circle`,
 		);
 
 		// Send invite email
