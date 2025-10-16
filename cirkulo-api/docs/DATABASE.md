@@ -1,93 +1,111 @@
 # Database Guide
 
-This guide covers everything you need to know about working with the database in the Cirkulo API.
+Complete guide for database development with PostgreSQL and Drizzle ORM.
 
-## 📚 Overview
+## 📚 Stack
 
-The Cirkulo API uses:
-- **PostgreSQL** as the database
-- **Drizzle ORM** for type-safe database queries
-- **Docker** for easy local development
-- **Drizzle Kit** for schema migrations
+- **PostgreSQL 16** - Database
+- **Drizzle ORM** - Type-safe queries
+- **Drizzle Kit** - Migrations & schema management
+- **Docker** - Local development environment
 
 ---
 
-## 🚀 Quick Start
+## 🚀 Quick Setup
 
-### Start Database
+### 1. Start Database
 
 ```bash
-# Using Docker (recommended)
+# Start PostgreSQL with Docker
 bun run docker:up
 
-# Check if it's running
-bun run docker:logs
+# Verify it's running
+bun run docker:logs postgres
 ```
 
-### Apply Schema
+**Connection:**
+- URL: `postgresql://postgres:postgres@localhost:5432/cirkulo`
+- Host: `localhost` (or `postgres` inside Docker)
+- Port: `5432`
+- Database: `cirkulo`
+
+### 2. Define Your Schema
+
+Edit `src/db/schema.ts`:
+
+```typescript
+import { pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
+
+export const products = pgTable("products", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  name: text("name").notNull(),
+  price: integer("price").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+```
+
+### 3. Apply Schema
+
+**Development (quick):**
+```bash
+bun run db:push
+```
+
+**Production (with migrations):**
+```bash
+bun run db:generate  # Create migration
+bun run db:migrate   # Apply migration
+```
+
+### 4. Browse Your Data
 
 ```bash
-# Push schema changes directly (development)
+bun run db:studio
+# Opens at http://localhost:4983
+```
+
+---
+
+## � Development Workflow
+
+### Daily Development
+
+```bash
+# 1. Start database
+bun run docker:up
+
+# 2. Edit schema in src/db/schema.ts
+
+# 3. Push changes (no migration files)
 bun run db:push
 
-# OR generate and run migrations (production-ready)
-bun run db:generate
-bun run db:migrate
-```
-
-### Explore Data
-
-```bash
-# Open Drizzle Studio
+# 4. View data
 bun run db:studio
 ```
 
----
+### Production-Ready Migrations
 
-## 🐘 PostgreSQL Setup
-
-### Using Docker (Recommended)
-
-The easiest way to get started:
+When you're ready to commit:
 
 ```bash
-# Start PostgreSQL container
-bun run docker:up
+# 1. Generate migration from schema changes
+bun run db:generate
 
-# Stop it when you're done
-bun run docker:down
+# 2. Review the SQL in src/db/migrations/
+
+# 3. Apply migration
+bun run db:migrate
+
+# 4. Commit migration files to git
+git add src/db/migrations/
 ```
 
-**Connection Details:**
-- Host: `localhost`
-- Port: `5432`
-- Database: `cirkulo`
-- Username: `postgres`
-- Password: `postgres`
+### Key Differences
 
-### Local PostgreSQL
-
-If you prefer a local installation:
-
-1. **Install PostgreSQL**
-   ```bash
-   # macOS
-   brew install postgresql@16
-   brew services start postgresql@16
-   
-   # Ubuntu/Debian
-   sudo apt install postgresql-16
-   ```
-
-2. **Create Database**
-   ```bash
-   createdb cirkulo
-   ```
-
-3. **Update `.env`**
-   ```bash
-   DATABASE_URL=postgresql://postgres:postgres@localhost:5432/cirkulo
-   ```
+| Command | Use Case | Creates Migrations | Safe for Production |
+|---------|----------|-------------------|---------------------|
+| `db:push` | Fast development iteration | ❌ No | ❌ No |
+| `db:generate` + `db:migrate` | Production changes | ✅ Yes | ✅ Yes |
 
 ---
 
@@ -180,50 +198,7 @@ export const postsRelations = relations(posts, ({ one }) => ({
 }));
 ```
 
----
 
-## 🔄 Migrations
-
-### Development Workflow
-
-For rapid development, use `db:push`:
-
-```bash
-# Modify schema in src/db/schema.ts
-# Then push changes directly
-bun run db:push
-```
-
-⚠️ **Note**: `db:push` doesn't create migration files. Use it only in development.
-
-### Production Workflow
-
-For production, generate proper migration files:
-
-```bash
-# 1. Modify schema in src/db/schema.ts
-
-# 2. Generate migration
-bun run db:generate
-
-# 3. Review the generated SQL in src/db/migrations/
-
-# 4. Apply migration
-bun run db:migrate
-```
-
-### Migration Commands
-
-```bash
-# Generate migration from schema changes
-bun run db:generate
-
-# Apply pending migrations
-bun run db:migrate
-
-# Push schema without migrations (dev only)
-bun run db:push
-```
 
 ---
 
@@ -354,122 +329,44 @@ Features:
 
 ---
 
-## 🐳 Docker Details
-
-### docker-compose.yml Structure
-
-```yaml
-services:
-  postgres:
-    image: postgres:16-alpine
-    ports:
-      - "5432:5432"
-    environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: cirkulo
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-```
-
-### Useful Docker Commands
+## 🐳 Docker Commands
 
 ```bash
-# Start containers
-docker-compose up -d
+# Start PostgreSQL
+bun run docker:up
 
 # Stop containers
-docker-compose down
+bun run docker:down
 
 # View logs
-docker-compose logs -f postgres
+bun run docker:logs
 
 # Access PostgreSQL shell
 docker-compose exec postgres psql -U postgres -d cirkulo
 
-# Restart database
-docker-compose restart postgres
-
-# Remove volumes (⚠️ deletes all data)
+# Reset database (⚠️ deletes all data)
 docker-compose down -v
-```
-
----
-
-## 🔧 Configuration
-
-### drizzle.config.ts
-
-```typescript
-import { defineConfig } from "drizzle-kit";
-
-export default defineConfig({
-  schema: "./src/db/schema.ts",        // Where schemas are defined
-  out: "./src/db/migrations",          // Where migrations are saved
-  dialect: "postgresql",               // Database type
-  dbCredentials: {
-    url: process.env.DATABASE_URL!,    // Connection string
-  },
-});
-```
-
-### Environment Variables
-
-```bash
-# Local development
-DATABASE_URL=postgresql://postgres:postgres@localhost:5432/cirkulo
-
-# Docker
-DATABASE_URL=postgresql://postgres:postgres@postgres:5432/cirkulo
-
-# Production (example)
-DATABASE_URL=postgresql://user:password@host:5432/dbname?sslmode=require
+docker-compose up -d
 ```
 
 ---
 
 ## 🎯 Best Practices
 
-### 1. **Always Use Transactions for Related Operations**
+### Use Transactions for Related Operations
 
 ```typescript
-// ✅ Good
+// ✅ Atomic - both succeed or both fail
 await db.transaction(async (tx) => {
   const user = await tx.insert(users).values({...}).returning();
   await tx.insert(profiles).values({ userId: user[0].id });
 });
-
-// ❌ Bad
-const user = await db.insert(users).values({...}).returning();
-await db.insert(profiles).values({ userId: user[0].id });
 ```
 
-### 2. **Use Prepared Statements for Repeated Queries**
+### Add Timestamps to All Tables
 
 ```typescript
-const getUserByEmail = db.select()
-  .from(users)
-  .where(eq(users.email, placeholder("email")))
-  .prepare("get_user_by_email");
-
-const user = await getUserByEmail.execute({ email: "user@example.com" });
-```
-
-### 3. **Index Frequently Queried Columns**
-
-```typescript
-export const users = pgTable("users", {
-  id: uuid("id").defaultRandom().primaryKey(),
-  email: text("email").notNull().unique(),  // Automatically indexed
-}, (table) => ({
-  emailIdx: index("email_idx").on(table.email),  // Explicit index
-}));
-```
-
-### 4. **Use Timestamps for Audit Trail**
-
-```typescript
-export const users = pgTable("users", {
+export const myTable = pgTable("my_table", {
   id: uuid("id").defaultRandom().primaryKey(),
   // ... other fields
   createdAt: timestamp("created_at").defaultNow().notNull(),
@@ -477,73 +374,55 @@ export const users = pgTable("users", {
 });
 ```
 
-### 5. **Validate Data Before Insertion**
+### Index Frequently Queried Columns
 
 ```typescript
-import { z } from "zod";
+import { index } from "drizzle-orm/pg-core";
 
-const userSchema = z.object({
-  email: z.string().email(),
-  name: z.string().min(1),
-});
-
-// Validate first
-const validData = userSchema.parse(data);
-
-// Then insert
-await db.insert(users).values(validData);
+export const users = pgTable("users", {
+  email: text("email").notNull(),
+  // ... other fields
+}, (table) => ({
+  emailIdx: index("email_idx").on(table.email),
+}));
 ```
 
 ---
 
 ## 🚨 Troubleshooting
 
-### Connection Refused
-
+**Database won't start:**
 ```bash
-# Check if PostgreSQL is running
-docker-compose ps
-
-# Restart if needed
-docker-compose restart postgres
+docker-compose ps  # Check status
+docker-compose logs postgres  # View errors
 ```
 
-### Migration Errors
-
+**Port 5432 already in use:**
 ```bash
-# Reset database (⚠️ deletes all data)
+lsof -i :5432  # Find what's using it
+# Or change port in docker-compose.yml
+```
+
+**Reset database (⚠️ deletes all data):**
+```bash
 docker-compose down -v
 docker-compose up -d
 bun run db:push
 ```
 
-### Port Already in Use
-
+**Type errors after schema changes:**
 ```bash
-# Find process using port 5432
-lsof -i :5432
-
-# Kill it or change port in docker-compose.yml
-ports:
-  - "5433:5432"  # Use 5433 on host
-```
-
-### Type Errors
-
-```bash
-# Regenerate types
-bun run db:generate
+bun run db:generate  # Regenerate types
 ```
 
 ---
 
-## 📚 Additional Resources
+## 📚 Resources
 
-- [Drizzle ORM Documentation](https://orm.drizzle.team/docs/overview)
-- [Drizzle Kit CLI Reference](https://orm.drizzle.team/kit-docs/overview)
-- [PostgreSQL Documentation](https://www.postgresql.org/docs/)
-- [Docker Compose Reference](https://docs.docker.com/compose/)
+- [Drizzle ORM Docs](https://orm.drizzle.team/docs/overview) - Complete ORM guide
+- [Drizzle Kit](https://orm.drizzle.team/kit-docs/overview) - Migration tools
+- [PostgreSQL Docs](https://www.postgresql.org/docs/) - Database reference
 
 ---
 
-**Need help?** Check the [GETTING_STARTED.md](./GETTING_STARTED.md) or ask in the team channel! 🚀
+**Quick Links:** [Getting Started](./GETTING_STARTED.md) | [API Standards](./API_STANDARDS.md)
