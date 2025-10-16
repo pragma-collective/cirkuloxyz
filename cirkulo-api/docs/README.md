@@ -7,6 +7,7 @@ Welcome to the Cirkulo API documentation! This folder contains comprehensive gui
 ### [GETTING_STARTED.md](./GETTING_STARTED.md)
 **Quick start guide for new developers**
 - Installation and setup
+- Database setup with Docker
 - Running the development server
 - Accessing Swagger UI
 - Testing endpoints
@@ -14,6 +15,17 @@ Welcome to the Cirkulo API documentation! This folder contains comprehensive gui
 - Project structure
 
 👉 **Start here** if you're new to the project.
+
+### [DATABASE.md](./DATABASE.md)
+**Complete guide to database management**
+- PostgreSQL setup (Docker & local)
+- Drizzle ORM usage
+- Schema definition and migrations
+- Querying data
+- Drizzle Studio
+- Best practices and troubleshooting
+
+👉 **Read this** when working with the database.
 
 ### [API_STANDARDS.md](./API_STANDARDS.md)
 **Complete guide to API development standards**
@@ -46,8 +58,15 @@ Welcome to the Cirkulo API documentation! This folder contains comprehensive gui
 
 1. **Get Started**: Read [GETTING_STARTED.md](./GETTING_STARTED.md)
    - Install dependencies
-   - Run the development server
+   - Set up PostgreSQL with Docker
+   - Run database migrations
+   - Start the development server
    - Access Swagger UI at `/swagger`
+
+2. **Learn the Database**: Read [DATABASE.md](./DATABASE.md)
+   - Understand the schema
+   - Learn Drizzle ORM queries
+   - Explore Drizzle Studio
 
 ### Creating Your First Endpoint
 
@@ -57,13 +76,18 @@ Welcome to the Cirkulo API documentation! This folder contains comprehensive gui
    - Create schema in `src/schemas/[feature].ts`
    - Create route in `src/routes/[feature].ts`
    - Register in `src/routes/index.ts`
-4. **Test in Swagger**: Visit `http://localhost:3000/swagger`
+4. **Test in Swagger**: Visit `http://localhost:8000/swagger`
 
 ### File Organization
 
 ```
 src/
-├── schemas/          # OpenAPI schemas with Zod
+├── db/              # Database configuration
+│   ├── index.ts     # Database connection
+│   ├── schema.ts    # Drizzle schema definitions
+│   └── migrations/  # Migration files
+│
+├── schemas/         # OpenAPI schemas with Zod
 │   ├── auth.ts      # Authentication schemas
 │   ├── common.ts    # Shared/reusable schemas
 │   └── [feature].ts # Feature-specific schemas
@@ -174,7 +198,7 @@ export const listRoute = createRoute({
 ## 🧪 Testing Your Endpoints
 
 ### 1. Swagger UI (Recommended)
-- Visit: `http://localhost:3000/swagger`
+- Visit: `http://localhost:8000/swagger`
 - Interactive interface
 - Test authentication
 - See all endpoints and schemas
@@ -182,17 +206,17 @@ export const listRoute = createRoute({
 ### 2. cURL
 ```bash
 # GET request
-curl http://localhost:3000/api/items
+curl http://localhost:8000/api/items
 
 # POST with auth
-curl -X POST http://localhost:3000/api/items \
+curl -X POST http://localhost:8000/api/items \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer YOUR_TOKEN" \
   -d '{"name": "test"}'
 ```
 
 ### 3. OpenAPI Spec
-- Visit: `http://localhost:3000/doc`
+- Visit: `http://localhost:8000/doc`
 - Raw OpenAPI JSON
 - Import into Postman, Insomnia, etc.
 
