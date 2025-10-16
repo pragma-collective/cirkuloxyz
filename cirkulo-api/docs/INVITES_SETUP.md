@@ -36,7 +36,7 @@ Add these to your `.env` file:
 # Resend Configuration
 RESEND_API_KEY=re_your_api_key_here
 FROM_EMAIL=noreply@yourdomain.com
-APP_URL=http://localhost:3000
+APP_URL=http://localhost:8000
 ```
 
 - `RESEND_API_KEY`: Your Resend API key
@@ -50,7 +50,7 @@ Start the server:
 bun run dev
 ```
 
-Visit the Swagger UI at `http://localhost:3000/swagger` to test the endpoint.
+Visit the Swagger UI at `http://localhost:8000/swagger` to test the endpoint.
 
 ## API Usage
 
@@ -84,7 +84,7 @@ Visit the Swagger UI at `http://localhost:3000/swagger` to test the endpoint.
 ### Using with cURL
 
 ```bash
-curl -X POST http://localhost:3000/api/invites/send \
+curl -X POST http://localhost:8000/api/invites/send \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer YOUR_JWT_TOKEN" \
   -d '{"email": "newuser@example.com"}'

@@ -70,4 +70,10 @@ app.get("/doc", (c) => {
 // Swagger UI
 app.get("/swagger", swaggerUI({ url: "/doc" }));
 
-export default app;
+// Get port from environment variable or use default
+const port = process.env.PORT ? Number.parseInt(process.env.PORT, 10) : 8000;
+
+export default {
+	port,
+	fetch: app.fetch,
+};

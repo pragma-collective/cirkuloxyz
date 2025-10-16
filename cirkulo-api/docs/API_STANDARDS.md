@@ -461,7 +461,7 @@ users.openapi(protectedRoute, async (c) => {
 1. **In Swagger UI**: Visit `/swagger` to test interactively
 2. **With curl**:
    ```bash
-   curl -X POST http://localhost:3000/api/users \
+   curl -X POST http://localhost:8000/api/users \
      -H "Content-Type: application/json" \
      -H "Authorization: Bearer YOUR_TOKEN" \
      -d '{"email": "test@example.com", "name": "Test User"}'
@@ -527,7 +527,7 @@ Before submitting a PR with new endpoints:
 1. Create schema file: `src/schemas/[feature].ts`
 2. Create route file: `src/routes/[feature].ts`
 3. Register in: `src/routes/index.ts`
-4. Test in Swagger UI: `http://localhost:3000/swagger`
+4. Test in Swagger UI: `http://localhost:8000/swagger`
 
 ### Common Imports
 

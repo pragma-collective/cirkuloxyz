@@ -1,3 +1,21 @@
 # deps
 node_modules/
 .env
+# environment variables
+.env.local
+.env.*.local
+
+# OS files
+.DS_Store
+*.log
+
+# IDE
+.vscode/
+.idea/
+
+# Build output
+dist/
+build/
+
+# Drizzle Studio
+.drizzle/
