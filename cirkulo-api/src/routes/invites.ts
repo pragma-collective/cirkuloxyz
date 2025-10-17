@@ -1,4 +1,7 @@
 import { OpenAPIHono } from "@hono/zod-openapi";
+import { and, eq } from "drizzle-orm";
+import { db } from "../db";
+import { invites as invitesTable } from "../db/schema";
 import { sendInviteEmail } from "../lib/email";
 import type { AuthContext } from "../lib/middleware";
 import { authMiddleware } from "../lib/middleware";
@@ -14,27 +17,66 @@ invites.openapi(inviteUserRoute, async (c) => {
 	try {
 		// Get validated request body
 		const body = c.req.valid("json");
-		const { email } = body;
+		const { recipientEmail, groupAddress } = body;
 
-		// Get authenticated user info from context
+		// Get authenticated user info from JWT token
 		const user = c.get("user");
+		const senderId = user.sub as string | undefined; // Dynamic user ID from JWT sub claim
+		const senderEmail = user.email as string | undefined; // Sender's email from JWT
 
-		// Extract inviter's name from JWT token
-		// Try to get the full name first, fall back to given_name, alias, or email
-		const inviterName =
-			user.given_name && user.family_name
-				? `${user.given_name} ${user.family_name}`
-				: user.given_name || user.alias || user.email || "Someone";
+		if (!senderId || !senderEmail) {
+			return c.json(
+				{
+					error: "Sender information not found",
+					details:
+						"Unable to retrieve sender's ID or email from authentication token",
+				},
+				400,
+			);
+		}
 
 		console.log(
-			`User ${user.sub} (${inviterName}) is inviting ${email} to join their circle`,
+			`User ${senderId} (${senderEmail}) is inviting ${recipientEmail} to group ${groupAddress}`,
 		);
 
+		// Check for existing active invite (one pending invite per recipient per group)
+		const existingInvite = await db
+			.select()
+			.from(invitesTable)
+			.where(
+				and(
+					eq(invitesTable.recipientEmail, recipientEmail),
+					eq(invitesTable.groupAddress, groupAddress),
+					eq(invitesTable.status, "pending"),
+				),
+			)
+			.limit(1);
+
+		if (existingInvite.length > 0) {
+			return c.json(
+				{
+					error: "Invite already exists",
+					details: `An active invite for ${recipientEmail} to this group already exists`,
+				},
+				400,
+			);
+		}
+
+		// Create invite record in database
+		const [newInvite] = await db
+			.insert(invitesTable)
+			.values({
+				recipientEmail,
+				senderId,
+				groupAddress,
+				status: "pending",
+			})
+			.returning();
+
 		// Send invite email
-		// TODO: Generate invite token if needed for tracking/validation
 		const emailResult = await sendInviteEmail({
-			to: email,
-			inviterName,
+			to: recipientEmail,
+			inviterEmail: senderEmail,
 		});
 
 		// Return success response
@@ -42,26 +84,15 @@ invites.openapi(inviteUserRoute, async (c) => {
 			{
 				success: true,
 				message: "Invitation sent successfully",
-				email,
+				recipientEmail,
+				groupAddress,
+				inviteId: newInvite.id,
 				emailId: emailResult.data?.id,
 			},
 			200,
 		);
 	} catch (error) {
 		console.error("Error sending invite:", error);
-
-		// Handle specific error cases
-		if (error instanceof Error) {
-			if (error.message.includes("email")) {
-				return c.json(
-					{
-						error: "Failed to send invite email",
-						details: error.message,
-					},
-					500,
-				);
-			}
-		}
 
 		// Generic error response
 		return c.json(

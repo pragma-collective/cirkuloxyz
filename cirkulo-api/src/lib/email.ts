@@ -9,31 +9,24 @@ const APP_URL = process.env.APP_URL || "http://localhost:8000";
 
 export interface SendInviteEmailParams {
 	to: string;
-	inviterName?: string;
+	inviterEmail: string;
 	inviteToken?: string;
 }
 
 /**
  * Send an invite email to a user
- * @param params Email parameters including recipient, inviter name, and optional invite token
+ * @param params Email parameters including recipient, inviter email, and optional invite token
  * @returns Resend response with email ID
  */
 export async function sendInviteEmail(params: SendInviteEmailParams) {
-	const { to, inviterName, inviteToken } = params;
+	const { to, inviterEmail, inviteToken } = params;
 
 	// Generate invite link
 	const inviteLink = inviteToken
 		? `${APP_URL}/invite?token=${inviteToken}`
 		: `${APP_URL}/signup`;
 
-	// Determine greeting text
-	const inviterText = inviterName
-		? `${inviterName} has invited you to join their circle on Xersha`
-		: "You've been invited to join Xersha";
-
-	const subjectLine = inviterName
-		? `${inviterName} invited you to join Xersha`
-		: "You're invited to join Xersha";
+	const subjectLine = `${inviterEmail} invited you to join Xersha`;
 
 	try {
 		const data = await resend.emails.send({
@@ -60,18 +53,14 @@ export async function sendInviteEmail(params: SendInviteEmailParams) {
               <h2 style="color: #1f1f1f; margin-top: 0; font-size: 24px; font-weight: 600;">You've been invited!</h2>
               
               <p style="font-size: 16px; color: #525252; margin: 20px 0; line-height: 1.7;">
-                ${inviterText}. Xersha is a decentralized platform for creating and managing community circles.
+                <strong style="color: #e67e22;">${inviterEmail}</strong> has invited you to join their circle on Xersha. Xersha is a decentralized platform for creating and managing community circles.
               </p>
               
-              ${
-								inviterName
-									? `<div style="background: linear-gradient(135deg, #fef3e2 0%, #fde8cc 100%); padding: 20px; border-radius: 12px; border-left: 4px solid #e67e22; margin: 25px 0;">
+              <div style="background: linear-gradient(135deg, #fef3e2 0%, #fde8cc 100%); padding: 20px; border-radius: 12px; border-left: 4px solid #e67e22; margin: 25px 0;">
                 <p style="margin: 0; color: #78350f; font-size: 15px;">
-                  <strong style="color: #92400e;">${inviterName}</strong> thinks you'd be a great addition to their circle community!
+                  <strong style="color: #92400e;">${inviterEmail}</strong> thinks you'd be a great addition to their circle community!
                 </p>
-              </div>`
-									: ""
-							}
+              </div>
               
               <p style="font-size: 16px; color: #525252; margin: 25px 0;">
                 Click the button below to accept your invitation and create your account:
@@ -119,9 +108,9 @@ export async function sendInviteEmail(params: SendInviteEmailParams) {
       `,
 			// Plain text fallback
 			text: `
-${inviterText}!
+${inviterEmail} has invited you to join their circle on Xersha!
 
-${inviterName ? `${inviterName} thinks you'd be a great addition to their circle community.` : ""}
+${inviterEmail} thinks you'd be a great addition to their circle community.
 
 Xersha is a decentralized platform for creating and managing community circles.
 
