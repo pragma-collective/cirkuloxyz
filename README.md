@@ -74,7 +74,7 @@ New to Bitcoin or crypto? No problem! Cirkulo makes it easy to get started:
 - No judgment, no pressure - everyone starts somewhere
 - Bitcoin and Citrea might sound unfamiliar, but your friends make it approachable
 
-### 🌍 **Explore Public Circles**
+### **Explore Public Circles**
 Discover and join community fundraising initiatives:
 - 🌱 Community gardens
 - 🐕 Animal shelter support
