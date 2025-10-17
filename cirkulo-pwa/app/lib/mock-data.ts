@@ -19,6 +19,15 @@ export const mockUsers: User[] = [
   { id: "user5", hasProfile: true, name: "David Kim" },
 ];
 
+// Mock current user (logged in user)
+export const mockCurrentUser: User = {
+  id: "current-user",
+  hasProfile: true,
+  name: "Alex Chen",
+  lensUsername: "alexchen",
+  bio: "Saving for adventures and helping friends reach their goals. Passionate about community-driven finance and Bitcoin.",
+};
+
 // Mock circles (user's circles)
 export const mockCircles: Circle[] = [
   {
@@ -416,6 +425,54 @@ export const mockUserStats: UserStats = {
   totalGoals: 5,
   monthlyTrend: 12,
 };
+
+// Mock streak data
+export const mockStreak = {
+  currentDays: 23,
+  longestStreak: 45,
+  lastContribution: new Date(Date.now() - 1000 * 60 * 60 * 12).toISOString(), // 12 hours ago
+};
+
+// Mock profile activity feed
+export const mockProfileActivity = [
+  {
+    id: "activity1",
+    type: "contribution" as const,
+    timestamp: new Date(Date.now() - 1000 * 60 * 120).toISOString(), // 2h ago
+    amount: 150,
+    circle: mockCircles[0],
+    reactions: [
+      { user: mockUsers[1], emoji: "🔥" },
+      { user: mockUsers[2], emoji: "💪" },
+      { user: mockUsers[3], emoji: "👏" },
+      { user: mockUsers[4], emoji: "🎉" },
+      { user: mockUsers[0], emoji: "❤️" },
+    ],
+  },
+  {
+    id: "activity2",
+    type: "milestone" as const,
+    timestamp: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString(), // 1d ago
+    circle: mockCircles[0],
+    milestone: "50%",
+    reactions: [
+      { user: mockUsers[0], emoji: "🎉" },
+      { user: mockUsers[2], emoji: "🔥" },
+      { user: mockUsers[3], emoji: "💯" },
+    ],
+  },
+  {
+    id: "activity3",
+    type: "contribution" as const,
+    timestamp: new Date(Date.now() - 1000 * 60 * 60 * 48).toISOString(), // 2d ago
+    amount: 200,
+    circle: mockCircles[2],
+    reactions: [
+      { user: mockUsers[1], emoji: "🚀" },
+      { user: mockUsers[4], emoji: "💪" },
+    ],
+  },
+];
 
 // Mock feed items
 export const mockFeedItems: FeedItem[] = [

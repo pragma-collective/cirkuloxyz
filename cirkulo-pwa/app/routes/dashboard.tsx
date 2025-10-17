@@ -101,7 +101,7 @@ export default function Dashboard() {
         {
           icon: <User className="size-6" />,
           label: "Profile",
-          onClick: () => console.log("Profile clicked"),
+          onClick: () => navigate("/profile"),
         },
       ]}
     >
