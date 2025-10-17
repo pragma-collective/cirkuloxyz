@@ -14,6 +14,10 @@ export interface Circle {
   id: string;
   name: string;
   emoji?: string;
+  description?: string;
+  savingType: "rotating" | "contribution";
+  contributionSchedule: "weekly" | "bi-weekly" | "monthly";
+  endDate: string;
   goalName: string;
   goalAmount: number;
   currentAmount: number;

@@ -1,6 +1,5 @@
 # Task
 
-Next, we're going to implement the explore page where the user can view public circles
+<Task>
 
-ui-ux-designer to design and frontend-developer to implement the code
-
+ui-ux-designer to design the page and frontend-developer to implement code
