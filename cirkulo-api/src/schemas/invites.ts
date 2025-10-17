@@ -1,20 +1,30 @@
 import { createRoute } from "@hono/zod-openapi";
 import { z } from "zod";
 
-// Request Schema
+// Request Schema - removed senderName, now extracted from JWT
 export const InviteUserSchema = z.object({
-	email: z
+	recipientEmail: z
 		.string()
 		.email()
 		.describe("Email address of the user to invite")
 		.openapi({ example: "newuser@example.com" }),
+	groupAddress: z
+		.string()
+		.regex(/^0x[a-fA-F0-9]{40}$/, "Invalid Ethereum address")
+		.describe("Ethereum address of the group")
+		.openapi({ example: "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb0" }),
 });
 
 // Response Schema
 export const InviteResponseSchema = z.object({
 	success: z.boolean().describe("Whether the invite was sent successfully"),
 	message: z.string().describe("Success message"),
-	email: z.string().email().describe("Email address the invite was sent to"),
+	recipientEmail: z
+		.string()
+		.email()
+		.describe("Email address the invite was sent to"),
+	groupAddress: z.string().describe("Group address the invite is for"),
+	inviteId: z.string().describe("Database ID of the created invite"),
 	emailId: z.string().optional().describe("Email service provider ID"),
 });
 
@@ -29,9 +39,9 @@ export const inviteUserRoute = createRoute({
 	method: "post",
 	path: "/send",
 	tags: ["Invites"],
-	summary: "Invite a user to the platform",
+	summary: "Invite a user to a group",
 	description:
-		"Sends an email invitation to a user. Requires authentication. The invite email will contain a link to join the platform.",
+		"Sends an email invitation to a user to join a specific group. Requires authentication. The sender information is automatically extracted from the authentication token.",
 	security: [{ bearerAuth: [] }],
 	request: {
 		body: {
@@ -52,7 +62,8 @@ export const inviteUserRoute = createRoute({
 			},
 		},
 		400: {
-			description: "Invalid request data",
+			description:
+				"Invalid request data, invite already exists, or user already joined the group",
 			content: {
 				"application/json": {
 					schema: ErrorSchema,
