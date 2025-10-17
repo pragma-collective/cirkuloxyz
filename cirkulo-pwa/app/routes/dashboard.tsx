@@ -1,5 +1,6 @@
 import * as React from "react";
 import type { Route } from "./+types/dashboard";
+import { useNavigate } from "react-router";
 import { AuthenticatedLayout } from "app/components/layouts/authenticated-layout";
 import { LeftSidebar } from "app/components/dashboard/left-sidebar";
 import { RightSidebar } from "app/components/dashboard/right-sidebar";
@@ -19,6 +20,7 @@ export function meta({}: Route.MetaArgs) {
 }
 
 export default function Dashboard() {
+  const navigate = useNavigate();
   const [feedFilter, setFeedFilter] = React.useState<FeedFilter>("all");
   const [feedItems, setFeedItems] = React.useState(mockFeedItems);
 
@@ -89,7 +91,7 @@ export default function Dashboard() {
         {
           icon: <PlusCircle className="size-6" />,
           label: "Create",
-          onClick: () => console.log("Create circle"),
+          onClick: () => navigate("/create-circle"),
         },
         {
           icon: <Bell className="size-6" />,
@@ -110,7 +112,7 @@ export default function Dashboard() {
           <LeftSidebar
             stats={mockUserStats}
             onNewContribution={() => console.log("New contribution")}
-            onCreateCircle={() => console.log("Create circle")}
+            onCreateCircle={() => navigate("/create-circle")}
             onSettings={() => console.log("Settings")}
           />
 
@@ -128,7 +130,7 @@ export default function Dashboard() {
           <RightSidebar
             circles={mockCircles}
             onCircleClick={(circleId) => console.log("Circle clicked:", circleId)}
-            onCreateCircle={() => console.log("Create circle")}
+            onCreateCircle={() => navigate("/create-circle")}
           />
         </div>
       </div>

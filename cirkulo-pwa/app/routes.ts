@@ -6,5 +6,6 @@ export default [
   route("onboarding", "routes/onboarding.tsx"),
   route("dashboard", "routes/dashboard.tsx"),
   route("explore", "routes/explore.tsx"),
+  route("create-circle", "routes/create-circle.tsx"),
   route("logo-showcase", "routes/logo-showcase.tsx"),
 ] satisfies RouteConfig;
