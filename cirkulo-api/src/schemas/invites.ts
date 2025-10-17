@@ -62,7 +62,8 @@ export const inviteUserRoute = createRoute({
 			},
 		},
 		400: {
-			description: "Invalid request data or invite already exists",
+			description:
+				"Invalid request data, invite already exists, or user already joined the group",
 			content: {
 				"application/json": {
 					schema: ErrorSchema,

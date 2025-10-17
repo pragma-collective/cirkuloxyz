@@ -56,13 +56,23 @@ Successfully implemented a complete invite tracking system that stores invitatio
 }
 ```
 
+**Response (Error - 400 - Already Member):**
+```json
+{
+  "error": "User already joined",
+  "details": "newuser@example.com has already accepted an invite and joined this group"
+}
+```
+
 ## Validation Rules
 
 1. **Authentication Required**: All invite endpoints require a valid JWT token
 2. **One Pending Invite**: A recipient can only have ONE pending invite per group
-3. **Ethereum Address**: Group address must be a valid Ethereum address (0x + 40 hex chars)
-4. **Email Validation**: Recipient email must be a valid email format
-5. **Sender Information**: Sender ID and email must be present in JWT token
+3. **No Duplicate Members**: Cannot invite a user who has already accepted an invite to the group
+4. **Expired Invites Allowed**: Can re-invite if previous invite expired
+5. **Ethereum Address**: Group address must be a valid Ethereum address (0x + 40 hex chars)
+6. **Email Validation**: Recipient email must be a valid email format
+7. **Sender Information**: Sender ID and email must be present in JWT token
 
 ## JWT Token Structure (Dynamic.xyz)
 

@@ -39,7 +39,7 @@ invites.openapi(inviteUserRoute, async (c) => {
 			`User ${senderId} (${senderEmail}) is inviting ${recipientEmail} to group ${groupAddress}`,
 		);
 
-		// Check for existing active invite (one pending invite per recipient per group)
+		// Check for existing invite (pending or accepted)
 		const existingInvite = await db
 			.select()
 			.from(invitesTable)
@@ -47,19 +47,32 @@ invites.openapi(inviteUserRoute, async (c) => {
 				and(
 					eq(invitesTable.recipientEmail, recipientEmail),
 					eq(invitesTable.groupAddress, groupAddress),
-					eq(invitesTable.status, "pending"),
 				),
 			)
 			.limit(1);
 
 		if (existingInvite.length > 0) {
-			return c.json(
-				{
-					error: "Invite already exists",
-					details: `An active invite for ${recipientEmail} to this group already exists`,
-				},
-				400,
-			);
+			const invite = existingInvite[0];
+
+			if (invite.status === "accepted") {
+				return c.json(
+					{
+						error: "User already joined",
+						details: `${recipientEmail} has already accepted an invite and joined this group`,
+					},
+					400,
+				);
+			}
+
+			if (invite.status === "pending") {
+				return c.json(
+					{
+						error: "Invite already exists",
+						details: `An active invite for ${recipientEmail} to this group already exists`,
+					},
+					400,
+				);
+			}
 		}
 
 		// Create invite record in database
