@@ -1,4 +1,4 @@
-# 🌊 Cirkulo (Xersha)
+# 🌊 Xersha
 
 > **Save Together, Grow Together** - Built on Citrea, Bitcoin's First ZK Rollup
 
@@ -11,7 +11,7 @@
 
 ---
 
-## 💡 The Problem
+## The Problem
 
 Traditional savings and community fundraising face critical challenges:
 
@@ -22,7 +22,7 @@ Traditional savings and community fundraising face critical challenges:
 - **Limited Flexibility** - Restricted payment methods and geographic barriers
 - **Technology Barriers** - New financial technology like Bitcoin can feel intimidating and complex to adopt alone
 
-## ✨ Our Solution
+## Our Solution
 
 **Xersha** is a Bitcoin-powered social savings platform that brings people together to achieve shared financial goals. Think of it as a social network for saving money with friends, family, and communities.
 
@@ -34,7 +34,7 @@ Traditional savings and community fundraising face critical challenges:
 4. **Celebrate Together** - Share achievements through a social feed experience
 5. **Secure & Transparent** - Built on Bitcoin for censorship-resistant, transparent savings
 
-### 🔗 Powered by Citrea
+### Powered by Citrea
 
 Built on **[Citrea](https://citrea.xyz)** - Bitcoin's first zero-knowledge rollup that brings programmability to Bitcoin while maintaining its security guarantees.
 
@@ -62,12 +62,12 @@ Built on **[Citrea](https://citrea.xyz)** - Bitcoin's first zero-knowledge rollu
 
 ---
 
-## 🎯 Key Features
+## Key Features
 
 ### 🏠 **Social Savings Dashboard**
 Track all your active circles, view contribution history, and celebrate milestones with your community through an engaging social feed.
 
-### 🤝 **Friendly Onboarding**
+### **Friendly Onboarding**
 New to Bitcoin or crypto? No problem! Cirkulo makes it easy to get started:
 - Join circles with friends who can guide you through your first transactions
 - Learn together in a supportive community environment
@@ -83,7 +83,7 @@ Discover and join community fundraising initiatives:
 - ⚽ Youth sports programs
 - 🌳 Environmental projects
 
-### 💰 **Citrea Smart Contracts on Bitcoin**
+### **Citrea Smart Contracts on Bitcoin**
 Savings circles powered by smart contracts on Citrea (Bitcoin Layer 2):
 - Real-time progress tracking with on-chain verification
 - Immutable transaction history settled on Bitcoin
@@ -91,20 +91,20 @@ Savings circles powered by smart contracts on Citrea (Bitcoin Layer 2):
 - Zero-knowledge proofs for enhanced privacy
 - No hidden fees or intermediaries
 
-### 📱 **Progressive Web App**
+### **Progressive Web App**
 - Install on any device (iOS, Android, Desktop)
 - Works offline with service workers
 - Native app-like experience
 - Fast, responsive, and accessible
 
-### 🎉 **Social Feed Experience**
+### **Social Feed Experience**
 - Share updates and celebrations
 - React to milestones with emojis
 - Comment on achievements
 - Tag hashtags for discoverability
 - See member activity in real-time
 
-### 📊 **Comprehensive Analytics**
+### **Comprehensive Analytics**
 - Total saved across all circles
 - Active circles overview
 - Goals completed counter
@@ -113,7 +113,7 @@ Savings circles powered by smart contracts on Citrea (Bitcoin Layer 2):
 
 ---
 
-## 🛠 Tech Stack
+## Tech Stack
 
 ### Blockchain Layer
 - **Citrea** - Bitcoin's first zero-knowledge rollup
@@ -154,30 +154,7 @@ Savings circles powered by smart contracts on Citrea (Bitcoin Layer 2):
 
 ---
 
-## 📸 Screenshots
-
-> _Coming soon: Screenshots of Dashboard, Explore page, Landing page, and Mobile views_
-
-### Desktop Experience
-- Clean, modern dashboard with three-column layout
-- Desktop navigation in header
-- Responsive grid for circle cards
-
-### Mobile Experience
-- Bottom navigation bar
-- Optimized touch targets
-- Swipeable category filters
-
-### Landing Page
-- Hero section with Bitcoin badge
-- How It Works (3-step process)
-- Use Cases showcase
-- Social feed mockup
-- Trust & security section
-
----
-
-## 🚀 Getting Started
+## Getting Started
 
 ### Prerequisites
 
@@ -243,7 +220,7 @@ The production build uses Caddy for serving with SPA fallback routing.
 
 ---
 
-## 📁 Project Structure
+## Project Structure
 
 ```
 cirkulo/
@@ -285,7 +262,7 @@ cirkulo/
 
 ---
 
-## 🎨 Design Highlights
+## Design Highlights
 
 ### OKLCH Color System
 
