@@ -4,7 +4,7 @@ import { cn } from "app/lib/utils";
 
 export interface UserAvatarProps {
   user: User;
-  size?: "xs" | "sm" | "md" | "lg";
+  size?: "xs" | "sm" | "md" | "lg" | "xl";
   showOnlineStatus?: boolean;
   className?: string;
   onClick?: () => void;
@@ -15,6 +15,7 @@ const sizeClasses = {
   sm: "size-10",
   md: "size-12",
   lg: "size-16",
+  xl: "size-24",
 };
 
 const textSizeClasses = {
@@ -22,6 +23,7 @@ const textSizeClasses = {
   sm: "text-sm",
   md: "text-base",
   lg: "text-xl",
+  xl: "text-3xl",
 };
 
 const statusSizeClasses = {
@@ -29,6 +31,7 @@ const statusSizeClasses = {
   sm: "size-2.5",
   md: "size-3",
   lg: "size-4",
+  xl: "size-5",
 };
 
 export function UserAvatar({
