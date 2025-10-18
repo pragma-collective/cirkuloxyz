@@ -88,3 +88,139 @@ export const inviteUserRoute = createRoute({
 		},
 	},
 });
+
+// Path Parameter Schema
+export const InviteIdParamSchema = z.object({
+	id: z.string().uuid().describe("Unique identifier of the invite"),
+});
+
+// Resend Response Schema
+export const ResendInviteResponseSchema = z.object({
+	success: z.boolean().describe("Whether the invite was resent successfully"),
+	message: z.string().describe("Success message"),
+	inviteId: z.string().describe("Database ID of the invite"),
+	emailId: z.string().optional().describe("Email service provider ID"),
+});
+
+// Cancel Response Schema
+export const CancelInviteResponseSchema = z.object({
+	success: z
+		.boolean()
+		.describe("Whether the invite was cancelled successfully"),
+	message: z.string().describe("Success message"),
+	inviteId: z.string().describe("Database ID of the cancelled invite"),
+});
+
+// Resend Invite Route Definition
+export const resendInviteRoute = createRoute({
+	method: "post",
+	path: "/{id}/resend",
+	tags: ["Invites"],
+	summary: "Resend a pending invite",
+	description:
+		"Resends an email invitation for a pending invite. Only pending invites can be resent. Requires authentication.",
+	security: [{ bearerAuth: [] }],
+	request: {
+		params: InviteIdParamSchema,
+	},
+	responses: {
+		200: {
+			description: "Invite resent successfully",
+			content: {
+				"application/json": {
+					schema: ResendInviteResponseSchema,
+				},
+			},
+		},
+		400: {
+			description:
+				"Invite cannot be resent (not found, not pending, or wrong status)",
+			content: {
+				"application/json": {
+					schema: ErrorSchema,
+				},
+			},
+		},
+		401: {
+			description: "Unauthorized - Invalid or missing authentication token",
+			content: {
+				"application/json": {
+					schema: ErrorSchema,
+				},
+			},
+		},
+		404: {
+			description: "Invite not found",
+			content: {
+				"application/json": {
+					schema: ErrorSchema,
+				},
+			},
+		},
+		500: {
+			description: "Internal server error",
+			content: {
+				"application/json": {
+					schema: ErrorSchema,
+				},
+			},
+		},
+	},
+});
+
+// Cancel Invite Route Definition
+export const cancelInviteRoute = createRoute({
+	method: "post",
+	path: "/{id}/cancel",
+	tags: ["Invites"],
+	summary: "Cancel an invite",
+	description:
+		"Cancels a pending invite by updating its status to cancelled. Only pending invites can be cancelled. Requires authentication.",
+	security: [{ bearerAuth: [] }],
+	request: {
+		params: InviteIdParamSchema,
+	},
+	responses: {
+		200: {
+			description: "Invite cancelled successfully",
+			content: {
+				"application/json": {
+					schema: CancelInviteResponseSchema,
+				},
+			},
+		},
+		400: {
+			description:
+				"Invite cannot be cancelled (not found, not pending, or already cancelled)",
+			content: {
+				"application/json": {
+					schema: ErrorSchema,
+				},
+			},
+		},
+		401: {
+			description: "Unauthorized - Invalid or missing authentication token",
+			content: {
+				"application/json": {
+					schema: ErrorSchema,
+				},
+			},
+		},
+		404: {
+			description: "Invite not found",
+			content: {
+				"application/json": {
+					schema: ErrorSchema,
+				},
+			},
+		},
+		500: {
+			description: "Internal server error",
+			content: {
+				"application/json": {
+					schema: ErrorSchema,
+				},
+			},
+		},
+	},
+});
