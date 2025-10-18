@@ -513,7 +513,7 @@ export default function Profile() {
                   <Card
                     key={circle.id}
                     className="bg-white/90 backdrop-blur-sm border-0 shadow-lg hover:shadow-2xl transition-all duration-300 cursor-pointer group overflow-hidden"
-                    onClick={() => console.log("Circle clicked:", circle.id)}
+                    onClick={() => navigate(`/circle/${circle.id}`)}
                   >
                     <CardHeader className="space-y-4 pb-4">
                       {/* Circle Header */}
