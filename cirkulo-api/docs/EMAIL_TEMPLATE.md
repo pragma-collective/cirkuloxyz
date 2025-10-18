@@ -69,7 +69,7 @@ Link Box: #fef3e2
 
 ### Name Extraction from JWT
 
-The system intelligently extracts the inviter's name from the Dynamic JWT token:
+The system intelligently extracts the inviter's name from the Lens Protocol JWT token:
 
 ```typescript
 Priority order:

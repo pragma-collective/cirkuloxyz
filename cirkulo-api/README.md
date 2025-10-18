@@ -112,7 +112,6 @@ bun run docker:logs    # View logs
 
 ## 🔑 Environment Variables
 
-- `DYNAMIC_ENV_ID` - Your Dynamic Environment ID from the dashboard
 - `RESEND_API_KEY` - Resend API key for email
 - `FROM_EMAIL` - Verified sender email address
 - `APP_URL` - Application URL for invite links

@@ -1,12 +1,11 @@
 import type { Context, Next } from "hono";
-import type { JwtPayload } from "jsonwebtoken";
-import jwt from "jsonwebtoken";
+import type { JWTPayload } from "jose";
 import { extractToken, validateJWT } from "./auth";
 
 // Extend Hono context to include user info
 export type AuthContext = {
 	Variables: {
-		user: JwtPayload;
+		user: JWTPayload;
 	};
 };
 
@@ -31,16 +30,17 @@ export async function authMiddleware(c: Context, next: Next) {
 
 		await next();
 	} catch (error) {
-		if (error instanceof jwt.JsonWebTokenError) {
-			return c.json({ error: "Invalid token", details: error.message }, 401);
-		}
-		if (error instanceof jwt.TokenExpiredError) {
-			return c.json({ error: "Token expired", details: error.message }, 401);
+		// Handle jose verification errors
+		if (error instanceof Error) {
+			return c.json(
+				{ error: "Invalid or expired token", details: error.message },
+				401,
+			);
 		}
 		return c.json(
 			{
 				error: "Authentication failed",
-				details: error instanceof Error ? error.message : "Unknown error",
+				details: "Unknown error",
 			},
 			401,
 		);

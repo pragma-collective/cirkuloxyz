@@ -6,7 +6,7 @@ This document explains how to set up and use the user invite functionality.
 
 The invite endpoint allows authenticated users to invite others to the platform via email. It uses:
 - **Resend** for email delivery
-- **JWT Authentication** via Dynamic.xyz
+- **JWT Authentication** via Lens Protocol
 - **Auth Middleware** for protected routes
 
 ## Setup Instructions
@@ -125,7 +125,7 @@ The invite email includes:
 
 **Key Features:**
 - Uses Citrea brand colors (orange gradient: #e67e22 to #d35400)
-- Personalizes message with inviter's name from Dynamic JWT token
+- Personalizes message with inviter's name from Lens Protocol JWT token
 - Falls back gracefully if inviter name not available
 - Modern, clean design matching your frontend theme
 
@@ -157,9 +157,9 @@ For higher volumes, check [Resend pricing](https://resend.com/pricing).
 - Check server logs for detailed error messages
 
 ### Authentication errors
-- Ensure valid JWT token from Dynamic.xyz
+- Ensure valid JWT token from Lens Protocol
 - Token must not be expired
-- Check `DYNAMIC_ENV_ID` is set correctly
+- Check `JWKS_URI` is set correctly
 
 ### Domain verification issues
 - Follow Resend's DNS setup guide
