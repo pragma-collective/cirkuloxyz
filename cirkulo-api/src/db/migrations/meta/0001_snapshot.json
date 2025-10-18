@@ -1,0 +1,85 @@
+{
+	"id": "ba257f6a-052c-4977-8fab-3dd590a76025",
+	"prevId": "a43c8b5d-6823-42c8-bae6-882ba81379ef",
+	"version": "7",
+	"dialect": "postgresql",
+	"tables": {
+		"public.invites": {
+			"name": "invites",
+			"schema": "",
+			"columns": {
+				"id": {
+					"name": "id",
+					"type": "uuid",
+					"primaryKey": true,
+					"notNull": true,
+					"default": "gen_random_uuid()"
+				},
+				"recipient_email": {
+					"name": "recipient_email",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": true
+				},
+				"sender_address": {
+					"name": "sender_address",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": true
+				},
+				"group_address": {
+					"name": "group_address",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": true
+				},
+				"status": {
+					"name": "status",
+					"type": "invite_status",
+					"typeSchema": "public",
+					"primaryKey": false,
+					"notNull": true,
+					"default": "'pending'"
+				},
+				"created_at": {
+					"name": "created_at",
+					"type": "timestamp",
+					"primaryKey": false,
+					"notNull": true,
+					"default": "now()"
+				},
+				"updated_at": {
+					"name": "updated_at",
+					"type": "timestamp",
+					"primaryKey": false,
+					"notNull": true,
+					"default": "now()"
+				}
+			},
+			"indexes": {},
+			"foreignKeys": {},
+			"compositePrimaryKeys": {},
+			"uniqueConstraints": {},
+			"policies": {},
+			"checkConstraints": {},
+			"isRLSEnabled": false
+		}
+	},
+	"enums": {
+		"public.invite_status": {
+			"name": "invite_status",
+			"schema": "public",
+			"values": ["pending", "accepted", "expired"]
+		}
+	},
+	"schemas": {},
+	"sequences": {},
+	"roles": {},
+	"policies": {},
+	"views": {},
+	"_meta": {
+		"columns": {},
+		"schemas": {},
+		"tables": {}
+	}
+}

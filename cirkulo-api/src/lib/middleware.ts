@@ -2,16 +2,16 @@ import type { Context, Next } from "hono";
 import type { JWTPayload } from "jose";
 import { extractToken, validateJWT } from "./auth";
 
-// Extend Hono context to include user info
+// Extend Hono context to include JWT payload
 export type AuthContext = {
 	Variables: {
-		user: JWTPayload;
+		jwtPayload: JWTPayload;
 	};
 };
 
 /**
  * Authentication middleware for protected routes
- * Validates JWT token from Authorization header and attaches user to context
+ * Validates JWT token from Authorization header and attaches JWT payload to context
  */
 export async function authMiddleware(c: Context, next: Next) {
 	try {
@@ -25,8 +25,8 @@ export async function authMiddleware(c: Context, next: Next) {
 		// Validate JWT and get decoded token
 		const decodedToken = await validateJWT(token);
 
-		// Attach user to context for downstream handlers
-		c.set("user", decodedToken);
+		// Attach JWT payload to context for downstream handlers
+		c.set("jwtPayload", decodedToken);
 
 		await next();
 	} catch (error) {
