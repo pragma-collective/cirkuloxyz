@@ -20,7 +20,7 @@ Successfully implemented a complete invite tracking system that stores invitatio
 
 **Design Decisions:**
 - ✅ **UUID for ID**: Better for distributed systems, no sequential ID exposure
-- ✅ **senderId from JWT**: Uses `user.sub` from Dynamic token - secure and tamper-proof
+- ✅ **senderId from JWT**: Uses `user.sub` from Lens Protocol token - secure and tamper-proof
 - ✅ **Status Enum**: Type-safe with PostgreSQL enum
 - ✅ **Auto-timestamps**: `createdAt` and `updatedAt` managed automatically
 
@@ -74,9 +74,9 @@ Successfully implemented a complete invite tracking system that stores invitatio
 6. **Email Validation**: Recipient email must be a valid email format
 7. **Sender Information**: Sender ID and email must be present in JWT token
 
-## JWT Token Structure (Dynamic.xyz)
+## JWT Token Structure (Lens Protocol)
 
-The system extracts the following from the Dynamic JWT token:
+The system extracts the following from the Lens Protocol JWT token:
 
 ```json
 {

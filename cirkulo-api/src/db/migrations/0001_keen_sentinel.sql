@@ -1,0 +1,1 @@
+ALTER TABLE "invites" RENAME COLUMN "sender_id" TO "sender_address";

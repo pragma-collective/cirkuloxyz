@@ -3,6 +3,7 @@ import { and, eq } from "drizzle-orm";
 import { db } from "../db";
 import { invites as invitesTable } from "../db/schema";
 import { sendInviteEmail } from "../lib/email";
+import { getLensUsername } from "../lib/lens";
 import type { AuthContext } from "../lib/middleware";
 import { authMiddleware } from "../lib/middleware";
 import { inviteUserRoute } from "../schemas/invites";
@@ -20,23 +21,33 @@ invites.openapi(inviteUserRoute, async (c) => {
 		const { recipientEmail, groupAddress } = body;
 
 		// Get authenticated user info from JWT token
-		const user = c.get("user");
-		const senderId = user.sub as string | undefined; // Dynamic user ID from JWT sub claim
-		const senderEmail = user.email as string | undefined; // Sender's email from JWT
+		const jwtPayload = c.get("jwtPayload");
 
-		if (!senderId || !senderEmail) {
+		// Extract sender address from act claim (Account address the token can act on behalf of)
+		// @ts-expect-error - act claim is not in the standard JWTPayload type
+		const senderAddress = jwtPayload.act?.sub as string | undefined;
+
+		if (!senderAddress) {
 			return c.json(
 				{
 					error: "Sender information not found",
 					details:
-						"Unable to retrieve sender's ID or email from authentication token",
+						"Unable to retrieve sender's address from authentication token (act.sub claim missing)",
 				},
 				400,
 			);
 		}
 
 		console.log(
-			`User ${senderId} (${senderEmail}) is inviting ${recipientEmail} to group ${groupAddress}`,
+			`User ${senderAddress} is inviting ${recipientEmail} to group ${groupAddress}`,
+		);
+
+		// Fetch Lens account username
+		const lensUsername = await getLensUsername(senderAddress);
+		const inviterName = lensUsername || senderAddress; // Fallback to address if no username
+
+		console.log(
+			`Lens username: ${lensUsername || "not found"}, using: ${inviterName}`,
 		);
 
 		// Check for existing invite (pending or accepted)
@@ -80,16 +91,16 @@ invites.openapi(inviteUserRoute, async (c) => {
 			.insert(invitesTable)
 			.values({
 				recipientEmail,
-				senderId,
+				senderAddress,
 				groupAddress,
 				status: "pending",
 			})
 			.returning();
 
-		// Send invite email
+		// Send invite email with Lens username
 		const emailResult = await sendInviteEmail({
 			to: recipientEmail,
-			inviterEmail: senderEmail,
+			inviterName,
 		});
 
 		// Return success response

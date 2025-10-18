@@ -12,7 +12,7 @@ export const inviteStatusEnum = pgEnum("invite_status", [
 export const invites = pgTable("invites", {
 	id: uuid("id").defaultRandom().primaryKey(),
 	recipientEmail: text("recipient_email").notNull(),
-	senderId: text("sender_id").notNull(), // Dynamic user ID from JWT sub claim
+	senderAddress: text("sender_address").notNull(), // Lens Protocol Account address from JWT act.sub claim
 	groupAddress: text("group_address").notNull(), // Group wallet address
 	status: inviteStatusEnum("status").notNull().default("pending"),
 	createdAt: timestamp("created_at").defaultNow().notNull(),

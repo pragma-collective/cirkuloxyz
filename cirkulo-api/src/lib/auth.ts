@@ -1,38 +1,38 @@
-import jwt, { type JwtPayload } from "jsonwebtoken";
-import { JwksClient } from "jwks-rsa";
+import { createRemoteJWKSet, type JWTPayload, jwtVerify } from "jose";
 
-// Replace with your Dynamic Environment ID from https://app.dynamic.xyz/dashboard/developer/api
-const DYNAMIC_ENV_ID = process.env.DYNAMIC_ENV_ID || "YOUR_DYNAMIC_ENV_ID";
-const jwksUrl = `https://app.dynamic.xyz/api/v0/sdk/${DYNAMIC_ENV_ID}/.well-known/jwks`;
+// Get JWKS URI from environment variables for Lens Protocol
+const jwksUri = process.env.JWKS_URI;
 
-// Initialize JWKS client with caching
-const jwksClient = new JwksClient({
-	jwksUri: jwksUrl,
-	rateLimit: true,
-	cache: true,
-	cacheMaxEntries: 5, // Maximum number of cached keys
-	cacheMaxAge: 600000, // Cache duration in milliseconds (10 minutes)
-});
-
-// Helper function to get public key
-async function getPublicKey(): Promise<string> {
-	const signingKey = await jwksClient.getSigningKey();
-	return signingKey.getPublicKey();
+if (!jwksUri) {
+	throw new Error("JWKS_URI environment variable is not set");
 }
 
-// Validate JWT token
-export async function validateJWT(token: string): Promise<JwtPayload> {
-	const publicKey = await getPublicKey();
-	const decodedToken = jwt.verify(token, publicKey, {
-		ignoreExpiration: false,
-	}) as JwtPayload;
+// Initialize JWKS with jose's createRemoteJWKSet
+const JWKS = createRemoteJWKSet(new URL(jwksUri));
 
-	// Check for additional auth requirements
-	if (decodedToken?.scopes?.includes("requiresAdditionalAuth")) {
-		throw new Error("Additional verification required (e.g., MFA)");
+// Validate JWT token using Lens Protocol
+export async function validateJWT(token: string): Promise<JWTPayload> {
+	try {
+		// Verify the JWT using the JWKS
+		const { payload } = await jwtVerify(token, JWKS);
+
+		// Check for additional auth requirements if needed
+		if (
+			payload?.scopes &&
+			Array.isArray(payload.scopes) &&
+			payload.scopes.includes("requiresAdditionalAuth")
+		) {
+			throw new Error("Additional verification required (e.g., MFA)");
+		}
+
+		return payload;
+	} catch (error) {
+		// Re-throw with more specific error messages
+		if (error instanceof Error) {
+			throw error;
+		}
+		throw new Error("JWT verification failed");
 	}
-
-	return decodedToken;
 }
 
 // Extract token from Authorization header
