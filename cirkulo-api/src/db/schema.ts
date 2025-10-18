@@ -6,11 +6,13 @@ export const inviteStatusEnum = pgEnum("invite_status", [
 	"pending",
 	"accepted",
 	"expired",
+	"cancelled",
 ]);
 
 // Invites table
 export const invites = pgTable("invites", {
 	id: uuid("id").defaultRandom().primaryKey(),
+	code: uuid("code").defaultRandom().notNull().unique(), // Unique invite code for validation
 	recipientEmail: text("recipient_email").notNull(),
 	senderAddress: text("sender_address").notNull(), // Lens Protocol Account address from JWT act.sub claim
 	groupAddress: text("group_address").notNull(), // Group wallet address
