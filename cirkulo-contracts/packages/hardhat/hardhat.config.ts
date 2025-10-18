@@ -125,10 +125,39 @@ const config: HardhatUserConfig = {
       url: "https://forno.celo-sepolia.celo-testnet.org/",
       accounts: [deployerPrivateKey],
     },
+    // Citrea Testnet for Xersha deployment
+    citreaTestnet: {
+      url: process.env.CITREA_RPC_URL || "https://rpc.testnet.citrea.xyz",
+      chainId: 5115, // Citrea Testnet chain ID
+      accounts: [deployerPrivateKey],
+      gasPrice: "auto",
+    },
   },
   // Configuration for harhdat-verify plugin
   etherscan: {
-    apiKey: etherscanApiKey,
+    apiKey: {
+      citreaTestnet: process.env.CITREA_API_KEY || "dummy-api-key-not-needed",
+      mainnet: etherscanApiKey,
+      sepolia: etherscanApiKey,
+      arbitrum: etherscanApiKey,
+      arbitrumSepolia: etherscanApiKey,
+      optimism: etherscanApiKey,
+      optimismSepolia: etherscanApiKey,
+      polygon: etherscanApiKey,
+      polygonAmoy: etherscanApiKey,
+      base: etherscanApiKey,
+      baseSepolia: etherscanApiKey,
+    },
+    customChains: [
+      {
+        network: "citreaTestnet",
+        chainId: 5115,
+        urls: {
+          apiURL: process.env.CITREA_EXPLORER_API || "https://explorer-api.testnet.citrea.xyz/api",
+          browserURL: process.env.CITREA_EXPLORER_URL || "https://explorer.testnet.citrea.xyz",
+        },
+      },
+    ],
   },
   // Configuration for etherscan-verify from hardhat-deploy plugin
   verify: {
