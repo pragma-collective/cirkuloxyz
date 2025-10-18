@@ -1,9 +1,32 @@
-import { evmAddress, mainnet, PublicClient } from "@lens-protocol/client";
+import {
+	evmAddress,
+	mainnet,
+	PublicClient,
+	testnet,
+} from "@lens-protocol/client";
 import { fetchAccount } from "@lens-protocol/client/actions";
 
-// Initialize Lens Protocol client with mainnet
+// Determine Lens environment based on LENS_ENVIRONMENT variable
+// Use 'production' for mainnet, anything else defaults to testnet
+const getLensEnvironment = () => {
+	const lensEnv = process.env.LENS_ENVIRONMENT?.toLowerCase();
+	return lensEnv === "production" ? mainnet : testnet;
+};
+
+/**
+ * Get JWKS URI based on LENS_ENVIRONMENT
+ * @returns JWKS URI for the appropriate Lens environment
+ */
+export const getJwksUri = () => {
+	const lensEnv = process.env.LENS_ENVIRONMENT?.toLowerCase();
+	return lensEnv === "production"
+		? "https://api.lens.xyz/.well-known/jwks.json"
+		: "https://api.testnet.lens.xyz/.well-known/jwks.json";
+};
+
+// Initialize Lens Protocol client with appropriate environment
 export const lensClient = PublicClient.create({
-	environment: mainnet,
+	environment: getLensEnvironment(),
 });
 
 /**
