@@ -37,11 +37,15 @@ Add these to your `.env` file:
 RESEND_API_KEY=re_your_api_key_here
 FROM_EMAIL=noreply@yourdomain.com
 APP_URL=http://localhost:8000
+
+# Lens Protocol Configuration
+LENS_ENVIRONMENT=development  # Use 'production' for mainnet, anything else for testnet
 ```
 
 - `RESEND_API_KEY`: Your Resend API key
 - `FROM_EMAIL`: The sender email address (must be verified in Resend)
 - `APP_URL`: Your application URL for invite links
+- `LENS_ENVIRONMENT`: Controls Lens Protocol environment (`production` for mainnet, `development`/`testnet` for testnet)
 
 ### 4. Test the Endpoint
 
@@ -159,7 +163,7 @@ For higher volumes, check [Resend pricing](https://resend.com/pricing).
 ### Authentication errors
 - Ensure valid JWT token from Lens Protocol
 - Token must not be expired
-- Check `JWKS_URI` is set correctly
+- Check `LENS_ENVIRONMENT` matches your Lens Protocol setup (production/development)
 
 ### Domain verification issues
 - Follow Resend's DNS setup guide

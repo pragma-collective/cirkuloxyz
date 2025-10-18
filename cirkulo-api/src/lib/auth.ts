@@ -1,11 +1,8 @@
 import { createRemoteJWKSet, type JWTPayload, jwtVerify } from "jose";
+import { getJwksUri } from "./lens";
 
-// Get JWKS URI from environment variables for Lens Protocol
-const jwksUri = process.env.JWKS_URI;
-
-if (!jwksUri) {
-	throw new Error("JWKS_URI environment variable is not set");
-}
+// Get JWKS URI based on LENS_ENVIRONMENT
+const jwksUri = getJwksUri();
 
 // Initialize JWKS with jose's createRemoteJWKSet
 const JWKS = createRemoteJWKSet(new URL(jwksUri));
