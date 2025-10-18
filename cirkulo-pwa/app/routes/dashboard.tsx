@@ -129,7 +129,7 @@ export default function Dashboard() {
           {/* Right Sidebar - Hidden on mobile/tablet/small desktop, visible on XL */}
           <RightSidebar
             circles={mockCircles}
-            onCircleClick={(circleId) => console.log("Circle clicked:", circleId)}
+            onCircleClick={(circleId) => navigate(`/circle/${circleId}`)}
             onCreateCircle={() => navigate("/create-circle")}
           />
         </div>

@@ -1,5 +1,6 @@
 import * as React from "react";
 import type { Route } from "./+types/explore";
+import { useNavigate } from "react-router";
 import { AuthenticatedLayout } from "app/components/layouts/authenticated-layout";
 import { ExploreHeader } from "app/components/explore/explore-header";
 import { CategoryFilter } from "app/components/explore/category-filter";
@@ -21,6 +22,7 @@ export function meta({}: Route.MetaArgs) {
 }
 
 export default function Explore() {
+  const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = React.useState("");
   const [activeCategory, setActiveCategory] = React.useState<CircleCategory | "all">(
     "all"
@@ -112,13 +114,11 @@ export default function Explore() {
   };
 
   const handleCircleClick = (circleId: string) => {
-    console.log("View circle details:", circleId);
-    // TODO: Navigate to circle detail page
+    navigate(`/circle/${circleId}`);
   };
 
   const handleCreateCircle = () => {
-    console.log("Create new circle");
-    // TODO: Navigate to create circle page
+    navigate("/create-circle");
   };
 
   const handleClearSearch = () => {
@@ -162,7 +162,7 @@ export default function Explore() {
         {
           icon: <User className="size-6" />,
           label: "Profile",
-          onClick: () => console.log("Profile clicked"),
+          onClick: () => navigate("/profile"),
         },
       ]}
     >

@@ -8,5 +8,7 @@ export default [
   route("explore", "routes/explore.tsx"),
   route("create-circle", "routes/create-circle.tsx"),
   route("profile", "routes/profile.tsx"),
+  route("circle/:id", "routes/circle-detail.tsx"),
+  route("circle/:id/members", "routes/circle-members.tsx"),
   route("logo-showcase", "routes/logo-showcase.tsx"),
 ] satisfies RouteConfig;
