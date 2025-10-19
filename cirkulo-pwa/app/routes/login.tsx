@@ -1,5 +1,7 @@
 import type { Route } from "./+types/login";
 import { useNavigate } from "react-router";
+import * as React from "react";
+import { useDynamicContext } from "@dynamic-labs/sdk-react-core";
 import { XershaLogo } from "app/components/xersha-logo";
 import { Button } from "app/components/ui/button";
 import {
@@ -11,7 +13,7 @@ import {
 	CardTitle,
 } from "app/components/ui/card";
 import { useAuth } from "app/context/auth-context";
-import { Mail, Users, TrendingUp, Shield, Loader2 } from "lucide-react";
+import { Wallet, TrendingUp, Shield, Loader2, Users } from "lucide-react";
 
 export function meta({}: Route.MetaArgs) {
 	return [
@@ -25,40 +27,22 @@ export function meta({}: Route.MetaArgs) {
 
 export default function Login() {
 	const navigate = useNavigate();
-	const { login, isLoading } = useAuth();
+	const { user } = useAuth();
+	const { setShowAuthFlow, user: dynamicUser, primaryWallet } = useDynamicContext();
+	const [isAuthenticating, setIsAuthenticating] = React.useState(false);
 
-	const handleSocialLogin = async () => {
-		try {
-			// Call login from auth context
-			const user = await login();
-
-			// Navigate based on profile status
-			if (!user.hasProfile) {
-				navigate("/onboarding");
-			} else {
-				navigate("/dashboard");
-			}
-		} catch (error) {
-			console.error("Social login failed:", error);
-			// In a real app, you'd show an error message here
+	// Watch for successful authentication and redirect to onboarding
+	React.useEffect(() => {
+		if (isAuthenticating && dynamicUser && primaryWallet) {
+			// User successfully authenticated, navigate to onboarding
+			// (All new Dynamic users need to create their Xersha profile)
+			navigate("/onboarding");
 		}
-	};
+	}, [isAuthenticating, dynamicUser, primaryWallet, navigate]);
 
-	const handleEmailLogin = async () => {
-		try {
-			// Call login from auth context
-			const user = await login();
-
-			// Navigate based on profile status
-			if (!user.hasProfile) {
-				navigate("/onboarding");
-			} else {
-				navigate("/dashboard");
-			}
-		} catch (error) {
-			console.error("Email login failed:", error);
-			// In a real app, you'd show an error message here
-		}
+	const handleSignIn = () => {
+		setIsAuthenticating(true);
+		setShowAuthFlow(true);
 	};
 
 	return (
@@ -106,43 +90,23 @@ export default function Login() {
 								/>
 							</div>
 
-							{/* Login buttons */}
-							<div className="space-y-3 pt-4">
+							{/* Login button */}
+							<div className="pt-4">
 								<Button
 									size="lg"
 									className="w-full text-base"
-									onClick={handleSocialLogin}
-									disabled={isLoading}
+									onClick={handleSignIn}
+									disabled={isAuthenticating}
 								>
-									{isLoading ? (
+									{isAuthenticating ? (
 										<>
 											<Loader2 className="size-5 animate-spin" />
 											Signing in...
 										</>
 									) : (
 										<>
-											<Users className="size-5" />
-											Continue with Social
-										</>
-									)}
-								</Button>
-
-								<Button
-									size="lg"
-									variant="outline"
-									className="w-full text-base"
-									onClick={handleEmailLogin}
-									disabled={isLoading}
-								>
-									{isLoading ? (
-										<>
-											<Loader2 className="size-5 animate-spin" />
-											Signing in...
-										</>
-									) : (
-										<>
-											<Mail className="size-5" />
-											Continue with Email
+											<Wallet className="size-5" />
+											Sign In
 										</>
 									)}
 								</Button>

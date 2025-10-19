@@ -1,4 +1,5 @@
 import * as React from "react";
+import { useDynamicContext } from "@dynamic-labs/sdk-react-core";
 
 // User interface
 export interface User {
@@ -7,6 +8,7 @@ export interface User {
   name?: string;
   lensUsername?: string;
   bio?: string;
+  walletAddress?: string;
 }
 
 // Profile data for creation
@@ -30,46 +32,88 @@ const AuthContext = React.createContext<AuthContextType | undefined>(undefined);
 
 // Auth provider component
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = React.useState<User | null>(null);
+  const {
+    user: dynamicUser,
+    primaryWallet,
+    setShowAuthFlow,
+    handleLogOut,
+  } = useDynamicContext();
+
+  // Check if user is authenticated (has a user and wallet)
+  const isAuthenticated = Boolean(dynamicUser && primaryWallet);
+
+  const [profileData, setProfileData] = React.useState<{
+    hasProfile: boolean;
+    name?: string;
+    lensUsername?: string;
+    bio?: string;
+  }>({ hasProfile: false });
   const [isLoading, setIsLoading] = React.useState(false);
 
-  // Mock login function - simulates social/email login
+  // Map Dynamic user to our User interface
+  const user: User | null = React.useMemo(() => {
+    if (!isAuthenticated || !dynamicUser) return null;
+
+    return {
+      id: dynamicUser.userId || primaryWallet?.address || "unknown",
+      walletAddress: primaryWallet?.address,
+      hasProfile: profileData.hasProfile,
+      name: profileData.name,
+      lensUsername: profileData.lensUsername,
+      bio: profileData.bio,
+    };
+  }, [isAuthenticated, dynamicUser, primaryWallet, profileData]);
+
+  // Login function - triggers Dynamic auth flow
+  // Note: Actual navigation should be handled via useEffect watching user state
   const login = React.useCallback(async (): Promise<User> => {
     setIsLoading(true);
 
-    // Simulate API delay
-    await new Promise((resolve) => setTimeout(resolve, 1000));
+    // Trigger Dynamic's auth modal
+    setShowAuthFlow(true);
 
-    // Return mock user without profile
-    const mockUser: User = {
-      id: "mock-user-123",
-      hasProfile: false,
-    };
+    // Return a promise that resolves when user becomes authenticated
+    return new Promise((resolve, reject) => {
+      const timeoutId = setTimeout(() => {
+        setIsLoading(false);
+        reject(new Error("Authentication timeout"));
+      }, 120000); // 2 minute timeout
 
-    setUser(mockUser);
-    setIsLoading(false);
+      // This will be resolved by the useEffect watching authentication state
+      const checkInterval = setInterval(() => {
+        if (isAuthenticated && dynamicUser && primaryWallet) {
+          clearInterval(checkInterval);
+          clearTimeout(timeoutId);
+          setIsLoading(false);
 
-    return mockUser;
-  }, []);
+          const newUser: User = {
+            id: dynamicUser.userId || primaryWallet.address || "unknown",
+            walletAddress: primaryWallet.address,
+            hasProfile: profileData.hasProfile,
+            name: profileData.name,
+            lensUsername: profileData.lensUsername,
+            bio: profileData.bio,
+          };
 
-  // Mock create profile function
+          resolve(newUser);
+        }
+      }, 500);
+    });
+  }, [setShowAuthFlow, isAuthenticated, dynamicUser, primaryWallet, profileData]);
+
+  // Create profile function
   const createProfile = React.useCallback(async (data: ProfileData): Promise<void> => {
     setIsLoading(true);
 
     // Simulate profile creation delay (2 seconds)
     await new Promise((resolve) => setTimeout(resolve, 2000));
 
-    // Update user with profile data
-    setUser((currentUser) => {
-      if (!currentUser) return null;
-
-      return {
-        ...currentUser,
-        hasProfile: true,
-        name: data.name,
-        lensUsername: data.lensUsername,
-        bio: data.bio,
-      };
+    // Update profile data
+    setProfileData({
+      hasProfile: true,
+      name: data.name,
+      lensUsername: data.lensUsername,
+      bio: data.bio,
     });
 
     setIsLoading(false);
@@ -77,9 +121,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   // Logout function
   const logout = React.useCallback(() => {
-    setUser(null);
+    handleLogOut();
+    setProfileData({ hasProfile: false });
     setIsLoading(false);
-  }, []);
+  }, [handleLogOut]);
 
   const value = React.useMemo(
     () => ({
