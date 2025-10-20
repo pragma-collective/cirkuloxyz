@@ -12,11 +12,11 @@ import type {
 
 // Mock users
 export const mockUsers: User[] = [
-  { id: "user1", hasProfile: true, name: "Alex Chen" },
-  { id: "user2", hasProfile: true, name: "Sarah Johnson" },
-  { id: "user3", hasProfile: true, name: "Mike Rodriguez" },
-  { id: "user4", hasProfile: true, name: "Emma Thompson" },
-  { id: "user5", hasProfile: true, name: "David Kim" },
+  { id: "user1", hasProfile: true, name: "Alex Chen", hasLensAccount: true },
+  { id: "user2", hasProfile: true, name: "Sarah Johnson", hasLensAccount: true },
+  { id: "user3", hasProfile: true, name: "Mike Rodriguez", hasLensAccount: true },
+  { id: "user4", hasProfile: true, name: "Emma Thompson", hasLensAccount: true },
+  { id: "user5", hasProfile: true, name: "David Kim", hasLensAccount: true },
 ];
 
 // Mock current user (logged in user)
@@ -26,6 +26,7 @@ export const mockCurrentUser: User = {
   name: "Alex Chen",
   lensUsername: "alexchen",
   bio: "Saving for adventures and helping friends reach their goals. Passionate about community-driven finance and Bitcoin.",
+  hasLensAccount: true,
 };
 
 // Mock circles (user's circles)

@@ -1,8 +1,12 @@
 # Task
 
-We're now going to design the circle detail view, this is when a user views a circle (public or private)
+Now we have dynamic integrated, we're only gonna use it for its embedded wallets for our users.
+The actual authentication will utilize lens accounts. Once we have a dynamic user account and its address,
+we can check if it has an existing lens account, if yes, we go to the dashboard, if not we'll show the onboarding screen.
 
-We want this to look nice and very social first. Our docs should have most of the details and elements
-that needs to be in the circle view
+Also now we have a working authentication. Let's create a wrapper component what handles the authentication logic / checks
+for pages that requires authentication. You can check the docs https://reactrouter.com/start/framework/routing.
 
-ui-ux-designer to design the page and frontend-developer to implement code
+As for the lens docs, you can read docs/lens.txt
+
+frontend-developer to implement code
