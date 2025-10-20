@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import type { Route } from "./+types/onboarding";
 import { useNavigate } from "react-router";
 import { XershaLogo } from "app/components/xersha-logo";
@@ -24,6 +24,17 @@ import {
 } from "lucide-react";
 import { cn } from "app/lib/utils";
 import { uploadToLensStorage } from "app/lib/lens-storage";
+import {
+  authenticateAsOnboardingUser,
+  checkUsername,
+  useCreateLensAccount,
+  type SessionClient,
+} from "app/hooks/create-lens-account";
+import { useDynamicContext } from "@dynamic-labs/sdk-react-core";
+import { getWalletClient } from "@dynamic-labs/sdk-react-core";
+
+// TODO: Replace with your app's actual Lens address
+const APP_ADDRESS = "0x0000000000000000000000000000000000000000";
 
 export function meta({}: Route.MetaArgs) {
   return [
@@ -54,6 +65,13 @@ interface FormData {
 export default function Onboarding() {
   const navigate = useNavigate();
   const { createProfile } = useAuth();
+  const { primaryWallet } = useDynamicContext();
+  const { createAccount, isCreating } = useCreateLensAccount();
+
+  // Session state for early authentication
+  const [sessionClient, setSessionClient] = useState<SessionClient | null>(null);
+  const [isAuthenticating, setIsAuthenticating] = useState(false);
+  const [authError, setAuthError] = useState<string | null>(null);
 
   // Form state
   const [formData, setFormData] = useState<FormData>({
@@ -70,6 +88,7 @@ export default function Onboarding() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [showTooltip, setShowTooltip] = useState(false);
+  const [isCheckingUsername, setIsCheckingUsername] = useState(false);
 
   // Validation functions
   const validateName = (value: string): string | undefined => {
@@ -125,6 +144,45 @@ export default function Onboarding() {
     }
   };
 
+  // Authenticate as onboarding user when page loads
+  useEffect(() => {
+    const authenticateUser = async () => {
+      if (!primaryWallet || !APP_ADDRESS) {
+        console.log("[Onboarding] Waiting for wallet connection");
+        return;
+      }
+
+      setIsAuthenticating(true);
+      setAuthError(null);
+
+      try {
+        const walletClient = await getWalletClient(primaryWallet);
+        const result = await authenticateAsOnboardingUser(
+          primaryWallet.address,
+          APP_ADDRESS,
+          walletClient
+        );
+
+        if (result.sessionClient) {
+          setSessionClient(result.sessionClient);
+          console.log("[Onboarding] Successfully authenticated");
+        } else {
+          const errorMsg = result.error?.message || "Authentication failed";
+          setAuthError(errorMsg);
+          console.error("[Onboarding] Authentication failed:", result.error);
+        }
+      } catch (err) {
+        const errorMsg = err instanceof Error ? err.message : "Authentication failed";
+        setAuthError(errorMsg);
+        console.error("[Onboarding] Authentication error:", err);
+      } finally {
+        setIsAuthenticating(false);
+      }
+    };
+
+    authenticateUser();
+  }, [primaryWallet]);
+
   // Handle field change
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -147,7 +205,7 @@ export default function Onboarding() {
   };
 
   // Handle field blur
-  const handleBlur = (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleBlur = async (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     const fieldName = name as keyof FormData;
 
@@ -158,6 +216,28 @@ export default function Onboarding() {
       ...prev,
       [fieldName]: error,
     }));
+
+    // Real-time username availability check
+    if (fieldName === "lensUsername" && !error && value.trim() && sessionClient) {
+      setIsCheckingUsername(true);
+
+      try {
+        const availability = await checkUsername(value.trim(), sessionClient);
+
+        if (!availability.available) {
+          setErrors((prev) => ({
+            ...prev,
+            lensUsername: availability.reason || "Username is not available",
+          }));
+        }
+        // If available, error is already cleared above
+      } catch (err) {
+        console.error("[Onboarding] Username check error:", err);
+        // Don't show error to user for network issues during blur
+      } finally {
+        setIsCheckingUsername(false);
+      }
+    }
   };
 
   // Handle profile photo change
@@ -203,6 +283,25 @@ export default function Onboarding() {
     setIsSubmitting(true);
 
     try {
+      // Check if we have a session client and wallet
+      if (!sessionClient) {
+        setErrors((prev) => ({
+          ...prev,
+          lensUsername: "Authentication required. Please refresh the page.",
+        }));
+        setIsSubmitting(false);
+        return;
+      }
+
+      if (!primaryWallet) {
+        setErrors((prev) => ({
+          ...prev,
+          lensUsername: "Wallet not connected. Please connect your wallet.",
+        }));
+        setIsSubmitting(false);
+        return;
+      }
+
       // Upload profile photo if provided
       let profilePictureUri: string | undefined;
       if (formData.profilePhoto) {
@@ -219,12 +318,28 @@ export default function Onboarding() {
         }
       }
 
-      // Create profile
-      await createProfile({
-        name: formData.name.trim(),
-        lensUsername: formData.lensUsername.trim(),
-        bio: formData.bio.trim() || undefined,
-        picture: profilePictureUri,
+      // Create Lens account
+      const result = await createAccount({
+        username: formData.lensUsername.trim(),
+        metadataUri: profilePictureUri || "lens://", // TODO: Create proper metadata
+        walletAddress: primaryWallet.address,
+        appAddress: APP_ADDRESS,
+        sessionClient, // Reuse existing session
+      });
+
+      if (result.error) {
+        console.error("[Onboarding] Account creation failed:", result.error);
+        setErrors((prev) => ({
+          ...prev,
+          lensUsername: result.error?.message || "Failed to create account",
+        }));
+        setIsSubmitting(false);
+        return;
+      }
+
+      console.log("[Onboarding] Account created successfully:", {
+        txHash: result.txHash,
+        accountAddress: result.accountAddress,
       });
 
       // Show success state
@@ -235,9 +350,12 @@ export default function Onboarding() {
         navigate("/dashboard");
       }, 1500);
     } catch (error) {
-      console.error("Profile creation failed:", error);
+      console.error("[Onboarding] Account creation failed:", error);
       setIsSubmitting(false);
-      // In a real app, you'd show an error message here
+      setErrors((prev) => ({
+        ...prev,
+        lensUsername: error instanceof Error ? error.message : "Failed to create account",
+      }));
     }
   };
 

@@ -152,6 +152,116 @@ The app transparently communicates Bitcoin usage while maintaining a friendly, s
 
 ## Important Patterns
 
+### Async Logic and Hooks Pattern
+
+**Key Principle**: Keep components clean by extracting async logic into custom hooks in `app/hooks/`.
+
+**Pattern Structure:**
+1. **Create hook files in `app/hooks/`** - Encapsulate all async operations
+2. **Export standalone functions** - For operations that need to be called independently
+3. **Export custom hooks** - For component-level state management
+4. **Keep components presentational** - Routes/components should focus on UI rendering
+
+**Example: Lens Account Creation** (`app/hooks/create-lens-account.ts`)
+
+```typescript
+// 1. Export standalone async functions for early execution
+export async function authenticateAsOnboardingUser(
+  walletAddress: string,
+  appAddress: string,
+  walletClient: WalletClient
+): Promise<AuthenticationResult> {
+  // Async authentication logic
+  // Can be called independently (e.g., on page load)
+}
+
+export async function checkUsername(
+  username: string,
+  sessionClient: SessionClient
+): Promise<UsernameAvailability> {
+  // Username validation logic
+  // Can be called independently (e.g., on blur)
+}
+
+// 2. Export custom hook for component-level operations
+export function useCreateLensAccount() {
+  const [isCreating, setIsCreating] = useState(false);
+  const [error, setError] = useState<Error | null>(null);
+
+  const createAccount = useCallback(async (params) => {
+    // Uses standalone functions internally
+    // Manages loading/error state for UI feedback
+  }, []);
+
+  return { createAccount, isCreating, error };
+}
+```
+
+**Component Usage** (`app/routes/onboarding.tsx`):
+
+```typescript
+// Import standalone functions + custom hook
+import {
+  authenticateAsOnboardingUser,
+  checkUsername,
+  useCreateLensAccount,
+} from "app/hooks/create-lens-account";
+
+function Onboarding() {
+  const { createAccount, isCreating } = useCreateLensAccount();
+  const [sessionClient, setSessionClient] = useState(null);
+
+  // Early authentication on mount
+  useEffect(() => {
+    const auth = async () => {
+      const result = await authenticateAsOnboardingUser(
+        walletAddress,
+        appAddress,
+        walletClient
+      );
+      setSessionClient(result.sessionClient);
+    };
+    auth();
+  }, [walletAddress]);
+
+  // Real-time validation on blur
+  const handleBlur = async (username: string) => {
+    const availability = await checkUsername(username, sessionClient);
+    // Update UI based on availability
+  };
+
+  // Form submission using hook
+  const handleSubmit = async () => {
+    const result = await createAccount({
+      username,
+      metadataUri,
+      walletAddress,
+      appAddress,
+      sessionClient, // Reuse from earlier auth
+    });
+  };
+}
+```
+
+**Benefits:**
+- **Separation of Concerns**: Business logic separated from presentation
+- **Reusability**: Functions can be used across multiple components
+- **Testability**: Easier to unit test isolated functions
+- **Maintainability**: Changes to async logic don't affect component structure
+- **Performance**: Enables optimization patterns (early auth, session reuse)
+
+**When to Use This Pattern:**
+- Complex async operations (API calls, blockchain transactions, authentication)
+- Logic that needs to be reused across multiple components
+- Operations requiring state management (loading states, errors)
+- Early execution patterns (auth on mount, background prefetching)
+- Real-time validation (username checks, form validation)
+
+**Hooks Location:**
+- `app/hooks/create-lens-account.ts` - Lens account creation and authentication
+- `app/hooks/fetch-lens-accounts.ts` - Fetching existing Lens accounts
+- Follow this pattern for new async operations
+
 ### Adding New Landing Sections
 
 1. Create component in `app/components/landing/section-name.tsx`
