@@ -22,6 +22,7 @@
     "@lens-protocol/client": "^0.0.0-canary-20250430134539",
     "dotenv": "^17.2.3",
     "drizzle-orm": "^0.44.6",
+    "ethers": "6",
     "hono": "^4.9.12",
     "jose": "^6.1.0",
     "jsonwebtoken": "^9.0.2",

@@ -1,32 +1,21 @@
+import { evmAddress, PublicClient, testnet } from "@lens-protocol/client";
 import {
-	evmAddress,
-	mainnet,
-	PublicClient,
-	testnet,
-} from "@lens-protocol/client";
-import { fetchAccount } from "@lens-protocol/client/actions";
-
-// Determine Lens environment based on LENS_ENVIRONMENT variable
-// Use 'production' for mainnet, anything else defaults to testnet
-const getLensEnvironment = () => {
-	const lensEnv = process.env.LENS_ENVIRONMENT?.toLowerCase();
-	return lensEnv === "production" ? mainnet : testnet;
-};
+	fetchAccount,
+	fetchGroupMembers,
+	fetchGroup as lensProtocolFetchGroup,
+} from "@lens-protocol/client/actions";
 
 /**
- * Get JWKS URI based on LENS_ENVIRONMENT
- * @returns JWKS URI for the appropriate Lens environment
+ * Get JWKS URI for Lens testnet
+ * @returns JWKS URI for Lens testnet
  */
 export const getJwksUri = () => {
-	const lensEnv = process.env.LENS_ENVIRONMENT?.toLowerCase();
-	return lensEnv === "production"
-		? "https://api.lens.xyz/.well-known/jwks.json"
-		: "https://api.testnet.lens.xyz/.well-known/jwks.json";
+	return "https://api.testnet.lens.xyz/.well-known/jwks.json";
 };
 
-// Initialize Lens Protocol client with appropriate environment
+// Initialize Lens Protocol client for testnet
 export const lensClient = PublicClient.create({
-	environment: getLensEnvironment(),
+	environment: testnet,
 });
 
 /**
@@ -65,4 +54,106 @@ export async function getLensUsername(address: string): Promise<string | null> {
 	}
 
 	return `@${account.username.localName}`;
+}
+
+/**
+ * Check if an address is a member of a group
+ * @param groupAddress - The group's address
+ * @param memberAddress - The address to check
+ * @returns true if the address is a member
+ */
+export async function isGroupMember(
+	groupAddress: string,
+	memberAddress: string,
+): Promise<boolean> {
+	try {
+		console.log(
+			`📡 Checking if ${memberAddress} is member of group ${groupAddress}`,
+		);
+
+		const result = await fetchGroupMembers(lensClient, {
+			group: evmAddress(groupAddress),
+		});
+
+		if (result.isErr()) {
+			console.error(
+				"Error fetching group members from Lens Protocol:",
+				result.error,
+			);
+			// For security: if we can't verify, deny access
+			return false;
+		}
+
+		const members = result.value.items;
+
+		// Check if memberAddress is in the list of members
+		const isMember = members.some(
+			(member) =>
+				member.account.address.toLowerCase() === memberAddress.toLowerCase(),
+		);
+
+		console.log(`${isMember ? "✅" : "❌"} Member check result: ${isMember}`);
+
+		return isMember;
+	} catch (error) {
+		console.error("Error checking group membership:", error);
+		// For security: if we can't verify, deny access
+		return false;
+	}
+}
+
+/**
+ * Fetch group details from Lens Protocol
+ * @param groupAddress - The group's address
+ * @returns Group details including configSalt
+ */
+export async function fetchGroup(groupAddress: string): Promise<{
+	address: string;
+	configSalt: string;
+	name?: string;
+	description?: string;
+}> {
+	try {
+		console.log(`📡 Fetching group details for ${groupAddress}`);
+
+		const result = await lensProtocolFetchGroup(lensClient, {
+			group: evmAddress(groupAddress),
+		});
+
+		if (result.isErr()) {
+			console.error("Error fetching group from Lens Protocol:", result.error);
+			throw new Error(`Failed to fetch group: ${JSON.stringify(result.error)}`);
+		}
+
+		const group = result.value;
+
+		if (!group) {
+			throw new Error("Group not found");
+		}
+
+		// Extract configSalt from the first required rule
+		// According to Lens Protocol docs: group.rules.required[0].id is the configSalt
+		const configSalt = group.rules?.required?.[0]?.id || groupAddress;
+
+		console.log(`✅ Fetched group: ${group.metadata?.name || "Unknown"}`);
+		console.log(`📝 ConfigSalt: ${configSalt}`);
+
+		return {
+			address: group.address,
+			configSalt,
+			name: group.metadata?.name || undefined,
+			description: group.metadata?.description || undefined,
+		};
+	} catch (error) {
+		console.error("Error fetching group:", error);
+
+		// Fallback: use groupAddress as configSalt
+		console.warn(
+			`⚠️ Using groupAddress as fallback configSalt: ${groupAddress}`,
+		);
+		return {
+			address: groupAddress,
+			configSalt: groupAddress,
+		};
+	}
 }

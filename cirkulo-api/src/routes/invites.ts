@@ -3,12 +3,13 @@ import { and, eq } from "drizzle-orm";
 import { db } from "../db";
 import { invites as invitesTable } from "../db/schema";
 import { sendInviteEmail } from "../lib/email";
-import { getLensUsername } from "../lib/lens";
+import { fetchGroup, getLensUsername, isGroupMember } from "../lib/lens";
 import type { AuthContext } from "../lib/middleware";
 import { authMiddleware } from "../lib/middleware";
 import {
 	cancelInviteRoute,
 	inviteUserRoute,
+	markAcceptedRoute,
 	resendInviteRoute,
 } from "../schemas/invites";
 
@@ -46,7 +47,20 @@ invites.openapi(inviteUserRoute, async (c) => {
 			`User ${senderAddress} is inviting ${recipientEmail} to group ${groupAddress}`,
 		);
 
-		// Fetch Lens account username
+		// 1. Verify sender is a member of the group
+		const isMember = await isGroupMember(groupAddress, senderAddress);
+
+		if (!isMember) {
+			return c.json(
+				{
+					error: "Unauthorized",
+					details: "You must be a member of the group to send invites",
+				},
+				403,
+			);
+		}
+
+		// 2. Fetch Lens account username
 		const lensUsername = await getLensUsername(senderAddress);
 		const inviterName = lensUsername || senderAddress; // Fallback to address if no username
 
@@ -54,7 +68,7 @@ invites.openapi(inviteUserRoute, async (c) => {
 			`Lens username: ${lensUsername || "not found"}, using: ${inviterName}`,
 		);
 
-		// Check for existing invite (pending or accepted)
+		// 3. Check for existing invite (pending or accepted)
 		const existingInvite = await db
 			.select()
 			.from(invitesTable)
@@ -90,18 +104,32 @@ invites.openapi(inviteUserRoute, async (c) => {
 			}
 		}
 
-		// Create invite record in database
+		// 4. Fetch group details from Lens Protocol to get configSalt
+		const group = await fetchGroup(groupAddress);
+		const configSalt = group.configSalt;
+
+		console.log(`Using configSalt: ${configSalt} for group ${groupAddress}`);
+
+		// 5. Set expiration to 7 days from now
+		const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+
+		// 6. Create invite record in database
+		// NO blockchain registration - frontend will handle via Lens Protocol joinGroup()
 		const [newInvite] = await db
 			.insert(invitesTable)
 			.values({
 				recipientEmail,
 				senderAddress,
 				groupAddress,
+				configSalt,
+				expiresAt,
 				status: "pending",
 			})
 			.returning();
 
-		// Send invite email with Lens username
+		console.log(`✅ Invite created in database: ${newInvite.id}`);
+
+		// 7. Send invite email with Lens username
 		const emailResult = await sendInviteEmail({
 			to: recipientEmail,
 			inviterName,
@@ -115,6 +143,7 @@ invites.openapi(inviteUserRoute, async (c) => {
 				recipientEmail,
 				groupAddress,
 				inviteId: newInvite.id,
+				inviteCode: newInvite.code,
 				emailId: emailResult.data?.id,
 			},
 			200,
@@ -334,6 +363,88 @@ invites.openapi(cancelInviteRoute, async (c) => {
 		return c.json(
 			{
 				error: "Failed to cancel invite",
+				details: error instanceof Error ? error.message : "Unknown error",
+			},
+			500,
+		);
+	}
+});
+
+// Mark Accepted endpoint - called after user successfully joins on-chain
+invites.openapi(markAcceptedRoute, async (c) => {
+	try {
+		const body = c.req.valid("json");
+		const { inviteCode, txHash } = body;
+
+		console.log(`📝 Marking invite ${inviteCode} as accepted (tx: ${txHash})`);
+
+		// 1. Find invite
+		const [invite] = await db
+			.select()
+			.from(invitesTable)
+			.where(eq(invitesTable.code, inviteCode))
+			.limit(1);
+
+		if (!invite) {
+			return c.json(
+				{
+					error: "Invite not found",
+					details: `No invite found with code: ${inviteCode}`,
+				},
+				404,
+			);
+		}
+
+		// 2. Idempotent check - if already accepted, return success
+		if (invite.status === "accepted") {
+			console.log(`✅ Invite already marked as accepted`);
+			return c.json(
+				{
+					success: true,
+					message: "Invite already marked as accepted",
+					data: {
+						inviteId: invite.id,
+						groupAddress: invite.groupAddress,
+						acceptedAt:
+							invite.acceptedAt?.toISOString() || new Date().toISOString(),
+					},
+				},
+				200,
+			);
+		}
+
+		// 3. Update invite status
+		const [updatedInvite] = await db
+			.update(invitesTable)
+			.set({
+				status: "accepted",
+				acceptedAt: new Date(),
+				updatedAt: new Date(),
+			})
+			.where(eq(invitesTable.id, invite.id))
+			.returning();
+
+		console.log(`✅ Invite ${inviteCode} marked as accepted`);
+
+		return c.json(
+			{
+				success: true,
+				message: "Invite marked as accepted",
+				data: {
+					inviteId: updatedInvite.id,
+					groupAddress: updatedInvite.groupAddress,
+					acceptedAt:
+						updatedInvite.acceptedAt?.toISOString() || new Date().toISOString(),
+				},
+			},
+			200,
+		);
+	} catch (error) {
+		console.error("❌ Error marking invite as accepted:", error);
+
+		return c.json(
+			{
+				error: "Failed to mark invite as accepted",
 				details: error instanceof Error ? error.message : "Unknown error",
 			},
 			500,
