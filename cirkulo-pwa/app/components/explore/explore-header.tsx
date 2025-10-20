@@ -1,4 +1,4 @@
-import * as React from "react";
+import { useState } from "react";
 import { Button } from "app/components/ui/button";
 import { Search, Filter, ChevronDown } from "lucide-react";
 
@@ -23,7 +23,7 @@ export function ExploreHeader({
   sortBy,
   onSortChange,
 }: ExploreHeaderProps) {
-  const [showSortMenu, setShowSortMenu] = React.useState(false);
+  const [showSortMenu, setShowSortMenu] = useState(false);
 
   const selectedSort = sortOptions.find((opt) => opt.value === sortBy);
 

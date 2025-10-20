@@ -1,10 +1,10 @@
-import * as React from "react";
+import { type ReactNode } from "react";
 import { AppHeader } from "app/components/ui/app-header";
 import { MobileBottomNav, type NavItem } from "app/components/dashboard/mobile-bottom-nav";
 import { useAuth } from "app/context/auth-context";
 
 export interface AuthenticatedLayoutProps {
-  children: React.ReactNode;
+  children: ReactNode;
   navItems?: NavItem[];
   onNotificationClick?: () => void;
   onProfileClick?: () => void;

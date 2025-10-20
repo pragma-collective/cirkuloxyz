@@ -1,4 +1,4 @@
-import * as React from "react";
+import { type ReactNode } from "react";
 import { Card, CardContent } from "app/components/ui/card";
 import { Button } from "app/components/ui/button";
 import { UserAvatar } from "app/components/ui/user-avatar";
@@ -13,7 +13,7 @@ export interface FeedCardProps {
   onComment?: () => void;
   onShare?: () => void;
   onMenu?: () => void;
-  children: React.ReactNode;
+  children: ReactNode;
 }
 
 const accentColors = {

@@ -1,4 +1,4 @@
-import * as React from "react";
+import { useState, useCallback, useMemo } from "react";
 import type { Route } from "./+types/dashboard";
 import { useNavigate } from "react-router";
 import { AuthenticatedLayout } from "app/components/layouts/authenticated-layout";
@@ -21,11 +21,11 @@ export function meta({}: Route.MetaArgs) {
 
 export default function Dashboard() {
   const navigate = useNavigate();
-  const [feedFilter, setFeedFilter] = React.useState<FeedFilter>("all");
-  const [feedItems, setFeedItems] = React.useState(mockFeedItems);
+  const [feedFilter, setFeedFilter] = useState<FeedFilter>("all");
+  const [feedItems, setFeedItems] = useState(mockFeedItems);
 
   // Handle like action
-  const handleLike = React.useCallback((itemId: string) => {
+  const handleLike = useCallback((itemId: string) => {
     setFeedItems((items) =>
       items.map((item) =>
         item.id === itemId
@@ -40,19 +40,19 @@ export default function Dashboard() {
   }, []);
 
   // Handle comment action (placeholder)
-  const handleComment = React.useCallback((itemId: string) => {
+  const handleComment = useCallback((itemId: string) => {
     console.log("Comment on item:", itemId);
     // TODO: Implement comment functionality
   }, []);
 
   // Handle share action (placeholder)
-  const handleShare = React.useCallback((itemId: string) => {
+  const handleShare = useCallback((itemId: string) => {
     console.log("Share item:", itemId);
     // TODO: Implement share functionality
   }, []);
 
   // Filter feed items based on selected filter
-  const filteredItems = React.useMemo(() => {
+  const filteredItems = useMemo(() => {
     if (feedFilter === "all") return feedItems;
     if (feedFilter === "contributions") {
       return feedItems.filter((item) => item.type === "contribution");

@@ -1,4 +1,4 @@
-import * as React from "react";
+import { useMemo } from "react";
 import type { Circle } from "app/types/feed";
 import { Button } from "app/components/ui/button";
 import { Card } from "app/components/ui/card";
@@ -40,7 +40,7 @@ export function CircleHero({
   };
 
   // Calculate days left
-  const daysLeft = React.useMemo(() => {
+  const daysLeft = useMemo(() => {
     const now = new Date();
     const end = new Date(circle.endDate);
     const diffTime = end.getTime() - now.getTime();

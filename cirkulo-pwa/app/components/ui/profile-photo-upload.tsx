@@ -1,4 +1,4 @@
-import * as React from "react";
+import { useEffect, useState, useRef, type ChangeEvent, type MouseEvent, type KeyboardEvent } from "react";
 import { Camera, Pencil, Trash2, AlertCircle, Loader2 } from "lucide-react";
 import { cn } from "app/lib/utils";
 
@@ -22,16 +22,16 @@ export function ProfilePhotoUpload({
 	disabled = false,
 	className,
 }: ProfilePhotoUploadProps) {
-	const [preview, setPreview] = React.useState<string | null>(null);
-	const [isValidating, setIsValidating] = React.useState(false);
-	const [internalError, setInternalError] = React.useState<string | null>(null);
-	const fileInputRef = React.useRef<HTMLInputElement>(null);
+	const [preview, setPreview] = useState<string | null>(null);
+	const [isValidating, setIsValidating] = useState(false);
+	const [internalError, setInternalError] = useState<string | null>(null);
+	const fileInputRef = useRef<HTMLInputElement>(null);
 
 	// Combine external and internal errors
 	const displayError = error || internalError;
 
 	// Cleanup preview URL on unmount
-	React.useEffect(() => {
+	useEffect(() => {
 		return () => {
 			if (preview) URL.revokeObjectURL(preview);
 		};
@@ -71,7 +71,7 @@ export function ProfilePhotoUpload({
 	};
 
 	// Handle file selection
-	const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+	const handleFileChange = async (e: ChangeEvent<HTMLInputElement>) => {
 		const file = e.target.files?.[0];
 		if (!file) return;
 
@@ -103,7 +103,7 @@ export function ProfilePhotoUpload({
 	};
 
 	// Handle remove
-	const handleRemove = (e: React.MouseEvent) => {
+	const handleRemove = (e: MouseEvent) => {
 		e.stopPropagation();
 		if (preview) URL.revokeObjectURL(preview);
 		setPreview(null);
@@ -115,7 +115,7 @@ export function ProfilePhotoUpload({
 	};
 
 	// Handle keyboard interaction
-	const handleKeyDown = (e: React.KeyboardEvent) => {
+	const handleKeyDown = (e: KeyboardEvent) => {
 		if (e.key === "Enter" || e.key === " ") {
 			e.preventDefault();
 			handleClick();

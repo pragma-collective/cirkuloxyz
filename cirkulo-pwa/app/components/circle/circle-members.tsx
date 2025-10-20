@@ -1,4 +1,4 @@
-import * as React from "react";
+import { useState } from "react";
 import type { Circle } from "app/types/feed";
 import { Card, CardContent, CardHeader, CardTitle } from "app/components/ui/card";
 import { UserAvatar } from "app/components/ui/user-avatar";
@@ -19,7 +19,7 @@ export function CircleMembers({
   onMemberClick,
   className,
 }: CircleMembersProps) {
-  const [showAll, setShowAll] = React.useState(false);
+  const [showAll, setShowAll] = useState(false);
 
   // Determine how many members to show
   const visibleMembers = showAll ? circle.members : circle.members.slice(0, 12);

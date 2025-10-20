@@ -1,4 +1,4 @@
-import * as React from "react";
+import { useState, useMemo, useCallback } from "react";
 import type { Route } from "./+types/circle-detail";
 import { useNavigate, useParams } from "react-router";
 import { AuthenticatedLayout } from "app/components/layouts/authenticated-layout";
@@ -35,16 +35,16 @@ export default function CircleDetail() {
 
 	// State management
 	const [activityItems, setActivityItems] =
-		React.useState<FeedItem[]>(mockCircleActivity);
+		useState<FeedItem[]>(mockCircleActivity);
 
 	// Find the circle from mock data
-	const circle = React.useMemo(() => {
+	const circle = useMemo(() => {
 		const allCircles = [...mockCircles, ...mockPublicCircles];
 		return allCircles.find((c) => c.id === circleId);
 	}, [circleId]);
 
 	// Handle like action
-	const handleLike = React.useCallback((itemId: string) => {
+	const handleLike = useCallback((itemId: string) => {
 		setActivityItems((items) =>
 			items.map((item) =>
 				item.id === itemId
@@ -59,31 +59,31 @@ export default function CircleDetail() {
 	}, []);
 
 	// Handle comment action (placeholder)
-	const handleComment = React.useCallback((itemId: string) => {
+	const handleComment = useCallback((itemId: string) => {
 		console.log("Comment on item:", itemId);
 		// TODO: Implement comment functionality
 	}, []);
 
 	// Handle contribute action
-	const handleContribute = React.useCallback(() => {
+	const handleContribute = useCallback(() => {
 		console.log("Contribute to circle:", circleId);
 		// TODO: Implement contribution modal/flow
 	}, [circleId]);
 
 	// Handle invite action
-	const handleInvite = React.useCallback(() => {
+	const handleInvite = useCallback(() => {
 		console.log("Invite friends to circle:", circleId);
 		// TODO: Implement invite modal/flow
 	}, [circleId]);
 
 	// Handle share action
-	const handleShare = React.useCallback(() => {
+	const handleShare = useCallback(() => {
 		console.log("Share circle:", circleId);
 		// TODO: Implement share functionality
 	}, [circleId]);
 
 	// Handle join action (for non-members)
-	const handleJoin = React.useCallback(() => {
+	const handleJoin = useCallback(() => {
 		console.log("Join circle:", circleId);
 		// TODO: Implement join functionality
 	}, [circleId]);

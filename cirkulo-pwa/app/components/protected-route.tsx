@@ -1,4 +1,3 @@
-import * as React from "react";
 import { Navigate, Outlet } from "react-router";
 import { useAuth } from "app/context/auth-context";
 import { Loader2 } from "lucide-react";

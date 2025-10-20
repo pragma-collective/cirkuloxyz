@@ -1,4 +1,4 @@
-import * as React from "react";
+import { useState } from "react";
 import type { Route } from "./+types/onboarding";
 import { useNavigate } from "react-router";
 import { XershaLogo } from "app/components/xersha-logo";
@@ -56,20 +56,20 @@ export default function Onboarding() {
   const { createProfile } = useAuth();
 
   // Form state
-  const [formData, setFormData] = React.useState<FormData>({
+  const [formData, setFormData] = useState<FormData>({
     name: "",
     lensUsername: "",
     bio: "",
     profilePhoto: null,
   });
 
-  const [errors, setErrors] = React.useState<FormErrors>({});
-  const [touchedFields, setTouchedFields] = React.useState<Set<keyof FormData>>(
+  const [errors, setErrors] = useState<FormErrors>({});
+  const [touchedFields, setTouchedFields] = useState<Set<keyof FormData>>(
     new Set()
   );
-  const [isSubmitting, setIsSubmitting] = React.useState(false);
-  const [isSuccess, setIsSuccess] = React.useState(false);
-  const [showTooltip, setShowTooltip] = React.useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSuccess, setIsSuccess] = useState(false);
+  const [showTooltip, setShowTooltip] = useState(false);
 
   // Validation functions
   const validateName = (value: string): string | undefined => {

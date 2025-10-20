@@ -1,4 +1,4 @@
-import * as React from "react";
+import { useState, useMemo, type ChangeEvent, type FocusEvent, type FormEvent, type ReactNode } from "react";
 import type { Route } from "./+types/create-circle";
 import { useNavigate } from "react-router";
 import { XershaLogo } from "app/components/xersha-logo";
@@ -57,7 +57,7 @@ export default function CreateCircle() {
   const navigate = useNavigate();
 
   // Form state
-  const [formData, setFormData] = React.useState<FormData>({
+  const [formData, setFormData] = useState<FormData>({
     name: "",
     description: "",
     savingType: "",
@@ -65,12 +65,12 @@ export default function CreateCircle() {
     endDate: "",
   });
 
-  const [errors, setErrors] = React.useState<FormErrors>({});
-  const [touchedFields, setTouchedFields] = React.useState<Set<keyof FormData>>(
+  const [errors, setErrors] = useState<FormErrors>({});
+  const [touchedFields, setTouchedFields] = useState<Set<keyof FormData>>(
     new Set()
   );
-  const [isSubmitting, setIsSubmitting] = React.useState(false);
-  const [isSuccess, setIsSuccess] = React.useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSuccess, setIsSuccess] = useState(false);
 
   // Validation functions
   const validateName = (value: string): string | undefined => {
@@ -162,7 +162,7 @@ export default function CreateCircle() {
 
   // Handle input field change
   const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+    e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
     const { name, value } = e.target;
     const fieldName = name as keyof FormData;
@@ -205,7 +205,7 @@ export default function CreateCircle() {
 
   // Handle field blur
   const handleBlur = (
-    e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement>
+    e: FocusEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
     const { name, value } = e.target;
     const fieldName = name as keyof FormData;
@@ -241,7 +241,7 @@ export default function CreateCircle() {
   };
 
   // Handle form submission
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
 
     // Validate form
@@ -283,13 +283,13 @@ export default function CreateCircle() {
   const descriptionMaxChars = 200;
 
   // Get minimum and maximum dates for date picker
-  const minDate = React.useMemo(() => {
+  const minDate = useMemo(() => {
     const tomorrow = new Date();
     tomorrow.setDate(tomorrow.getDate() + 1);
     return tomorrow.toISOString().split("T")[0];
   }, []);
 
-  const maxDate = React.useMemo(() => {
+  const maxDate = useMemo(() => {
     const twoYearsFromNow = new Date();
     twoYearsFromNow.setFullYear(twoYearsFromNow.getFullYear() + 2);
     return twoYearsFromNow.toISOString().split("T")[0];
@@ -519,14 +519,14 @@ interface FormFieldProps {
   placeholder: string;
   value: string;
   onChange: (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+    e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => void;
-  onBlur: (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement>) => void;
+  onBlur: (e: FocusEvent<HTMLInputElement | HTMLTextAreaElement>) => void;
   error?: string;
-  icon?: React.ReactNode;
+  icon?: ReactNode;
   required?: boolean;
   disabled?: boolean;
-  helperText?: React.ReactNode;
+  helperText?: ReactNode;
   min?: string;
   max?: string;
 }
@@ -645,7 +645,7 @@ interface RadioOption {
   value: string;
   label: string;
   description: string;
-  icon?: React.ReactNode;
+  icon?: ReactNode;
 }
 
 interface RadioGroupFieldProps {

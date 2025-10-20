@@ -1,4 +1,4 @@
-import * as React from "react";
+import { useMemo } from "react";
 import type { Route } from "./+types/profile";
 import { useNavigate } from "react-router";
 import { AuthenticatedLayout } from "app/components/layouts/authenticated-layout";
@@ -75,7 +75,7 @@ export default function Profile() {
   };
 
   // Calculate friends count (unique users across all circles)
-  const friendsCount = React.useMemo(() => {
+  const friendsCount = useMemo(() => {
     const uniqueUserIds = new Set<string>();
     mockCircles.forEach((circle) => {
       circle.members.forEach((member) => {
