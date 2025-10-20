@@ -50,7 +50,6 @@ export function meta({}: Route.MetaArgs) {
 
 export default function Onboarding() {
   const navigate = useNavigate();
-  const { createProfile } = useAuth();
   const { primaryWallet } = useDynamicContext();
   const { createAccount, isCreating } = useCreateLensAccount();
 

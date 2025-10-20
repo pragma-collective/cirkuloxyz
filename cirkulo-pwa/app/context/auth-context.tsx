@@ -22,7 +22,6 @@ export type { LensAccount };
 // User interface
 export interface User {
 	id: string;
-	hasProfile: boolean;
 	name?: string;
 	lensUsername?: string;
 	bio?: string;
@@ -31,20 +30,11 @@ export interface User {
 	hasLensAccount: boolean;
 }
 
-// Profile data for creation
-export interface ProfileData {
-	name: string;
-	lensUsername: string;
-	bio?: string;
-	picture?: string; // lens:// URI from Lens Storage
-}
-
 // Auth context type
 export interface AuthContextType {
 	user: User | null;
 	isLoading: boolean;
 	login: () => Promise<User>;
-	createProfile: (data: ProfileData) => Promise<void>;
 	logout: () => void;
 }
 
@@ -65,12 +55,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 	// Check if user is authenticated (has a user and wallet)
 	const isAuthenticated = Boolean(dynamicUser && primaryWallet);
 
-	const [profileData, setProfileData] = useState<{
-		hasProfile: boolean;
-		name?: string;
-		lensUsername?: string;
-		bio?: string;
-	}>({ hasProfile: false });
 	const [isLoading, setIsLoading] = useState(false);
 
 	// Store pending login promise resolver
@@ -90,14 +74,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 		return {
 			id: dynamicUser.userId || primaryWallet?.address || "unknown",
 			walletAddress: primaryWallet?.address,
-			hasProfile: profileData.hasProfile,
-			name: profileData.name || lensAccount?.metadata?.name,
-			lensUsername: profileData.lensUsername || lensAccount?.username,
-			bio: profileData.bio || lensAccount?.metadata?.bio,
+			name: lensAccount?.metadata?.name,
+			lensUsername: lensAccount?.username,
+			bio: lensAccount?.metadata?.bio,
 			lensAccount,
 			hasLensAccount: Boolean(lensAccount),
 		};
-	}, [isAuthenticated, dynamicUser, primaryWallet, profileData, lensAccount]);
+	}, [isAuthenticated, dynamicUser, primaryWallet, lensAccount]);
 
 	// When user becomes available, resolve pending login promise
 	useEffect(() => {
@@ -171,47 +154,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 		});
 	}, [setShowAuthFlow]);
 
-	// Create profile function
-	const createProfile = useCallback(
-		async (data: ProfileData): Promise<void> => {
-			setIsLoading(true);
-
-			// TODO: Implement actual Lens account creation using @lens-protocol/metadata
-			// Example:
-			// import { account } from "@lens-protocol/metadata";
-			// const metadata = account({
-			//   name: data.name,
-			//   bio: data.bio,
-			//   picture: data.picture, // lens:// URI
-			// });
-
-			console.log("[Auth] Creating profile with data:", {
-				name: data.name,
-				lensUsername: data.lensUsername,
-				bio: data.bio,
-				picture: data.picture,
-			});
-
-			// Simulate profile creation delay (2 seconds)
-			await new Promise((resolve) => setTimeout(resolve, 2000));
-
-			// Update profile data
-			setProfileData({
-				hasProfile: true,
-				name: data.name,
-				lensUsername: data.lensUsername,
-				bio: data.bio,
-			});
-
-			setIsLoading(false);
-		},
-		[],
-	);
-
 	// Logout function
 	const logout = useCallback(() => {
 		handleLogOut();
-		setProfileData({ hasProfile: false });
 		setIsLoading(false);
 	}, [handleLogOut]);
 
@@ -220,10 +165,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 			user,
 			isLoading,
 			login,
-			createProfile,
 			logout,
 		}),
-		[user, isLoading, login, createProfile, logout],
+		[user, isLoading, login, logout],
 	);
 
 	return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
