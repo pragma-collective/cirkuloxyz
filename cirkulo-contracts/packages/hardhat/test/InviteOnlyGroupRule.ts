@@ -151,7 +151,6 @@ describe("InviteOnlyGroupRule", function () {
         inviteRule.processJoining(
           configSalt,
           invitee.address,
-          invitee.address,
           [],
           ruleParams
         )
@@ -170,7 +169,6 @@ describe("InviteOnlyGroupRule", function () {
         inviteRule.processJoining(
           configSalt,
           invitee.address,
-          invitee.address,
           [],
           ruleParams
         )
@@ -186,7 +184,6 @@ describe("InviteOnlyGroupRule", function () {
         inviteRule.processJoining(
           configSalt,
           attacker.address, // Not invited
-          attacker.address,
           [],
           ruleParams
         )
@@ -205,7 +202,6 @@ describe("InviteOnlyGroupRule", function () {
         inviteRule.processJoining(
           configSalt,
           invitee.address,
-          invitee.address,
           [],
           ruleParams
         )
@@ -221,7 +217,6 @@ describe("InviteOnlyGroupRule", function () {
       await inviteRule.processJoining(
         configSalt,
         invitee.address,
-        invitee.address,
         [],
         ruleParams
       );
@@ -231,7 +226,6 @@ describe("InviteOnlyGroupRule", function () {
         inviteRule.processJoining(
           configSalt,
           invitee.address,
-          invitee.address,
           [],
           ruleParams
         )
@@ -240,13 +234,7 @@ describe("InviteOnlyGroupRule", function () {
 
     it("Should reject empty rule params", async function () {
       await expect(
-        inviteRule.processJoining(
-          configSalt,
-          invitee.address,
-          invitee.address,
-          [],
-          []
-        )
+        inviteRule.processJoining(configSalt, invitee.address, [], [])
       ).to.be.revertedWithCustomError(inviteRule, "InvalidInviteCode");
     });
 
@@ -258,7 +246,6 @@ describe("InviteOnlyGroupRule", function () {
       await expect(
         inviteRule.processJoining(
           configSalt,
-          invitee.address,
           invitee.address,
           [],
           ruleParams
@@ -289,7 +276,7 @@ describe("InviteOnlyGroupRule", function () {
     it("Should allow any leaving (always pass)", async function () {
       // This should not revert regardless of parameters
       await expect(
-        inviteRule.processLeaving(configSalt, invitee.address, invitee.address, [], [])
+        inviteRule.processLeaving(configSalt, invitee.address, [], [])
       ).to.not.be.reverted;
     });
   });
@@ -365,7 +352,6 @@ describe("InviteOnlyGroupRule", function () {
         inviteRule.processJoining(
           configSalt,
           invitee.address,
-          invitee.address,
           [],
           ruleParams
         )
@@ -392,7 +378,6 @@ describe("InviteOnlyGroupRule", function () {
       await expect(
         inviteRule.processJoining(
           configSalt,
-          invitee.address,
           invitee.address,
           [],
           ruleParams
@@ -428,7 +413,6 @@ describe("InviteOnlyGroupRule", function () {
       await inviteRule.processJoining(
         configSalt,
         invitee.address,
-        invitee.address,
         [],
         ruleParams
       );
@@ -437,7 +421,6 @@ describe("InviteOnlyGroupRule", function () {
       await expect(
         inviteRule.processJoining(
           configSalt2,
-          invitee.address,
           invitee.address,
           [],
           ruleParams
@@ -466,7 +449,6 @@ describe("InviteOnlyGroupRule", function () {
         inviteRule.processJoining(
           configSalt,
           invitee.address,
-          invitee.address,
           [],
           wrongCaseParams
         )
@@ -480,7 +462,6 @@ describe("InviteOnlyGroupRule", function () {
       await expect(
         inviteRule.processJoining(
           configSalt,
-          invitee.address,
           invitee.address,
           [],
           correctParams
@@ -522,7 +503,6 @@ describe("InviteOnlyGroupRule", function () {
 
       const tx = await inviteRule.processJoining(
         configSalt,
-        invitee.address,
         invitee.address,
         [],
         ruleParams

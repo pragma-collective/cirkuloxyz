@@ -2,6 +2,76 @@
 pragma solidity ^0.8.20;
 
 /**
+ * @title IGroupRule Interface
+ * @notice Interface that all Lens Protocol group rules must implement
+ * @dev Based on Lens Protocol documentation for custom group rules
+ */
+interface IGroupRule {
+    /**
+     * @notice Configure the rule for a specific group
+     * @param configSalt Unique configuration identifier (32 bytes)
+     * @param ruleParams Configuration parameters as key-value pairs
+     */
+    function configure(
+        bytes32 configSalt, 
+        KeyValue[] calldata ruleParams
+    ) external;
+
+    /**
+     * @notice Called when admin adds a member
+     * @param configSalt Configuration identifier
+     * @param originalMsgSender Original transaction sender
+     * @param account Account being added
+     * @param primitiveParams Parameters from the group
+     * @param ruleParams Rule-specific parameters
+     */
+    function processAddition(
+        bytes32 configSalt,
+        address originalMsgSender,
+        address account,
+        KeyValue[] calldata primitiveParams,
+        KeyValue[] calldata ruleParams
+    ) external;
+
+    /**
+     * @notice Called when admin removes a member
+     */
+    function processRemoval(
+        bytes32 configSalt,
+        address originalMsgSender,
+        address account,
+        KeyValue[] calldata primitiveParams,
+        KeyValue[] calldata ruleParams
+    ) external;
+
+    /**
+     * @notice Called when someone tries to join
+     */
+    function processJoining(
+        bytes32 configSalt,
+        address account,
+        KeyValue[] calldata primitiveParams,
+        KeyValue[] calldata ruleParams
+    ) external;
+
+    /**
+     * @notice Called when someone tries to leave
+     */
+    function processLeaving(
+        bytes32 configSalt,
+        address account,
+        KeyValue[] calldata primitiveParams,
+        KeyValue[] calldata ruleParams
+    ) external;
+}
+
+/// @notice Key-value pair structure used by Lens Protocol
+struct KeyValue {
+    string key;
+    bytes value;
+}
+
+/**
  * @title InviteOnlyGroupRule
  * @notice Lens Protocol Group Rule that validates invite codes
  * @dev Implements IGroupRule interface for on-chain validation
@@ -12,14 +82,7 @@ pragma solidity ^0.8.20;
  * 3. Contract validates code and marks as used (one-time use)
  * 4. Admins can still add members directly (override)
  */
-
-/// @notice Key-value pair structure used by Lens Protocol
-struct KeyValue {
-    string key;
-    bytes value;
-}
-
-contract InviteOnlyGroupRule {
+contract InviteOnlyGroupRule is IGroupRule {
     // ========== ERRORS ==========
     error OnlyBackend();
     error OnlyOwner();
@@ -160,8 +223,8 @@ contract InviteOnlyGroupRule {
      */
     function configure(
         bytes32 configSalt,
-        bytes calldata /* ruleParams */
-    ) external {
+        KeyValue[] calldata /* ruleParams */
+    ) external override {
         emit RuleConfigured(configSalt);
     }
     
@@ -169,10 +232,7 @@ contract InviteOnlyGroupRule {
      * @notice Validate when someone tries to join the group
      * @dev Called by Lens Protocol when user attempts to join
      * @param configSalt Configuration identifier (identifies the group)
-     * @param originalMsgSender Original transaction sender
      * @param account Address attempting to join
-     * @param primitiveParams Primitive parameters from Lens Protocol
-     * @param ruleParams Rule-specific parameters (contains invite code)
      * 
      * Flow:
      * 1. User provides invite code when joining
@@ -183,11 +243,10 @@ contract InviteOnlyGroupRule {
      */
     function processJoining(
         bytes32 configSalt,
-        address originalMsgSender,
         address account,
-        KeyValue[] calldata primitiveParams,
+        KeyValue[] calldata /* primitiveParams */,
         KeyValue[] calldata ruleParams
-    ) external {
+    ) external override {
         // Extract invite code from ruleParams
         // Expected: ruleParams[0] = { key: "inviteCode", value: bytes(inviteCode) }
         if (ruleParams.length == 0) {
@@ -264,7 +323,7 @@ contract InviteOnlyGroupRule {
         address /* account */,
         KeyValue[] calldata /* primitiveParams */,
         KeyValue[] calldata /* ruleParams */
-    ) external pure {
+    ) external pure override {
         // Empty implementation = allow action
         // No revert = validation passed
     }
@@ -283,7 +342,7 @@ contract InviteOnlyGroupRule {
         address /* account */,
         KeyValue[] calldata /* primitiveParams */,
         KeyValue[] calldata /* ruleParams */
-    ) external pure {
+    ) external pure override {
         // Empty implementation = allow action
     }
     
@@ -297,11 +356,10 @@ contract InviteOnlyGroupRule {
      */
     function processLeaving(
         bytes32 /* configSalt */,
-        address /* originalMsgSender */,
         address /* account */,
         KeyValue[] calldata /* primitiveParams */,
         KeyValue[] calldata /* ruleParams */
-    ) external pure {
+    ) external pure override {
         // Empty implementation = allow action
     }
     
