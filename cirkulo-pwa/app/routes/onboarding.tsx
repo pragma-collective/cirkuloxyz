@@ -1,6 +1,8 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import type { Route } from "./+types/onboarding";
 import { useNavigate } from "react-router";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { XershaLogo } from "app/components/xersha-logo";
 import { Button } from "app/components/ui/button";
 import {
@@ -31,7 +33,7 @@ import {
   type SessionClient,
 } from "app/hooks/create-lens-account";
 import { useDynamicContext } from "@dynamic-labs/sdk-react-core";
-import { getWalletClient } from "@dynamic-labs/sdk-react-core";
+import { onboardingSchema, type OnboardingFormData } from "app/schemas/onboarding-schema";
 
 // TODO: Replace with your app's actual Lens address
 const APP_ADDRESS = "0x0000000000000000000000000000000000000000";
@@ -46,22 +48,6 @@ export function meta({}: Route.MetaArgs) {
   ];
 }
 
-// Form field validation errors
-interface FormErrors {
-  name?: string;
-  lensUsername?: string;
-  bio?: string;
-  profilePhoto?: string;
-}
-
-// Form data interface
-interface FormData {
-  name: string;
-  lensUsername: string;
-  bio: string;
-  profilePhoto: File | null;
-}
-
 export default function Onboarding() {
   const navigate = useNavigate();
   const { createProfile } = useAuth();
@@ -73,76 +59,32 @@ export default function Onboarding() {
   const [isAuthenticating, setIsAuthenticating] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
 
-  // Form state
-  const [formData, setFormData] = useState<FormData>({
-    name: "",
-    lensUsername: "",
-    bio: "",
-    profilePhoto: null,
-  });
-
-  const [errors, setErrors] = useState<FormErrors>({});
-  const [touchedFields, setTouchedFields] = useState<Set<keyof FormData>>(
-    new Set()
-  );
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  // UI state
   const [isSuccess, setIsSuccess] = useState(false);
   const [showTooltip, setShowTooltip] = useState(false);
   const [isCheckingUsername, setIsCheckingUsername] = useState(false);
 
-  // Validation functions
-  const validateName = (value: string): string | undefined => {
-    if (!value.trim()) {
-      return "Name is required";
-    }
-    if (value.trim().length < 2) {
-      return "Name must be at least 2 characters";
-    }
-    if (!/^[a-zA-Z\s-]+$/.test(value)) {
-      return "Name can only contain letters, spaces, and hyphens";
-    }
-    return undefined;
-  };
+  // React Hook Form setup
+  const {
+    register,
+    handleSubmit,
+    watch,
+    setError,
+    formState: { errors, isSubmitting },
+  } = useForm<OnboardingFormData>({
+    resolver: zodResolver(onboardingSchema),
+    defaultValues: {
+      name: "",
+      lensUsername: "",
+      bio: "",
+      profilePhoto: null,
+    },
+  });
 
-  const validateLensUsername = (value: string): string | undefined => {
-    if (!value.trim()) {
-      return "Lens username is required";
-    }
-    if (value.trim().length < 3) {
-      return "Username must be at least 3 characters";
-    }
-    if (value.trim().length > 26) {
-      return "Username must be no more than 26 characters";
-    }
-    if (!/^[a-z0-9_]+$/.test(value)) {
-      return "Username can only contain lowercase letters, numbers, and underscores";
-    }
-    return undefined;
-  };
-
-  const validateBio = (value: string): string | undefined => {
-    if (value.length > 280) {
-      return "Bio must be no more than 280 characters";
-    }
-    return undefined;
-  };
-
-  // Validate single field
-  const validateField = (
-    fieldName: keyof FormData,
-    value: string
-  ): string | undefined => {
-    switch (fieldName) {
-      case "name":
-        return validateName(value);
-      case "lensUsername":
-        return validateLensUsername(value);
-      case "bio":
-        return validateBio(value);
-      default:
-        return undefined;
-    }
-  };
+  // Watch bio field for character count
+  const bioValue = watch("bio") || "";
+  const bioCharCount = bioValue.length;
+  const bioMaxChars = 280;
 
   // Authenticate as onboarding user when page loads
   useEffect(() => {
@@ -156,7 +98,8 @@ export default function Onboarding() {
       setAuthError(null);
 
       try {
-        const walletClient = await getWalletClient(primaryWallet);
+        // @ts-expect-error - getWalletClient exists at runtime but not in type definition
+        const walletClient = await primaryWallet.getWalletClient();
         const result = await authenticateAsOnboardingUser(
           primaryWallet.address,
           APP_ADDRESS,
@@ -183,144 +126,73 @@ export default function Onboarding() {
     authenticateUser();
   }, [primaryWallet]);
 
-  // Handle field change
-  const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-  ) => {
-    const { name, value } = e.target;
-    const fieldName = name as keyof FormData;
+  // Handle username blur for real-time availability check
+  const handleUsernameBlur = async (e: React.FocusEvent<HTMLInputElement>) => {
+    const username = e.target.value;
 
-    setFormData((prev) => ({
-      ...prev,
-      [fieldName]: value,
-    }));
-
-    // Clear error for this field if it exists
-    if (errors[fieldName]) {
-      setErrors((prev) => ({
-        ...prev,
-        [fieldName]: undefined,
-      }));
-    }
-  };
-
-  // Handle field blur
-  const handleBlur = async (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-    const fieldName = name as keyof FormData;
-
-    setTouchedFields((prev) => new Set(prev).add(fieldName));
-
-    const error = validateField(fieldName, value);
-    setErrors((prev) => ({
-      ...prev,
-      [fieldName]: error,
-    }));
-
-    // Real-time username availability check
-    if (fieldName === "lensUsername" && !error && value.trim() && sessionClient) {
-      setIsCheckingUsername(true);
-
-      try {
-        const availability = await checkUsername(value.trim(), sessionClient);
-
-        if (!availability.available) {
-          setErrors((prev) => ({
-            ...prev,
-            lensUsername: availability.reason || "Username is not available",
-          }));
-        }
-        // If available, error is already cleared above
-      } catch (err) {
-        console.error("[Onboarding] Username check error:", err);
-        // Don't show error to user for network issues during blur
-      } finally {
-        setIsCheckingUsername(false);
-      }
-    }
-  };
-
-  // Handle profile photo change
-  const handleProfilePhotoChange = (file: File | null) => {
-    setFormData((prev) => ({
-      ...prev,
-      profilePhoto: file,
-    }));
-
-    // Clear error if exists
-    if (errors.profilePhoto) {
-      setErrors((prev) => ({
-        ...prev,
-        profilePhoto: undefined,
-      }));
-    }
-  };
-
-  // Validate all fields
-  const validateForm = (): boolean => {
-    const newErrors: FormErrors = {
-      name: validateName(formData.name),
-      lensUsername: validateLensUsername(formData.lensUsername),
-      bio: validateBio(formData.bio),
-    };
-
-    setErrors(newErrors);
-    setTouchedFields(new Set(["name", "lensUsername", "bio"]));
-
-    // Check if there are any errors
-    return !Object.values(newErrors).some((error) => error !== undefined);
-  };
-
-  // Handle form submission
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    // Validate form
-    if (!validateForm()) {
+    // Only check if username passes basic validation and we have a session
+    if (!username.trim() || errors.lensUsername || !sessionClient) {
       return;
     }
 
-    setIsSubmitting(true);
+    setIsCheckingUsername(true);
 
+    try {
+      const availability = await checkUsername(username.trim(), sessionClient);
+
+      if (!availability.available) {
+        setError("lensUsername", {
+          type: "manual",
+          message: availability.reason || "Username is not available",
+        });
+      }
+    } catch (err) {
+      console.error("[Onboarding] Username check error:", err);
+      // Don't show error to user for network issues during blur
+    } finally {
+      setIsCheckingUsername(false);
+    }
+  };
+
+  // Handle form submission
+  const onSubmit = async (data: OnboardingFormData) => {
     try {
       // Check if we have a session client and wallet
       if (!sessionClient) {
-        setErrors((prev) => ({
-          ...prev,
-          lensUsername: "Authentication required. Please refresh the page.",
-        }));
-        setIsSubmitting(false);
+        setError("lensUsername", {
+          type: "manual",
+          message: "Authentication required. Please refresh the page.",
+        });
         return;
       }
 
       if (!primaryWallet) {
-        setErrors((prev) => ({
-          ...prev,
-          lensUsername: "Wallet not connected. Please connect your wallet.",
-        }));
-        setIsSubmitting(false);
+        setError("lensUsername", {
+          type: "manual",
+          message: "Wallet not connected. Please connect your wallet.",
+        });
         return;
       }
 
       // Upload profile photo if provided
       let profilePictureUri: string | undefined;
-      if (formData.profilePhoto) {
+      if (data.profilePhoto) {
         try {
-          profilePictureUri = await uploadToLensStorage(formData.profilePhoto);
+          profilePictureUri = await uploadToLensStorage(data.profilePhoto);
           console.log("[Onboarding] Profile photo uploaded:", profilePictureUri);
         } catch (uploadError) {
           console.error("[Onboarding] Photo upload failed:", uploadError);
           // Photo is optional, so we continue even if upload fails
-          setErrors((prev) => ({
-            ...prev,
-            profilePhoto: "Photo upload failed. Continuing without photo.",
-          }));
+          setError("profilePhoto", {
+            type: "manual",
+            message: "Photo upload failed. Continuing without photo.",
+          });
         }
       }
 
       // Create Lens account
       const result = await createAccount({
-        username: formData.lensUsername.trim(),
+        username: data.lensUsername.trim(),
         metadataUri: profilePictureUri || "lens://", // TODO: Create proper metadata
         walletAddress: primaryWallet.address,
         appAddress: APP_ADDRESS,
@@ -329,11 +201,10 @@ export default function Onboarding() {
 
       if (result.error) {
         console.error("[Onboarding] Account creation failed:", result.error);
-        setErrors((prev) => ({
-          ...prev,
-          lensUsername: result.error?.message || "Failed to create account",
-        }));
-        setIsSubmitting(false);
+        setError("lensUsername", {
+          type: "manual",
+          message: result.error?.message || "Failed to create account",
+        });
         return;
       }
 
@@ -351,17 +222,12 @@ export default function Onboarding() {
       }, 1500);
     } catch (error) {
       console.error("[Onboarding] Account creation failed:", error);
-      setIsSubmitting(false);
-      setErrors((prev) => ({
-        ...prev,
-        lensUsername: error instanceof Error ? error.message : "Failed to create account",
-      }));
+      setError("lensUsername", {
+        type: "manual",
+        message: error instanceof Error ? error.message : "Failed to create account",
+      });
     }
   };
-
-  // Character count for bio
-  const bioCharCount = formData.bio.length;
-  const bioMaxChars = 280;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary-50 via-white to-secondary-50 relative overflow-hidden">
@@ -392,47 +258,29 @@ export default function Onboarding() {
             </CardHeader>
 
             <CardContent>
-              <form onSubmit={handleSubmit} className="space-y-5">
-                {/* Profile Photo field */}
-                <ProfilePhotoUpload
-                  value={formData.profilePhoto}
-                  onChange={handleProfilePhotoChange}
-                  error={errors.profilePhoto}
-                  disabled={isSubmitting || isSuccess}
-                />
-
+              <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
                 {/* Name field */}
                 <FormField
                   label="Name"
-                  name="name"
                   type="text"
                   placeholder="Enter your full name"
-                  value={formData.name}
-                  onChange={handleChange}
-                  onBlur={handleBlur}
-                  error={touchedFields.has("name") ? errors.name : undefined}
+                  error={errors.name?.message}
                   icon={<User className="size-5" />}
                   required
                   disabled={isSubmitting || isSuccess}
+                  {...register("name")}
                 />
 
                 {/* Lens username field */}
                 <FormField
                   label="Lens Username"
-                  name="lensUsername"
                   type="text"
                   placeholder="yourname"
-                  value={formData.lensUsername}
-                  onChange={handleChange}
-                  onBlur={handleBlur}
-                  error={
-                    touchedFields.has("lensUsername")
-                      ? errors.lensUsername
-                      : undefined
-                  }
+                  error={errors.lensUsername?.message}
                   icon={<AtSign className="size-5" />}
                   required
                   disabled={isSubmitting || isSuccess}
+                  onBlurCapture={handleUsernameBlur}
                   helperText={
                     <span className="flex items-center gap-1">
                       Your unique identifier on Lens Protocol
@@ -463,18 +311,15 @@ export default function Onboarding() {
                       </button>
                     </span>
                   }
+                  {...register("lensUsername")}
                 />
 
                 {/* Bio field */}
                 <FormField
                   label="Bio"
-                  name="bio"
                   type="textarea"
                   placeholder="Tell us a bit about yourself... (optional)"
-                  value={formData.bio}
-                  onChange={handleChange}
-                  onBlur={handleBlur}
-                  error={touchedFields.has("bio") ? errors.bio : undefined}
+                  error={errors.bio?.message}
                   icon={<FileText className="size-5" />}
                   disabled={isSubmitting || isSuccess}
                   helperText={
@@ -489,6 +334,7 @@ export default function Onboarding() {
                       {bioCharCount}/{bioMaxChars} characters
                     </span>
                   }
+                  {...register("bio")}
                 />
 
                 {/* Submit button */}
@@ -533,121 +379,102 @@ export default function Onboarding() {
   );
 }
 
-// Form Field Component
-interface FormFieldProps {
+// Form Field Component with react-hook-form support
+interface FormFieldProps extends React.InputHTMLAttributes<HTMLInputElement | HTMLTextAreaElement> {
   label: string;
-  name: string;
   type: "text" | "textarea";
-  placeholder: string;
-  value: string;
-  onChange: (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-  ) => void;
-  onBlur: (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement>) => void;
   error?: string;
   icon?: React.ReactNode;
   required?: boolean;
-  disabled?: boolean;
   helperText?: React.ReactNode;
 }
 
-function FormField({
-  label,
-  name,
-  type,
-  placeholder,
-  value,
-  onChange,
-  onBlur,
-  error,
-  icon,
-  required = false,
-  disabled = false,
-  helperText,
-}: FormFieldProps) {
-  const hasError = !!error;
+const FormField = React.forwardRef<HTMLInputElement | HTMLTextAreaElement, FormFieldProps>(
+  ({ label, name, type, placeholder, error, icon, required = false, disabled = false, helperText, ...rest }, ref) => {
+    const hasError = !!error;
 
-  const inputClasses = cn(
-    "w-full rounded-lg border-2 bg-white px-4 text-neutral-900 placeholder:text-neutral-400 transition-all duration-200 outline-none",
-    "focus:ring-[3px]",
-    hasError
-      ? "border-error-500 focus:border-error-500 focus:ring-error-500/20"
-      : "border-neutral-300 focus:border-primary-500 focus:ring-primary-500/30",
-    disabled && "opacity-60 cursor-not-allowed",
-    type === "textarea" ? "py-3 min-h-[100px] resize-none" : "h-12"
-  );
+    const inputClasses = cn(
+      "w-full rounded-lg border-2 bg-white px-4 text-neutral-900 placeholder:text-neutral-400 transition-all duration-200 outline-none",
+      "focus:ring-[3px]",
+      hasError
+        ? "border-error-500 focus:border-error-500 focus:ring-error-500/20"
+        : "border-neutral-300 focus:border-primary-500 focus:ring-primary-500/30",
+      disabled && "opacity-60 cursor-not-allowed",
+      type === "textarea" ? "py-3 min-h-[100px] resize-none" : "h-12"
+    );
 
-  return (
-    <div className="space-y-2">
-      {/* Label */}
-      <label htmlFor={name} className="block text-sm font-medium text-neutral-700">
-        {label}
-        {required && <span className="text-error-500 ml-1">*</span>}
-      </label>
+    return (
+      <div className="space-y-2">
+        {/* Label */}
+        <label htmlFor={name} className="block text-sm font-medium text-neutral-700">
+          {label}
+          {required && <span className="text-error-500 ml-1">*</span>}
+        </label>
 
-      {/* Input wrapper with icon */}
-      <div className="relative">
-        {icon && (
-          <div className="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-400 pointer-events-none">
-            {icon}
-          </div>
+        {/* Input wrapper with icon */}
+        <div className="relative">
+          {icon && (
+            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-400 pointer-events-none">
+              {icon}
+            </div>
+          )}
+
+          {type === "textarea" ? (
+            <textarea
+              ref={ref as React.ForwardedRef<HTMLTextAreaElement>}
+              id={name}
+              name={name}
+              placeholder={placeholder}
+              disabled={disabled}
+              className={cn(inputClasses, icon && "pl-12")}
+              aria-invalid={hasError}
+              aria-describedby={
+                error ? `${name}-error` : helperText ? `${name}-helper` : undefined
+              }
+              {...rest}
+            />
+          ) : (
+            <input
+              ref={ref as React.ForwardedRef<HTMLInputElement>}
+              type={type}
+              id={name}
+              name={name}
+              placeholder={placeholder}
+              disabled={disabled}
+              className={cn(inputClasses, icon && "pl-12")}
+              aria-invalid={hasError}
+              aria-describedby={
+                error ? `${name}-error` : helperText ? `${name}-helper` : undefined
+              }
+              {...rest}
+            />
+          )}
+
+          {/* Error icon */}
+          {hasError && (
+            <div className="absolute right-4 top-1/2 -translate-y-1/2 text-error-500">
+              <AlertCircle className="size-5" />
+            </div>
+          )}
+        </div>
+
+        {/* Error message */}
+        {error && (
+          <p id={`${name}-error`} className="text-sm text-error-600 flex items-center gap-1.5">
+            <AlertCircle className="size-4 shrink-0" />
+            {error}
+          </p>
         )}
 
-        {type === "textarea" ? (
-          <textarea
-            id={name}
-            name={name}
-            placeholder={placeholder}
-            value={value}
-            onChange={onChange}
-            onBlur={onBlur}
-            disabled={disabled}
-            className={cn(inputClasses, icon && "pl-12")}
-            aria-invalid={hasError}
-            aria-describedby={
-              error ? `${name}-error` : helperText ? `${name}-helper` : undefined
-            }
-          />
-        ) : (
-          <input
-            type={type}
-            id={name}
-            name={name}
-            placeholder={placeholder}
-            value={value}
-            onChange={onChange}
-            onBlur={onBlur}
-            disabled={disabled}
-            className={cn(inputClasses, icon && "pl-12")}
-            aria-invalid={hasError}
-            aria-describedby={
-              error ? `${name}-error` : helperText ? `${name}-helper` : undefined
-            }
-          />
-        )}
-
-        {/* Error icon */}
-        {hasError && (
-          <div className="absolute right-4 top-1/2 -translate-y-1/2 text-error-500">
-            <AlertCircle className="size-5" />
-          </div>
+        {/* Helper text */}
+        {!error && helperText && (
+          <p id={`${name}-helper`} className="text-xs text-neutral-500">
+            {helperText}
+          </p>
         )}
       </div>
+    );
+  }
+);
 
-      {/* Error message */}
-      {error && (
-        <p id={`${name}-error`} className="text-sm text-error-600 flex items-center gap-1.5">
-          <AlertCircle className="size-4 shrink-0" />
-          {error}
-        </p>
-      )}
-
-      {/* Helper text */}
-      {!error && helperText && (
-        <p id={`${name}-helper`} className="text-xs text-neutral-500">
-          {helperText}
-        </p>
-      )}
-    </div>
-  );
-}
+FormField.displayName = "FormField";

@@ -262,6 +262,183 @@ function Onboarding() {
 - `app/hooks/fetch-lens-accounts.ts` - Fetching existing Lens accounts
 - Follow this pattern for new async operations
 
+### Form Management Pattern
+
+**Key Principle**: Use react-hook-form + zod for all forms to ensure type safety and reduce boilerplate.
+
+**Pattern Structure:**
+1. **Create Zod schemas in `app/schemas/`** - Define validation rules and infer TypeScript types
+2. **Use react-hook-form in components** - Integrate with zodResolver for automatic validation
+3. **Support async validation** - Use `setError` for server-side validation (e.g., username availability)
+4. **Keep forms controlled** - Let react-hook-form manage state, avoid manual state management
+
+**Example: Onboarding Form** (`app/routes/onboarding.tsx` + `app/schemas/onboarding-schema.ts`)
+
+**Step 1: Create Zod Schema** (`app/schemas/onboarding-schema.ts`):
+```typescript
+import { z } from "zod";
+
+export const onboardingSchema = z.object({
+  name: z
+    .string()
+    .min(1, "Name is required")
+    .min(2, "Name must be at least 2 characters")
+    .regex(/^[a-zA-Z\s-]+$/, "Name can only contain letters, spaces, and hyphens"),
+
+  lensUsername: z
+    .string()
+    .min(1, "Lens username is required")
+    .min(3, "Username must be at least 3 characters")
+    .max(26, "Username must be no more than 26 characters")
+    .regex(/^[a-z0-9_]+$/, "Username can only contain lowercase letters, numbers, and underscores"),
+
+  bio: z.string().max(280, "Bio must be no more than 280 characters").optional(),
+
+  profilePhoto: z.instanceof(File).nullable().optional(),
+});
+
+// Infer TypeScript type from schema
+export type OnboardingFormData = z.infer<typeof onboardingSchema>;
+```
+
+**Step 2: Use react-hook-form in Component** (`app/routes/onboarding.tsx`):
+```typescript
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { onboardingSchema, type OnboardingFormData } from "app/schemas/onboarding-schema";
+
+function Onboarding() {
+  // Setup react-hook-form with Zod validation
+  const {
+    register,
+    handleSubmit,
+    watch,
+    setError,
+    formState: { errors, isSubmitting },
+  } = useForm<OnboardingFormData>({
+    resolver: zodResolver(onboardingSchema),
+    defaultValues: {
+      name: "",
+      lensUsername: "",
+      bio: "",
+      profilePhoto: null,
+    },
+  });
+
+  // Watch fields for UI updates (e.g., character count)
+  const bioValue = watch("bio") || "";
+
+  // Async validation example (username availability)
+  const handleUsernameBlur = async (e: React.FocusEvent<HTMLInputElement>) => {
+    const username = e.target.value;
+
+    if (!username.trim() || errors.lensUsername) return;
+
+    const availability = await checkUsername(username);
+
+    if (!availability.available) {
+      setError("lensUsername", {
+        type: "manual",
+        message: availability.reason || "Username is not available",
+      });
+    }
+  };
+
+  // Form submission handler
+  const onSubmit = async (data: OnboardingFormData) => {
+    try {
+      const result = await createAccount({
+        username: data.lensUsername,
+        // ... other fields
+      });
+
+      if (result.error) {
+        setError("lensUsername", {
+          type: "manual",
+          message: result.error.message,
+        });
+        return;
+      }
+
+      navigate("/dashboard");
+    } catch (error) {
+      setError("lensUsername", {
+        type: "manual",
+        message: error instanceof Error ? error.message : "Failed to create account",
+      });
+    }
+  };
+
+  return (
+    <form onSubmit={handleSubmit(onSubmit)}>
+      {/* Form fields use register() for automatic binding */}
+      <FormField
+        label="Name"
+        type="text"
+        error={errors.name?.message}
+        {...register("name")}
+      />
+
+      <FormField
+        label="Username"
+        type="text"
+        error={errors.lensUsername?.message}
+        onBlurCapture={handleUsernameBlur}
+        {...register("lensUsername")}
+      />
+
+      <button type="submit" disabled={isSubmitting}>
+        Submit
+      </button>
+    </form>
+  );
+}
+```
+
+**Step 3: Create Form Field Component with ref forwarding**:
+```typescript
+import React from "react";
+
+interface FormFieldProps extends React.InputHTMLAttributes<HTMLInputElement> {
+  label: string;
+  error?: string;
+  // ... other props
+}
+
+const FormField = React.forwardRef<HTMLInputElement, FormFieldProps>(
+  ({ label, error, ...rest }, ref) => {
+    return (
+      <div>
+        <label>{label}</label>
+        <input ref={ref} {...rest} />
+        {error && <p>{error}</p>}
+      </div>
+    );
+  }
+);
+
+FormField.displayName = "FormField";
+```
+
+**Benefits:**
+- **Type Safety**: Zod schemas provide runtime validation + TypeScript types
+- **Less Boilerplate**: No manual state management for form values
+- **Automatic Validation**: Zod schema validates on submit/blur/change
+- **Async Validation**: Use `setError` for server-side checks
+- **Performance**: Only re-renders changed fields
+- **Consistent Pattern**: All forms follow same structure
+
+**When to Use:**
+- All forms with 2+ fields
+- Forms requiring validation
+- Forms with async operations (API calls, file uploads)
+- Forms that need to track touched/dirty state
+
+**Schema Location:**
+- `app/schemas/onboarding-schema.ts` - User onboarding form
+- `app/schemas/circle-schema.ts` - Create/edit circle form (future)
+- Follow `{feature}-schema.ts` naming convention
+
 ### Adding New Landing Sections
 
 1. Create component in `app/components/landing/section-name.tsx`

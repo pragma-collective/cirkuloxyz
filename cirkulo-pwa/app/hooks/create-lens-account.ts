@@ -14,8 +14,10 @@ import {
 import { handleOperationWith } from "@lens-protocol/client/viem";
 import { lensClient } from "app/lib/lens";
 import { useDynamicContext } from "@dynamic-labs/sdk-react-core";
-import { getWalletClient } from "@dynamic-labs/sdk-react-core";
 import type { WalletClient } from "viem";
+
+// Re-export SessionClient for use in other files
+export type { SessionClient };
 
 /**
  * Result of authentication as onboarding user
@@ -93,11 +95,9 @@ export interface UseCreateLensAccountReturn {
  *
  * @example
  * ```tsx
- * import { getWalletClient } from "@dynamic-labs/sdk-react-core";
- *
  * useEffect(() => {
  *   const authenticate = async () => {
- *     const walletClient = await getWalletClient(primaryWallet);
+ *     const walletClient = await primaryWallet.getWalletClient();
  *     const result = await authenticateAsOnboardingUser(
  *       primaryWallet.address,
  *       APP_ADDRESS,
@@ -237,9 +237,10 @@ export async function checkUsername(
 			};
 		}
 
+		// Fallback for any unexpected validation result types
 		return {
 			available: false,
-			reason: `Validation failed: ${validation.__typename}`,
+			reason: `Validation failed: ${(validation as any).__typename || "Unknown"}`,
 		};
 	} catch (err) {
 		const error =
@@ -339,7 +340,8 @@ export function useCreateLensAccount(): UseCreateLensAccountReturn {
 						throw new Error("No wallet connected. Please connect a wallet first.");
 					}
 
-					const walletClient = await getWalletClient(primaryWallet);
+					// @ts-expect-error - getWalletClient exists at runtime but not in type definition
+					const walletClient = await primaryWallet.getWalletClient();
 					const authResult = await authenticateAsOnboardingUser(
 						params.walletAddress,
 						params.appAddress,
@@ -379,7 +381,8 @@ export function useCreateLensAccount(): UseCreateLensAccountReturn {
 				if (!primaryWallet) {
 					throw new Error("No wallet connected for transaction signing");
 				}
-				const walletClient = await getWalletClient(primaryWallet);
+				// @ts-expect-error - getWalletClient exists at runtime but not in type definition
+				const walletClient = await primaryWallet.getWalletClient();
 
 				const createResult = await createAccountWithUsername(sessionClient, {
 					username: { localName: params.username.trim() },
