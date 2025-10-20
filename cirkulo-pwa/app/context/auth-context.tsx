@@ -33,6 +33,7 @@ export interface ProfileData {
 	name: string;
 	lensUsername: string;
 	bio?: string;
+	picture?: string; // lens:// URI from Lens Storage
 }
 
 // Auth context type
@@ -169,6 +170,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 	const createProfile = React.useCallback(
 		async (data: ProfileData): Promise<void> => {
 			setIsLoading(true);
+
+			// TODO: Implement actual Lens account creation using @lens-protocol/metadata
+			// Example:
+			// import { account } from "@lens-protocol/metadata";
+			// const metadata = account({
+			//   name: data.name,
+			//   bio: data.bio,
+			//   picture: data.picture, // lens:// URI
+			// });
+
+			console.log("[Auth] Creating profile with data:", {
+				name: data.name,
+				lensUsername: data.lensUsername,
+				bio: data.bio,
+				picture: data.picture,
+			});
 
 			// Simulate profile creation delay (2 seconds)
 			await new Promise((resolve) => setTimeout(resolve, 2000));

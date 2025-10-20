@@ -11,6 +11,7 @@ import {
   CardHeader,
   CardTitle,
 } from "app/components/ui/card";
+import { ProfilePhotoUpload } from "app/components/ui/profile-photo-upload";
 import { useAuth } from "app/context/auth-context";
 import {
   CheckCircle2,
@@ -22,6 +23,7 @@ import {
   FileText,
 } from "lucide-react";
 import { cn } from "app/lib/utils";
+import { uploadToLensStorage } from "app/lib/lens-storage";
 
 export function meta({}: Route.MetaArgs) {
   return [
@@ -38,6 +40,7 @@ interface FormErrors {
   name?: string;
   lensUsername?: string;
   bio?: string;
+  profilePhoto?: string;
 }
 
 // Form data interface
@@ -45,6 +48,7 @@ interface FormData {
   name: string;
   lensUsername: string;
   bio: string;
+  profilePhoto: File | null;
 }
 
 export default function Onboarding() {
@@ -56,6 +60,7 @@ export default function Onboarding() {
     name: "",
     lensUsername: "",
     bio: "",
+    profilePhoto: null,
   });
 
   const [errors, setErrors] = React.useState<FormErrors>({});
@@ -155,6 +160,22 @@ export default function Onboarding() {
     }));
   };
 
+  // Handle profile photo change
+  const handleProfilePhotoChange = (file: File | null) => {
+    setFormData((prev) => ({
+      ...prev,
+      profilePhoto: file,
+    }));
+
+    // Clear error if exists
+    if (errors.profilePhoto) {
+      setErrors((prev) => ({
+        ...prev,
+        profilePhoto: undefined,
+      }));
+    }
+  };
+
   // Validate all fields
   const validateForm = (): boolean => {
     const newErrors: FormErrors = {
@@ -182,11 +203,28 @@ export default function Onboarding() {
     setIsSubmitting(true);
 
     try {
+      // Upload profile photo if provided
+      let profilePictureUri: string | undefined;
+      if (formData.profilePhoto) {
+        try {
+          profilePictureUri = await uploadToLensStorage(formData.profilePhoto);
+          console.log("[Onboarding] Profile photo uploaded:", profilePictureUri);
+        } catch (uploadError) {
+          console.error("[Onboarding] Photo upload failed:", uploadError);
+          // Photo is optional, so we continue even if upload fails
+          setErrors((prev) => ({
+            ...prev,
+            profilePhoto: "Photo upload failed. Continuing without photo.",
+          }));
+        }
+      }
+
       // Create profile
       await createProfile({
         name: formData.name.trim(),
         lensUsername: formData.lensUsername.trim(),
         bio: formData.bio.trim() || undefined,
+        picture: profilePictureUri,
       });
 
       // Show success state
@@ -237,6 +275,14 @@ export default function Onboarding() {
 
             <CardContent>
               <form onSubmit={handleSubmit} className="space-y-5">
+                {/* Profile Photo field */}
+                <ProfilePhotoUpload
+                  value={formData.profilePhoto}
+                  onChange={handleProfilePhotoChange}
+                  error={errors.profilePhoto}
+                  disabled={isSubmitting || isSuccess}
+                />
+
                 {/* Name field */}
                 <FormField
                   label="Name"
