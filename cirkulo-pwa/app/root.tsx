@@ -15,6 +15,7 @@ import { EthereumWalletConnectors } from "@dynamic-labs/ethereum";
 import type { Route } from "./+types/root";
 import { AuthProvider } from "./context/auth-context";
 import { wagmiConfig } from "./lib/wagmi";
+import { authEvents } from "./lib/auth-events";
 import "./app.css";
 
 // Create a client outside of component to avoid recreating on every render
@@ -70,6 +71,11 @@ export function Layout({ children }: { children: React.ReactNode }) {
             settings={{
               environmentId: import.meta.env.VITE_DYNAMIC_ENVIRONMENT_ID,
               walletConnectors: [EthereumWalletConnectors],
+              events: {
+                onAuthSuccess: () => {
+                  authEvents.emit("authSuccess");
+                },
+              },
             }}
           >
             <WagmiProvider config={wagmiConfig}>

@@ -3,44 +3,45 @@ import { useDynamicContext } from "@dynamic-labs/sdk-react-core";
 import { evmAddress } from "@lens-protocol/client";
 import { fetchAccountsAvailable } from "@lens-protocol/client/actions";
 import { lensClient } from "app/lib/lens";
+import { authEvents } from "app/lib/auth-events";
 
 // Lens account interface
 export interface LensAccount {
-  address: string;
-  username: string;
-  metadata?: {
-    name?: string;
-    bio?: string;
-    picture?: string;
-  };
+	address: string;
+	username: string;
+	metadata?: {
+		name?: string;
+		bio?: string;
+		picture?: string;
+	};
 }
 
 // User interface
 export interface User {
-  id: string;
-  hasProfile: boolean;
-  name?: string;
-  lensUsername?: string;
-  bio?: string;
-  walletAddress?: string;
-  lensAccount?: LensAccount; // Lens Protocol account info
-  hasLensAccount: boolean; // Quick check if user has Lens account
+	id: string;
+	hasProfile: boolean;
+	name?: string;
+	lensUsername?: string;
+	bio?: string;
+	walletAddress?: string;
+	lensAccount?: LensAccount;
+	hasLensAccount: boolean;
 }
 
 // Profile data for creation
 export interface ProfileData {
-  name: string;
-  lensUsername: string;
-  bio?: string;
+	name: string;
+	lensUsername: string;
+	bio?: string;
 }
 
 // Auth context type
 export interface AuthContextType {
-  user: User | null;
-  isLoading: boolean;
-  login: () => Promise<User>;
-  createProfile: (data: ProfileData) => Promise<void>;
-  logout: () => void;
+	user: User | null;
+	isLoading: boolean;
+	login: () => Promise<User>;
+	createProfile: (data: ProfileData) => Promise<void>;
+	logout: () => void;
 }
 
 // Create context with undefined default
@@ -48,167 +49,171 @@ const AuthContext = React.createContext<AuthContextType | undefined>(undefined);
 
 // Auth provider component
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const {
-    user: dynamicUser,
-    primaryWallet,
-    setShowAuthFlow,
-    handleLogOut,
-  } = useDynamicContext();
+	const {
+		user: dynamicUser,
+		primaryWallet,
+		setShowAuthFlow,
+		handleLogOut,
+	} = useDynamicContext();
 
-  // Check if user is authenticated (has a user and wallet)
-  const isAuthenticated = Boolean(dynamicUser && primaryWallet);
+	// Check if user is authenticated (has a user and wallet)
+	const isAuthenticated = Boolean(dynamicUser && primaryWallet);
 
-  const [profileData, setProfileData] = React.useState<{
-    hasProfile: boolean;
-    name?: string;
-    lensUsername?: string;
-    bio?: string;
-  }>({ hasProfile: false });
-  const [lensAccount, setLensAccount] = React.useState<LensAccount | undefined>(undefined);
-  const [isCheckingLens, setIsCheckingLens] = React.useState(false);
-  const [isLoading, setIsLoading] = React.useState(false);
+	const [profileData, setProfileData] = React.useState<{
+		hasProfile: boolean;
+		name?: string;
+		lensUsername?: string;
+		bio?: string;
+	}>({ hasProfile: false });
+	const [lensAccount, setLensAccount] = React.useState<LensAccount | undefined>(
+		undefined,
+	);
+	const [isCheckingLens, setIsCheckingLens] = React.useState(false);
+	const [isLoading, setIsLoading] = React.useState(false);
 
-  // Check for Lens account when wallet address changes
-  React.useEffect(() => {
-    const checkLensAccount = async () => {
-      if (!primaryWallet?.address) return;
+	// Store pending login promise resolver
+	const loginResolverRef = React.useRef<((user: User) => void) | null>(null);
 
-      setIsCheckingLens(true);
-      try {
-        const result = await fetchAccountsAvailable(lensClient, {
-          managedBy: evmAddress(primaryWallet.address),
-          includeOwned: true,
-        });
+	// Check for Lens account when wallet address changes
+	React.useEffect(() => {
+		const checkLensAccount = async () => {
+			if (!primaryWallet?.address) return;
 
-        if (result.isOk() && result.value.items.length > 0) {
-          const accountManaged = result.value.items[0];
-          const account = accountManaged.account;
-          setLensAccount({
-            address: account.address,
-            username: account.username?.localName || account.address,
-            metadata: account.metadata
-              ? {
-                  name: account.metadata.name || undefined,
-                  bio: account.metadata.bio || undefined,
-                  picture: account.metadata.picture || undefined,
-                }
-              : undefined,
-          });
-        } else {
-          setLensAccount(undefined);
-        }
-      } catch (error) {
-        console.error("Error checking Lens account:", error);
-        setLensAccount(undefined);
-      } finally {
-        setIsCheckingLens(false);
-      }
-    };
+			setIsCheckingLens(true);
+			try {
+				const result = await fetchAccountsAvailable(lensClient, {
+					managedBy: evmAddress(primaryWallet.address),
+					includeOwned: true,
+				});
 
-    checkLensAccount();
-  }, [primaryWallet?.address]);
+				if (result.isOk() && result.value.items.length > 0) {
+					const accountManaged = result.value.items[0];
+					const account = accountManaged.account;
+					setLensAccount({
+						address: account.address,
+						username: account.username?.localName || account.address,
+						metadata: account.metadata
+							? {
+									name: account.metadata.name || undefined,
+									bio: account.metadata.bio || undefined,
+									picture: account.metadata.picture || undefined,
+								}
+							: undefined,
+					});
+				} else {
+					setLensAccount(undefined);
+				}
+			} catch (error) {
+				console.error("Error checking Lens account:", error);
+				setLensAccount(undefined);
+			} finally {
+				setIsCheckingLens(false);
+			}
+		};
 
-  // Map Dynamic user to our User interface
-  const user: User | null = React.useMemo(() => {
-    if (!isAuthenticated || !dynamicUser) return null;
+		checkLensAccount();
+	}, [primaryWallet?.address]);
 
-    return {
-      id: dynamicUser.userId || primaryWallet?.address || "unknown",
-      walletAddress: primaryWallet?.address,
-      hasProfile: profileData.hasProfile,
-      name: profileData.name || lensAccount?.metadata?.name,
-      lensUsername: profileData.lensUsername || lensAccount?.username,
-      bio: profileData.bio || lensAccount?.metadata?.bio,
-      lensAccount,
-      hasLensAccount: Boolean(lensAccount),
-    };
-  }, [isAuthenticated, dynamicUser, primaryWallet, profileData, lensAccount]);
+	// Map Dynamic user to our User interface
+	const user: User | null = React.useMemo(() => {
+		if (!isAuthenticated || !dynamicUser) return null;
 
-  // Login function - triggers Dynamic auth flow
-  // Note: Actual navigation should be handled via useEffect watching user state
-  const login = React.useCallback(async (): Promise<User> => {
-    setIsLoading(true);
+		return {
+			id: dynamicUser.userId || primaryWallet?.address || "unknown",
+			walletAddress: primaryWallet?.address,
+			hasProfile: profileData.hasProfile,
+			name: profileData.name || lensAccount?.metadata?.name,
+			lensUsername: profileData.lensUsername || lensAccount?.username,
+			bio: profileData.bio || lensAccount?.metadata?.bio,
+			lensAccount,
+			hasLensAccount: Boolean(lensAccount),
+		};
+	}, [isAuthenticated, dynamicUser, primaryWallet, profileData, lensAccount]);
 
-    // Trigger Dynamic's auth modal
-    setShowAuthFlow(true);
+	// When user becomes available, resolve pending login promise
+	React.useEffect(() => {
+		if (user && loginResolverRef.current && !isCheckingLens) {
+			loginResolverRef.current(user);
+			loginResolverRef.current = null;
+			setIsLoading(false);
+		}
+	}, [user, isCheckingLens]);
 
-    // Return a promise that resolves when user becomes authenticated
-    return new Promise((resolve, reject) => {
-      const timeoutId = setTimeout(() => {
-        setIsLoading(false);
-        reject(new Error("Authentication timeout"));
-      }, 120000); // 2 minute timeout
+	// Login function - triggers Dynamic auth flow and returns user when ready
+	const login = React.useCallback(async (): Promise<User> => {
+		setIsLoading(true);
 
-      // This will be resolved by the useEffect watching authentication state
-      const checkInterval = setInterval(() => {
-        if (isAuthenticated && dynamicUser && primaryWallet) {
-          clearInterval(checkInterval);
-          clearTimeout(timeoutId);
-          setIsLoading(false);
+		// Trigger Dynamic's auth modal
+		setShowAuthFlow(true);
 
-          const newUser: User = {
-            id: dynamicUser.userId || primaryWallet.address || "unknown",
-            walletAddress: primaryWallet.address,
-            hasProfile: profileData.hasProfile,
-            name: profileData.name,
-            lensUsername: profileData.lensUsername,
-            bio: profileData.bio,
-            lensAccount,
-            hasLensAccount: Boolean(lensAccount),
-          };
+		// Return promise that resolves when user is authenticated
+		return new Promise((resolve, reject) => {
+			loginResolverRef.current = resolve;
 
-          resolve(newUser);
-        }
-      }, 500);
-    });
-  }, [setShowAuthFlow, isAuthenticated, dynamicUser, primaryWallet, profileData]);
+			// Listen for auth cancellation (user closes modal)
+			const handleAuthCancel = () => {
+				if (loginResolverRef.current) {
+					loginResolverRef.current = null;
+					setIsLoading(false);
+					authEvents.off("authSuccess", handleAuthCancel);
+					reject(new Error("Authentication cancelled"));
+				}
+			};
 
-  // Create profile function
-  const createProfile = React.useCallback(async (data: ProfileData): Promise<void> => {
-    setIsLoading(true);
+			// Note: Auth success is handled by the useEffect that watches for user
+			// This ensures we wait for both Dynamic auth AND Lens account check
+		});
+	}, [setShowAuthFlow]);
 
-    // Simulate profile creation delay (2 seconds)
-    await new Promise((resolve) => setTimeout(resolve, 2000));
+	// Create profile function
+	const createProfile = React.useCallback(
+		async (data: ProfileData): Promise<void> => {
+			setIsLoading(true);
 
-    // Update profile data
-    setProfileData({
-      hasProfile: true,
-      name: data.name,
-      lensUsername: data.lensUsername,
-      bio: data.bio,
-    });
+			// Simulate profile creation delay (2 seconds)
+			await new Promise((resolve) => setTimeout(resolve, 2000));
 
-    setIsLoading(false);
-  }, []);
+			// Update profile data
+			setProfileData({
+				hasProfile: true,
+				name: data.name,
+				lensUsername: data.lensUsername,
+				bio: data.bio,
+			});
 
-  // Logout function
-  const logout = React.useCallback(() => {
-    handleLogOut();
-    setProfileData({ hasProfile: false });
-    setIsLoading(false);
-  }, [handleLogOut]);
+			setIsLoading(false);
+		},
+		[],
+	);
 
-  const value = React.useMemo(
-    () => ({
-      user,
-      isLoading,
-      login,
-      createProfile,
-      logout,
-    }),
-    [user, isLoading, login, createProfile, logout]
-  );
+	// Logout function
+	const logout = React.useCallback(() => {
+		handleLogOut();
+		setProfileData({ hasProfile: false });
+		setIsLoading(false);
+	}, [handleLogOut]);
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+	const value = React.useMemo(
+		() => ({
+			user,
+			isLoading,
+			login,
+			createProfile,
+			logout,
+		}),
+		[user, isLoading, login, createProfile, logout],
+	);
+
+	return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
 // Custom hook to use auth context
 export function useAuth() {
-  const context = React.useContext(AuthContext);
+	const context = React.useContext(AuthContext);
 
-  if (context === undefined) {
-    throw new Error("useAuth must be used within an AuthProvider");
-  }
+	if (context === undefined) {
+		throw new Error("useAuth must be used within an AuthProvider");
+	}
 
-  return context;
+	return context;
 }

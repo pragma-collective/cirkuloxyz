@@ -1,7 +1,5 @@
 import type { Route } from "./+types/login";
 import { useNavigate } from "react-router";
-import * as React from "react";
-import { useDynamicContext } from "@dynamic-labs/sdk-react-core";
 import { XershaLogo } from "app/components/xersha-logo";
 import { Button } from "app/components/ui/button";
 import {
@@ -27,24 +25,24 @@ export function meta({}: Route.MetaArgs) {
 
 export default function Login() {
 	const navigate = useNavigate();
-	const { user } = useAuth();
-	const { setShowAuthFlow, user: dynamicUser, primaryWallet } = useDynamicContext();
-	const [isAuthenticating, setIsAuthenticating] = React.useState(false);
+	const { login, isLoading } = useAuth();
 
-	// Watch for successful authentication and check for Lens account
-	React.useEffect(() => {
-		if (isAuthenticating && user && !user.hasLensAccount) {
-			// User has Dynamic wallet but no Lens account → onboarding
-			navigate("/onboarding");
-		} else if (isAuthenticating && user && user.hasLensAccount) {
-			// User has both Dynamic wallet and Lens account → dashboard
-			navigate("/dashboard");
+	const handleSignIn = async () => {
+		try {
+			// Await authentication completion
+			const user = await login();
+
+			// Navigate based on Lens account status
+			if (!user.hasLensAccount) {
+				// User has Dynamic wallet but no Lens account → onboarding
+				navigate("/onboarding");
+			} else {
+				// User has both Dynamic wallet and Lens account → dashboard
+				navigate("/dashboard");
+			}
+		} catch (error) {
+			console.error("Sign in failed:", error);
 		}
-	}, [isAuthenticating, user, navigate]);
-
-	const handleSignIn = () => {
-		setIsAuthenticating(true);
-		setShowAuthFlow(true);
 	};
 
 	return (
@@ -98,9 +96,9 @@ export default function Login() {
 									size="lg"
 									className="w-full text-base"
 									onClick={handleSignIn}
-									disabled={isAuthenticating}
+									disabled={isLoading}
 								>
-									{isAuthenticating ? (
+									{isLoading ? (
 										<>
 											<Loader2 className="size-5 animate-spin" />
 											Signing in...
