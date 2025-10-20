@@ -132,11 +132,24 @@ const config: HardhatUserConfig = {
       accounts: [deployerPrivateKey],
       gasPrice: "auto",
     },
+    // Lens Chain Testnet for Lens Protocol custom group rules (HACKATHON TARGET)
+    lensTestnet: {
+      url: process.env.LENS_RPC_URL || "https://rpc.testnet.lens.xyz",
+      chainId: 37111, // Lens Testnet chain ID
+      accounts: [deployerPrivateKey],
+      gasPrice: "auto",
+      verify: {
+        etherscan: {
+          apiUrl: "https://explorer.testnet.lens.xyz/api",
+        },
+      },
+    },
   },
   // Configuration for harhdat-verify plugin
   etherscan: {
     apiKey: {
       citreaTestnet: process.env.CITREA_API_KEY || "dummy-api-key-not-needed",
+      lensTestnet: process.env.LENS_API_KEY || "dummy-api-key-not-needed",
       mainnet: etherscanApiKey,
       sepolia: etherscanApiKey,
       arbitrum: etherscanApiKey,
@@ -155,6 +168,14 @@ const config: HardhatUserConfig = {
         urls: {
           apiURL: process.env.CITREA_EXPLORER_API || "https://explorer-api.testnet.citrea.xyz/api",
           browserURL: process.env.CITREA_EXPLORER_URL || "https://explorer.testnet.citrea.xyz",
+        },
+      },
+      {
+        network: "lensTestnet",
+        chainId: 37111,
+        urls: {
+          apiURL: "https://explorer-api.testnet.lens.xyz",
+          browserURL: "https://explorer.testnet.lens.xyz",
         },
       },
     ],
