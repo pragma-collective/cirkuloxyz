@@ -11,7 +11,7 @@ import {
 	CardTitle,
 } from "app/components/ui/card";
 import { useAuth } from "app/context/auth-context";
-import { Mail, Users, TrendingUp, Shield, Loader2 } from "lucide-react";
+import { Wallet, TrendingUp, Shield, Loader2, Users } from "lucide-react";
 
 export function meta({}: Route.MetaArgs) {
 	return [
@@ -27,37 +27,21 @@ export default function Login() {
 	const navigate = useNavigate();
 	const { login, isLoading } = useAuth();
 
-	const handleSocialLogin = async () => {
+	const handleSignIn = async () => {
 		try {
-			// Call login from auth context
+			// Await authentication completion
 			const user = await login();
 
-			// Navigate based on profile status
-			if (!user.hasProfile) {
+			// Navigate based on Lens account status
+			if (!user.hasLensAccount) {
+				// User has Dynamic wallet but no Lens account → onboarding
 				navigate("/onboarding");
 			} else {
+				// User has both Dynamic wallet and Lens account → dashboard
 				navigate("/dashboard");
 			}
 		} catch (error) {
-			console.error("Social login failed:", error);
-			// In a real app, you'd show an error message here
-		}
-	};
-
-	const handleEmailLogin = async () => {
-		try {
-			// Call login from auth context
-			const user = await login();
-
-			// Navigate based on profile status
-			if (!user.hasProfile) {
-				navigate("/onboarding");
-			} else {
-				navigate("/dashboard");
-			}
-		} catch (error) {
-			console.error("Email login failed:", error);
-			// In a real app, you'd show an error message here
+			console.error("Sign in failed:", error);
 		}
 	};
 
@@ -106,12 +90,12 @@ export default function Login() {
 								/>
 							</div>
 
-							{/* Login buttons */}
-							<div className="space-y-3 pt-4">
+							{/* Login button */}
+							<div className="pt-4">
 								<Button
 									size="lg"
 									className="w-full text-base"
-									onClick={handleSocialLogin}
+									onClick={handleSignIn}
 									disabled={isLoading}
 								>
 									{isLoading ? (
@@ -121,28 +105,8 @@ export default function Login() {
 										</>
 									) : (
 										<>
-											<Users className="size-5" />
-											Continue with Social
-										</>
-									)}
-								</Button>
-
-								<Button
-									size="lg"
-									variant="outline"
-									className="w-full text-base"
-									onClick={handleEmailLogin}
-									disabled={isLoading}
-								>
-									{isLoading ? (
-										<>
-											<Loader2 className="size-5 animate-spin" />
-											Signing in...
-										</>
-									) : (
-										<>
-											<Mail className="size-5" />
-											Continue with Email
+											<Wallet className="size-5" />
+											Sign In
 										</>
 									)}
 								</Button>

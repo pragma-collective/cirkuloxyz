@@ -6,10 +6,20 @@ import {
   Scripts,
   ScrollRestoration,
 } from "react-router";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { WagmiProvider } from "wagmi";
+import { DynamicContextProvider } from "@dynamic-labs/sdk-react-core";
+import { DynamicWagmiConnector } from "@dynamic-labs/wagmi-connector";
+import { EthereumWalletConnectors } from "@dynamic-labs/ethereum";
 
 import type { Route } from "./+types/root";
 import { AuthProvider } from "./context/auth-context";
+import { wagmiConfig } from "./lib/wagmi";
+import { authEvents } from "./lib/auth-events";
 import "./app.css";
+
+// Create a client outside of component to avoid recreating on every render
+const queryClient = new QueryClient();
 
 export const links: Route.LinksFunction = () => [
   { rel: "preconnect", href: "https://fonts.googleapis.com" },
@@ -56,7 +66,25 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <Links />
       </head>
       <body>
-        <AuthProvider>{children}</AuthProvider>
+        <QueryClientProvider client={queryClient}>
+          <DynamicContextProvider
+            settings={{
+              environmentId: import.meta.env.VITE_DYNAMIC_ENVIRONMENT_ID,
+              walletConnectors: [EthereumWalletConnectors],
+              events: {
+                onAuthSuccess: () => {
+                  authEvents.emit("authSuccess");
+                },
+              },
+            }}
+          >
+            <WagmiProvider config={wagmiConfig}>
+              <DynamicWagmiConnector>
+                <AuthProvider>{children}</AuthProvider>
+              </DynamicWagmiConnector>
+            </WagmiProvider>
+          </DynamicContextProvider>
+        </QueryClientProvider>
         <ScrollRestoration />
         <Scripts />
       </body>
