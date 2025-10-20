@@ -1,4 +1,4 @@
-# Lens Protocol Custom Group Rule Implementation (Option B: Fully On-Chain)
+# Lens Protocol Custom Group Rule Implementation (Fully On-Chain)
 
 ## Overview
 
