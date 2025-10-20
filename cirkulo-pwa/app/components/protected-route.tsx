@@ -7,9 +7,9 @@ import { Loader2 } from "lucide-react";
  *
  * Wrapper for routes that require authentication.
  * - Checks if user has Dynamic wallet connected
- * - Checks if user has Lens account
  * - Redirects to /login if not authenticated
  * - Shows loading state while checking authentication
+ * - Post-authentication routing handled by AuthContext
  */
 export function ProtectedRoute() {
   const { user, isLoading } = useAuth();

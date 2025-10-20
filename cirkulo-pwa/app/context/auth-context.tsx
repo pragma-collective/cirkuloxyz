@@ -8,6 +8,7 @@ import {
 	createContext,
 	type ReactNode,
 } from "react";
+import { useNavigate, useLocation } from "react-router";
 import { useDynamicContext } from "@dynamic-labs/sdk-react-core";
 import { authEvents } from "app/lib/auth-events";
 import {
@@ -58,6 +59,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 		setShowAuthFlow,
 		handleLogOut,
 	} = useDynamicContext();
+	const navigate = useNavigate();
+	const location = useLocation();
 
 	// Check if user is authenticated (has a user and wallet)
 	const isAuthenticated = Boolean(dynamicUser && primaryWallet);
@@ -104,6 +107,43 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 			setIsLoading(false);
 		}
 	}, [user, isCheckingLens]);
+
+	// Handle post-authentication navigation
+	useEffect(() => {
+		// Skip if still loading Lens account data
+		if (isCheckingLens) return;
+
+		// Skip if not authenticated
+		if (!user) return;
+
+		// Skip if already on dashboard or onboarding (destination pages)
+		if (
+			location.pathname === "/dashboard" ||
+			location.pathname === "/onboarding"
+		) {
+			return;
+		}
+
+		// Skip navigation for other protected routes (let them render)
+		// Only auto-redirect from public pages like /login or /
+		const isPublicPage =
+			location.pathname === "/" ||
+			location.pathname === "/login" ||
+			location.pathname === "/logo-showcase";
+
+		if (!isPublicPage) {
+			return;
+		}
+
+		// Navigate based on Lens account status
+		if (!user.hasLensAccount) {
+			// No Lens account → redirect to onboarding
+			navigate("/onboarding", { replace: true });
+		} else {
+			// Has Lens account → redirect to dashboard
+			navigate("/dashboard", { replace: true });
+		}
+	}, [user, isCheckingLens, location.pathname, navigate]);
 
 	// Login function - triggers Dynamic auth flow and returns user when ready
 	const login = useCallback(async (): Promise<User> => {
