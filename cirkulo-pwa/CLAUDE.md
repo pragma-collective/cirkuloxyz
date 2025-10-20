@@ -475,7 +475,8 @@ All icons from Lucide React. Common patterns:
 
 ## Environment Variables
 
-- `VITE_DYNAMIC_ENVIRONMENT_ID`: Dynamic.xyz authentication environment
+- `VITE_DYNAMIC_ENVIRONMENT_ID`: Dynamic.xyz authentication environment ID
+- `VITE_LENS_APP_ADDRESS`: Lens Protocol app address for account creation
 - Set in Docker build args or local `.env` file
 
 ## Logo Switching

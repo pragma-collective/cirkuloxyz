@@ -44,6 +44,7 @@ npm install
 3. Create a `.env` file:
 ```bash
 VITE_DYNAMIC_ENVIRONMENT_ID=your_dynamic_environment_id
+VITE_LENS_APP_ADDRESS=your_lens_protocol_app_address
 ```
 
 ### Development
@@ -76,10 +77,13 @@ npm run build
 
 ### Docker Deployment
 
-Build with environment variable:
+Build with environment variables:
 
 ```bash
-docker build --build-arg VITE_DYNAMIC_ENVIRONMENT_ID=your_id -t cirkulo-pwa .
+docker build \
+  --build-arg VITE_DYNAMIC_ENVIRONMENT_ID=your_dynamic_id \
+  --build-arg VITE_LENS_APP_ADDRESS=your_lens_app_address \
+  -t cirkulo-pwa .
 
 # Run the container
 docker run -p 3000:3000 cirkulo-pwa

@@ -35,8 +35,8 @@ import {
 import { useDynamicContext } from "@dynamic-labs/sdk-react-core";
 import { onboardingSchema, type OnboardingFormData } from "app/schemas/onboarding-schema";
 
-// TODO: Replace with your app's actual Lens address
-const APP_ADDRESS = "0x0000000000000000000000000000000000000000";
+// Lens Protocol app address from environment variable
+const APP_ADDRESS = import.meta.env.VITE_LENS_APP_ADDRESS;
 
 export function meta({}: Route.MetaArgs) {
   return [
