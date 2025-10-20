@@ -31,14 +31,16 @@ export default function Login() {
 	const { setShowAuthFlow, user: dynamicUser, primaryWallet } = useDynamicContext();
 	const [isAuthenticating, setIsAuthenticating] = React.useState(false);
 
-	// Watch for successful authentication and redirect to onboarding
+	// Watch for successful authentication and check for Lens account
 	React.useEffect(() => {
-		if (isAuthenticating && dynamicUser && primaryWallet) {
-			// User successfully authenticated, navigate to onboarding
-			// (All new Dynamic users need to create their Xersha profile)
+		if (isAuthenticating && user && !user.hasLensAccount) {
+			// User has Dynamic wallet but no Lens account → onboarding
 			navigate("/onboarding");
+		} else if (isAuthenticating && user && user.hasLensAccount) {
+			// User has both Dynamic wallet and Lens account → dashboard
+			navigate("/dashboard");
 		}
-	}, [isAuthenticating, dynamicUser, primaryWallet, navigate]);
+	}, [isAuthenticating, user, navigate]);
 
 	const handleSignIn = () => {
 		setIsAuthenticating(true);

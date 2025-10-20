@@ -1,5 +1,19 @@
 import * as React from "react";
 import { useDynamicContext } from "@dynamic-labs/sdk-react-core";
+import { evmAddress } from "@lens-protocol/client";
+import { fetchAccountsAvailable } from "@lens-protocol/client/actions";
+import { lensClient } from "app/lib/lens";
+
+// Lens account interface
+export interface LensAccount {
+  address: string;
+  username: string;
+  metadata?: {
+    name?: string;
+    bio?: string;
+    picture?: string;
+  };
+}
 
 // User interface
 export interface User {
@@ -9,6 +23,8 @@ export interface User {
   lensUsername?: string;
   bio?: string;
   walletAddress?: string;
+  lensAccount?: LensAccount; // Lens Protocol account info
+  hasLensAccount: boolean; // Quick check if user has Lens account
 }
 
 // Profile data for creation
@@ -48,7 +64,49 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     lensUsername?: string;
     bio?: string;
   }>({ hasProfile: false });
+  const [lensAccount, setLensAccount] = React.useState<LensAccount | undefined>(undefined);
+  const [isCheckingLens, setIsCheckingLens] = React.useState(false);
   const [isLoading, setIsLoading] = React.useState(false);
+
+  // Check for Lens account when wallet address changes
+  React.useEffect(() => {
+    const checkLensAccount = async () => {
+      if (!primaryWallet?.address) return;
+
+      setIsCheckingLens(true);
+      try {
+        const result = await fetchAccountsAvailable(lensClient, {
+          managedBy: evmAddress(primaryWallet.address),
+          includeOwned: true,
+        });
+
+        if (result.isOk() && result.value.items.length > 0) {
+          const accountManaged = result.value.items[0];
+          const account = accountManaged.account;
+          setLensAccount({
+            address: account.address,
+            username: account.username?.localName || account.address,
+            metadata: account.metadata
+              ? {
+                  name: account.metadata.name || undefined,
+                  bio: account.metadata.bio || undefined,
+                  picture: account.metadata.picture || undefined,
+                }
+              : undefined,
+          });
+        } else {
+          setLensAccount(undefined);
+        }
+      } catch (error) {
+        console.error("Error checking Lens account:", error);
+        setLensAccount(undefined);
+      } finally {
+        setIsCheckingLens(false);
+      }
+    };
+
+    checkLensAccount();
+  }, [primaryWallet?.address]);
 
   // Map Dynamic user to our User interface
   const user: User | null = React.useMemo(() => {
@@ -58,11 +116,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       id: dynamicUser.userId || primaryWallet?.address || "unknown",
       walletAddress: primaryWallet?.address,
       hasProfile: profileData.hasProfile,
-      name: profileData.name,
-      lensUsername: profileData.lensUsername,
-      bio: profileData.bio,
+      name: profileData.name || lensAccount?.metadata?.name,
+      lensUsername: profileData.lensUsername || lensAccount?.username,
+      bio: profileData.bio || lensAccount?.metadata?.bio,
+      lensAccount,
+      hasLensAccount: Boolean(lensAccount),
     };
-  }, [isAuthenticated, dynamicUser, primaryWallet, profileData]);
+  }, [isAuthenticated, dynamicUser, primaryWallet, profileData, lensAccount]);
 
   // Login function - triggers Dynamic auth flow
   // Note: Actual navigation should be handled via useEffect watching user state
@@ -93,6 +153,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             name: profileData.name,
             lensUsername: profileData.lensUsername,
             bio: profileData.bio,
+            lensAccount,
+            hasLensAccount: Boolean(lensAccount),
           };
 
           resolve(newUser);
