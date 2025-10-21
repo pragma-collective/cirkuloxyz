@@ -21,43 +21,44 @@ export interface LensAccount {
  * Return type for useFetchLensAccounts hook
  */
 export interface UseFetchLensAccountsReturn {
-	lensAccount: LensAccount | undefined;
+	lensAccounts: LensAccount[];
 	isLoading: boolean;
 	error: Error | null;
 }
 
 /**
- * Custom hook to fetch Lens Protocol account for a given wallet address
+ * Custom hook to fetch all Lens Protocol accounts for a given wallet address
  *
  * @param walletAddress - The wallet address to check for Lens accounts
- * @returns Object containing lensAccount, isLoading, and error states
+ * @returns Object containing lensAccounts array, isLoading, and error states
  *
  * @example
- * const { lensAccount, isLoading, error } = useFetchLensAccounts(wallet?.address);
+ * const { lensAccounts, isLoading, error } = useFetchLensAccounts(wallet?.address);
  *
  * if (isLoading) return <Spinner />;
  * if (error) return <Error message={error.message} />;
- * if (lensAccount) return <Profile account={lensAccount} />;
+ * if (lensAccounts.length > 0) return <AccountList accounts={lensAccounts} />;
  */
 export function useFetchLensAccounts(
 	walletAddress: string | undefined,
 ): UseFetchLensAccountsReturn {
-	const [lensAccount, setLensAccount] = useState<LensAccount | undefined>(
-		undefined,
-	);
-	const [isLoading, setIsLoading] = useState(false);
+	const [lensAccounts, setLensAccounts] = useState<LensAccount[]>([]);
+	const [isLoading, setIsLoading] = useState(true);
 	const [error, setError] = useState<Error | null>(null);
 
 	useEffect(() => {
 		// Early return if no wallet address
 		if (!walletAddress) {
-			setLensAccount(undefined);
-			setIsLoading(false);
-			setError(null);
+			// setLensAccounts([]);
+			// setIsLoading(false);
+			// setError(null);
+
+			console.log("EARLY RETURN");
 			return;
 		}
 
 		const fetchLensAccount = async () => {
+			console.log("FETCHING_LENS");
 			setIsLoading(true);
 			setError(null);
 
@@ -68,38 +69,43 @@ export function useFetchLensAccounts(
 				});
 
 				if (result.isOk() && result.value.items.length > 0) {
-					const accountManaged = result.value.items[0];
-					const account = accountManaged.account;
+					// Map all accounts instead of just the first one
+					const accounts = result.value.items.map((accountManaged) => {
+						const account = accountManaged.account;
 
-					setLensAccount({
-						address: account.address,
-						username: account.username?.localName || account.address,
-						metadata: account.metadata
-							? {
-									name: account.metadata.name || undefined,
-									bio: account.metadata.bio || undefined,
-									picture: account.metadata.picture || undefined,
-								}
-							: undefined,
+						return {
+							address: account.address,
+							username: account.username?.localName || account.address,
+							metadata: account.metadata
+								? {
+										name: account.metadata.name || undefined,
+										bio: account.metadata.bio || undefined,
+										picture: account.metadata.picture || undefined,
+									}
+								: undefined,
+						};
 					});
+
+					setLensAccounts(accounts);
+					setIsLoading(false);
 				} else {
-					setLensAccount(undefined);
+					setLensAccounts([]);
 				}
 			} catch (err) {
 				const errorMessage =
 					err instanceof Error
 						? err
-						: new Error("Failed to fetch Lens account");
-				console.error("Error fetching Lens account:", errorMessage);
+						: new Error("Failed to fetch Lens accounts");
+				console.error("Error fetching Lens accounts:", errorMessage);
 				setError(errorMessage);
-				setLensAccount(undefined);
-			} finally {
+				setLensAccounts([]);
 				setIsLoading(false);
+			} finally {
 			}
 		};
 
 		fetchLensAccount();
 	}, [walletAddress]);
 
-	return { lensAccount, isLoading, error };
+	return { lensAccounts, isLoading, error };
 }

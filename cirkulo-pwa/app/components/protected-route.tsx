@@ -11,7 +11,7 @@ import { Loader2 } from "lucide-react";
  * - Shows loading state while checking authentication
  * - Post-authentication routing handled by AuthContext
  */
-export function ProtectedRoute() {
+export default function ProtectedRoute() {
   const { user, isLoading } = useAuth();
 
   // Show loading state while checking authentication

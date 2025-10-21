@@ -2,8 +2,9 @@ import { XershaLogo } from "app/components/xersha-logo";
 import { UserAvatar } from "app/components/ui/user-avatar";
 import { Button } from "app/components/ui/button";
 import { DesktopNav } from "app/components/ui/desktop-nav";
-import { Bell, Plus } from "lucide-react";
+import { Bell, Plus, LogOut } from "lucide-react";
 import type { User } from "app/context/auth-context";
+import { useAuth } from "app/context/auth-context";
 
 export interface AppHeaderProps {
   user: User;
@@ -20,6 +21,8 @@ export function AppHeader({
   onProfileClick,
   onNewContribution,
 }: AppHeaderProps) {
+  const { logout } = useAuth();
+
   return (
     <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-neutral-200 shadow-sm">
       <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8">
@@ -62,6 +65,17 @@ export function AppHeader({
             >
               <Plus className="size-4" />
               New Contribution
+            </Button>
+
+            {/* Logout - Hidden on mobile */}
+            <Button
+              variant="ghost"
+              size="sm"
+              className="hidden md:inline-flex"
+              onClick={logout}
+            >
+              <LogOut className="size-4" />
+              Logout
             </Button>
 
             {/* Profile Avatar */}

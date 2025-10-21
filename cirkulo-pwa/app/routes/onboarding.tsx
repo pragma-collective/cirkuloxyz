@@ -93,39 +93,36 @@ export default function Onboarding() {
 	// Authenticate as onboarding user when page loads
 	useEffect(() => {
 		const authenticateUser = async () => {
-			console.log("test", primaryWallet, APP_ADDRESS);
-			if (!primaryWallet || !APP_ADDRESS) {
+			if (primaryWallet || APP_ADDRESS) {
 				console.log("[Onboarding] Waiting for wallet connection");
-				return;
-			}
+				setIsAuthenticating(true);
+				setAuthError(null);
 
-			setIsAuthenticating(true);
-			setAuthError(null);
-
-			try {
-				// @ts-expect-error - getWalletClient exists at runtime but not in type definition
-				const walletClient = await primaryWallet.getWalletClient();
-				const result = await authenticateAsOnboardingUser(
-					primaryWallet.address,
-					APP_ADDRESS,
-					walletClient,
-				);
-
-				if (result.sessionClient) {
-					setSessionClient(result.sessionClient);
-					console.log("[Onboarding] Successfully authenticated");
-				} else {
-					const errorMsg = result.error?.message || "Authentication failed";
-					setAuthError(errorMsg);
-					console.error("[Onboarding] Authentication failed:", result.error);
-				}
-			} catch (err) {
-				const errorMsg =
-					err instanceof Error ? err.message : "Authentication failed";
-				setAuthError(errorMsg);
-				console.error("[Onboarding] Authentication error:", err);
-			} finally {
-				setIsAuthenticating(false);
+				//try {
+				//	// @ts-expect-error - getWalletClient exists at runtime but not in type definition
+				//	const walletClient = await primaryWallet.getWalletClient();
+				//	const result = await authenticateAsOnboardingUser(
+				//		primaryWallet.address,
+				//		APP_ADDRESS,
+				//		walletClient,
+				//	);
+				//
+				//	if (result.sessionClient) {
+				//		setSessionClient(result.sessionClient);
+				//		console.log("[Onboarding] Successfully authenticated");
+				//	} else {
+				//		const errorMsg = result.error?.message || "Authentication failed";
+				//		setAuthError(errorMsg);
+				//		console.error("[Onboarding] Authentication failed:", result.error);
+				//	}
+				//} catch (err) {
+				//	const errorMsg =
+				//		err instanceof Error ? err.message : "Authentication failed";
+				//	setAuthError(errorMsg);
+				//	console.error("[Onboarding] Authentication error:", err);
+				//} finally {
+				//	setIsAuthenticating(false);
+				//}
 			}
 		};
 

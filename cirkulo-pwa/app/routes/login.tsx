@@ -33,13 +33,13 @@ export default function Login() {
 			const user = await login();
 
 			// Navigate based on Lens account status
-			if (!user.hasLensAccount) {
-				// User has Dynamic wallet but no Lens account → onboarding
-				navigate("/onboarding");
-			} else {
-				// User has both Dynamic wallet and Lens account → dashboard
-				navigate("/dashboard");
-			}
+			//if (!user.hasLensAccount) {
+			//	// User has Dynamic wallet but no Lens account → onboarding
+			//	navigate("/onboarding");
+			//} else {
+			//	// User has both Dynamic wallet and Lens account → dashboard
+			//	navigate("/dashboard");
+			//}
 		} catch (error) {
 			console.error("Sign in failed:", error);
 		}
