@@ -1,11 +1,14 @@
 # Task
 
-The next flow we're going to integrate is the "No lens profile" flow that shows the onboarding page.
-The onboarding page is where we're going to mint the lens profile for the user. 
+Next task we're going to work on is the auth scenario where users have an existing lens account.
 
-Use the lens.txt file for implementation details for "Creating a user".
+A user may have 0 - many lens account. We already handled the 0 / no lens account when we redirect them to the onboarding
 
-I've create a create-lens-account.ts hook, this is where we'll put all the code related to minting a 
-lens profile
+Now we're going to handle the scenario where a user has one or more lens profile. We need a page to redirect them
+and show the available accounts, so they can choose which account to authenticate into.
 
-frontend-developer to implement code
+It should look good if user has only one account and accounts should be properly displayed if the user has multiple
+
+It should display the photo and username of each account in the page and a button to select that profile and authenticate as account owner
+
+ui-ux-designer to design the page and frontend-developer to implement code

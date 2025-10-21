@@ -10,11 +10,14 @@ import {
 } from "react";
 import { useNavigate, useLocation } from "react-router";
 import { useDynamicContext } from "@dynamic-labs/sdk-react-core";
+import type { SessionClient } from "@lens-protocol/client";
+import { lensClient } from "app/lib/lens";
 import { authEvents } from "app/lib/auth-events";
 import {
 	useFetchLensAccounts,
 	type LensAccount,
 } from "app/hooks/fetch-lens-accounts";
+import { authenticateAsAccountOwner } from "app/hooks/authenticate-account";
 
 // Re-export LensAccount for backward compatibility
 export type { LensAccount };
@@ -27,6 +30,7 @@ export interface User {
 	bio?: string;
 	walletAddress?: string;
 	lensAccount?: LensAccount;
+	lensAccounts: LensAccount[];
 	hasLensAccount: boolean;
 }
 
@@ -34,8 +38,13 @@ export interface User {
 export interface AuthContextType {
 	user: User | null;
 	isLoading: boolean;
+	sessionClient: SessionClient | null;
+	setSessionClient: (client: SessionClient | null) => void;
 	login: () => Promise<User>;
 	logout: () => void;
+	selectAccount: (
+		account: LensAccount,
+	) => Promise<{ success: boolean; error?: string }>;
 }
 
 // Create context with undefined default
@@ -60,12 +69,66 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 	// Store pending login promise resolver
 	const loginResolverRef = useRef<((user: User) => void) | null>(null);
 
-	// Fetch Lens account for the connected wallet
+	// Lens session state
+	const [sessionClient, setSessionClient] = useState<SessionClient | null>(
+		null,
+	);
+
+	// Fetch all Lens accounts for the connected wallet
 	const {
-		lensAccount,
+		lensAccounts,
 		isLoading: isCheckingLens,
 		error: lensError,
 	} = useFetchLensAccounts(primaryWallet?.address);
+
+	// Track selected account (defaults to first account if only one)
+	const [selectedAccount, setSelectedAccount] = useState<
+		LensAccount | undefined
+	>(undefined);
+
+	// Auto-select first account if user has exactly one
+	useEffect(() => {
+		if (lensAccounts.length === 1) {
+			setSelectedAccount(lensAccounts[0]);
+		} else if (lensAccounts.length === 0) {
+			setSelectedAccount(undefined);
+		}
+		// Don't auto-select if multiple accounts - user must choose
+	}, [lensAccounts]);
+
+	// Resume Lens session from localStorage when user is authenticated
+	useEffect(() => {
+		// Only attempt to resume session if user is authenticated with Dynamic
+		if (!isAuthenticated) {
+			return;
+		}
+
+		const resumeSession = async () => {
+			try {
+				console.log("[AuthContext] Resuming Lens session...");
+				const resumed = await lensClient.resumeSession();
+
+				if (resumed.isOk()) {
+					setSessionClient(resumed.value);
+					console.log("[AuthContext] Lens session resumed successfully");
+				} else {
+					// Non-blocking error - user might not have Lens account yet
+					console.log(
+						"[AuthContext] No active Lens session:",
+						resumed.error.message || "No session found",
+					);
+				}
+			} catch (err) {
+				// Non-blocking error - user might not have Lens account yet
+				console.error(
+					"[AuthContext] Session resume error:",
+					err instanceof Error ? err.message : "Failed to resume session",
+				);
+			}
+		};
+
+		resumeSession();
+	}, [isAuthenticated]);
 
 	// Map Dynamic user to our User interface
 	const user: User | null = useMemo(() => {
@@ -74,13 +137,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 		return {
 			id: dynamicUser.userId || primaryWallet?.address || "unknown",
 			walletAddress: primaryWallet?.address,
-			name: lensAccount?.metadata?.name,
-			lensUsername: lensAccount?.username,
-			bio: lensAccount?.metadata?.bio,
-			lensAccount,
-			hasLensAccount: Boolean(lensAccount),
+			name: selectedAccount?.metadata?.name,
+			lensUsername: selectedAccount?.username,
+			bio: selectedAccount?.metadata?.bio,
+			lensAccount: selectedAccount,
+			lensAccounts,
+			hasLensAccount: lensAccounts.length > 0,
 		};
-	}, [isAuthenticated, dynamicUser, primaryWallet, lensAccount]);
+	}, [
+		isAuthenticated,
+		dynamicUser,
+		primaryWallet,
+		selectedAccount,
+		lensAccounts,
+	]);
 
 	// When user becomes available, resolve pending login promise
 	useEffect(() => {
@@ -93,65 +163,49 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
 	// Handle post-authentication navigation
 	useEffect(() => {
-		// Skip if still loading Lens account data
-		if (isCheckingLens) return;
+		console.log("LENS ACCOUNT", isCheckingLens, lensAccounts, !isAuthenticated);
+		if (isCheckingLens || !isAuthenticated) return;
 
-		// Skip if not authenticated
-		if (!user) return;
+		if (sessionClient) return; // user already has selected account
 
-		// Skip if already on dashboard or onboarding (destination pages)
+		// Determine which page user should be on based on account count
+		const shouldBeOnOnboarding = lensAccounts.length === 0;
+		const shouldBeOnSelectAccount = lensAccounts.length >= 2;
+		const shouldBeOnDashboard = lensAccounts.length === 1;
+
+		console.log("shouldBeOnOnboarding", shouldBeOnOnboarding);
+		// Skip if already on correct destination page
 		if (
-			location.pathname === "/dashboard" ||
-			location.pathname === "/onboarding"
+			(location.pathname === "/dashboard" && shouldBeOnDashboard) ||
+			(location.pathname === "/onboarding" && shouldBeOnOnboarding) ||
+			(location.pathname === "/select-account" && shouldBeOnSelectAccount)
 		) {
-			return;
-		}
-
-		// Skip navigation for other protected routes (let them render)
-		// Only auto-redirect from public pages like /login or /
-		const isPublicPage =
-			location.pathname === "/" ||
-			location.pathname === "/login" ||
-			location.pathname === "/logo-showcase";
-
-		if (!isPublicPage) {
+			console.log("HERE");
 			return;
 		}
 
 		// Navigate based on Lens account status
-		if (!user.hasLensAccount) {
-			// No Lens account → redirect to onboarding
+		if (lensAccounts.length === 0) {
+			// No Lens accounts → redirect to onboarding
 			navigate("/onboarding", { replace: true });
-		} else {
-			// Has Lens account → redirect to dashboard
+		} else if (lensAccounts.length === 1) {
+			// One Lens account → auto-select and redirect to dashboard
 			navigate("/dashboard", { replace: true });
+		} else {
+			// Multiple Lens accounts → redirect to account selection
+			navigate("/select-account", { replace: true });
 		}
-	}, [user, isCheckingLens, location.pathname, navigate]);
+	}, [user, isCheckingLens, location.pathname, navigate, lensAccounts]);
 
 	// Handle session expiration / logout
 	useEffect(() => {
 		const handleLogout = () => {
-			console.log("[Auth] Logout event received, current path:", location.pathname);
-
-			// Check if user is on a protected route
-			const protectedRoutes = [
-				"/dashboard",
-				"/onboarding",
-				"/explore",
-				"/create-circle",
-				"/profile",
-				"/circle",
-			];
-
-			const isOnProtectedRoute = protectedRoutes.some((route) =>
-				location.pathname.startsWith(route),
+			console.log(
+				"[Auth] Logout event received, current path:",
+				location.pathname,
 			);
 
-			// Redirect to login if on protected route
-			if (isOnProtectedRoute) {
-				console.log("[Auth] Redirecting to login due to session expiration");
-				navigate("/login", { replace: true });
-			}
+			navigate("/login", { replace: true });
 		};
 
 		// Listen for logout events (including session expiration)
@@ -190,19 +244,145 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 	}, [setShowAuthFlow]);
 
 	// Logout function
-	const logout = useCallback(() => {
+	const logout = useCallback(async () => {
+		// First, log out of Lens session if it exists
+		if (sessionClient) {
+			try {
+				console.log("[AuthContext] Logging out of Lens session...");
+				const result = await sessionClient.logout();
+
+				if (result.isOk()) {
+					console.log("[AuthContext] Lens logout successful");
+				} else {
+					console.error("[AuthContext] Lens logout failed:", result.error);
+				}
+			} catch (err) {
+				console.error(
+					"[AuthContext] Lens logout error:",
+					err instanceof Error ? err.message : "Unknown error",
+				);
+			}
+		}
+
+		// Then log out of Dynamic wallet session
 		handleLogOut();
 		setIsLoading(false);
-	}, [handleLogOut]);
+		setSelectedAccount(undefined);
+		setSessionClient(null);
+	}, [handleLogOut, sessionClient]);
+
+	// Select account function - authenticates with Lens as account owner
+	const selectAccount = useCallback(
+		async (
+			account: LensAccount,
+		): Promise<{ success: boolean; error?: string }> => {
+			// Check if primaryWallet is available
+			if (!primaryWallet) {
+				console.error(
+					"[AuthContext] Cannot select account: No wallet connected",
+				);
+				return {
+					success: false,
+					error: "No wallet connected. Please try logging in again.",
+				};
+			}
+
+			// Get app address from environment variable
+			const appAddress = import.meta.env.VITE_LENS_APP_ADDRESS;
+			if (!appAddress) {
+				console.error(
+					"[AuthContext] Cannot select account: VITE_LENS_APP_ADDRESS not configured",
+				);
+				return {
+					success: false,
+					error: "App configuration error. Please contact support.",
+				};
+			}
+
+			try {
+				console.log(
+					"[AuthContext] Authenticating as account owner:",
+					account.address,
+				);
+
+				// Get wallet client for signing
+				// @ts-expect-error - getWalletClient exists at runtime but not in type definition
+				const walletClient = await primaryWallet.getWalletClient();
+				if (!walletClient) {
+					return {
+						success: false,
+						error: "Could not access wallet client. Please try again.",
+					};
+				}
+
+				// Authenticate with Lens as account owner
+				const authResult = await authenticateAsAccountOwner(
+					account.address,
+					primaryWallet.address,
+					appAddress,
+					walletClient,
+				);
+
+				if (authResult.error) {
+					console.error(
+						"[AuthContext] Authentication failed:",
+						authResult.error,
+					);
+					return {
+						success: false,
+						error:
+							authResult.error.message ||
+							"Failed to authenticate with selected account",
+					};
+				}
+
+				console.log(
+					"[AuthContext] Successfully authenticated as account owner:",
+					account.address,
+				);
+
+				// Update session client with the new authenticated session
+				if (authResult.sessionClient) {
+					setSessionClient(authResult.sessionClient);
+				}
+
+				// Only update selected account if authentication succeeded
+				setSelectedAccount(account);
+
+				return { success: true };
+			} catch (err) {
+				console.error("[AuthContext] Select account error:", err);
+				return {
+					success: false,
+					error:
+						err instanceof Error
+							? err.message
+							: "Failed to authenticate with selected account",
+				};
+			}
+		},
+		[primaryWallet],
+	);
 
 	const value = useMemo(
 		() => ({
 			user,
 			isLoading,
+			sessionClient,
+			setSessionClient,
 			login,
 			logout,
+			selectAccount,
 		}),
-		[user, isLoading, login, logout],
+		[
+			user,
+			isLoading,
+			sessionClient,
+			setSessionClient,
+			login,
+			logout,
+			selectAccount,
+		],
 	);
 
 	return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

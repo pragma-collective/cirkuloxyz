@@ -25,9 +25,8 @@ import {
 } from "lucide-react";
 import { cn } from "app/lib/utils";
 import { useDynamicContext } from "@dynamic-labs/sdk-react-core";
-import { type SessionClient } from "app/hooks/create-lens-account";
+import { useAuth } from "app/context/auth-context";
 import { useCreateLensGroup } from "app/hooks/create-lens-group";
-import { lensClient } from "app/lib/lens";
 
 export function meta({}: Route.MetaArgs) {
   return [
@@ -60,12 +59,8 @@ interface FormData {
 export default function CreateCircle() {
   const navigate = useNavigate();
   const { primaryWallet } = useDynamicContext();
+  const { sessionClient } = useAuth();
   const { createGroup, isCreating, error: groupCreationError } = useCreateLensGroup();
-
-  // Session state for authentication
-  const [sessionClient, setSessionClient] = useState<SessionClient | null>(null);
-  const [isAuthenticating, setIsAuthenticating] = useState(false);
-  const [authError, setAuthError] = useState<string | null>(null);
 
   // Form state
   const [formData, setFormData] = useState<FormData>({
@@ -170,36 +165,6 @@ export default function CreateCircle() {
         return undefined;
     }
   };
-
-  // Resume existing Lens session when component mounts
-  useEffect(() => {
-    const resumeSession = async () => {
-      setIsAuthenticating(true);
-      setAuthError(null);
-
-      try {
-        console.log("[CreateCircle] Resuming Lens session...");
-        const resumed = await lensClient.resumeSession();
-
-        if (resumed.isOk()) {
-          setSessionClient(resumed.value);
-          console.log("[CreateCircle] Session resumed successfully");
-        } else {
-          const errorMsg = resumed.error.message || "No active session found";
-          setAuthError(errorMsg);
-          console.error("[CreateCircle] Session resume failed:", resumed.error);
-        }
-      } catch (err) {
-        const errorMsg = err instanceof Error ? err.message : "Failed to resume session";
-        setAuthError(errorMsg);
-        console.error("[CreateCircle] Session resume error:", err);
-      } finally {
-        setIsAuthenticating(false);
-      }
-    };
-
-    resumeSession();
-  }, []); // No dependencies - only run once on mount
 
   // Handle input field change
   const handleChange = (
@@ -421,24 +386,6 @@ export default function CreateCircle() {
             </CardHeader>
 
             <CardContent>
-              {/* Authentication status */}
-              {isAuthenticating && (
-                <div className="mb-6 p-4 bg-primary-50 border border-primary-200 rounded-lg flex items-center gap-3">
-                  <Loader2 className="size-5 text-primary-600 animate-spin" />
-                  <p className="text-sm text-primary-700">Authenticating...</p>
-                </div>
-              )}
-
-              {authError && (
-                <div className="mb-6 p-4 bg-error-50 border border-error-200 rounded-lg flex items-start gap-3">
-                  <AlertCircle className="size-5 text-error-600 shrink-0 mt-0.5" />
-                  <div className="flex-1">
-                    <p className="text-sm font-medium text-error-700">Authentication Error</p>
-                    <p className="text-sm text-error-600 mt-1">{authError}</p>
-                  </div>
-                </div>
-              )}
-
               <form onSubmit={handleSubmit} className="space-y-6">
                 {/* Circle Name */}
                 <FormField
@@ -580,7 +527,7 @@ export default function CreateCircle() {
                     isSuccess &&
                       "bg-success-600 hover:bg-success-600 active:bg-success-600"
                   )}
-                  disabled={isSubmitting || isSuccess || isAuthenticating || !!authError}
+                  disabled={isSubmitting || isSuccess || !sessionClient}
                 >
                   {isSubmitting ? (
                     <>
@@ -592,11 +539,8 @@ export default function CreateCircle() {
                       <CheckCircle2 className="size-5" />
                       Group Created!
                     </>
-                  ) : isAuthenticating ? (
-                    <>
-                      <Loader2 className="size-5 animate-spin" />
-                      Authenticating...
-                    </>
+                  ) : !sessionClient ? (
+                    "Waiting for authentication..."
                   ) : (
                     "Create Circle"
                   )}

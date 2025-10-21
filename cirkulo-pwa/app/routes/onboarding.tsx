@@ -29,9 +29,9 @@ import {
 	authenticateAsOnboardingUser,
 	checkUsername,
 	useCreateLensAccount,
-	type SessionClient,
 } from "app/hooks/create-lens-account";
 import { useDynamicContext } from "@dynamic-labs/sdk-react-core";
+import { useAuth } from "app/context/auth-context";
 import {
 	onboardingSchema,
 	type OnboardingFormData,
@@ -53,12 +53,10 @@ export function meta({}: Route.MetaArgs) {
 export default function Onboarding() {
 	const navigate = useNavigate();
 	const { primaryWallet } = useDynamicContext();
+	const { sessionClient, setSessionClient } = useAuth();
 	const { createAccount, isCreating } = useCreateLensAccount();
 
-	// Session state for early authentication
-	const [sessionClient, setSessionClient] = useState<SessionClient | null>(
-		null,
-	);
+	// Authentication state
 	const [isAuthenticating, setIsAuthenticating] = useState(false);
 	const [authError, setAuthError] = useState<string | null>(null);
 
@@ -93,9 +91,13 @@ export default function Onboarding() {
 	// Authenticate as onboarding user when page loads
 	useEffect(() => {
 		const authenticateUser = async () => {
-			console.log("test", primaryWallet, APP_ADDRESS);
 			if (!primaryWallet || !APP_ADDRESS) {
 				console.log("[Onboarding] Waiting for wallet connection");
+				return;
+			}
+
+			// Skip if already authenticated
+			if (sessionClient) {
 				return;
 			}
 
@@ -112,6 +114,7 @@ export default function Onboarding() {
 				);
 
 				if (result.sessionClient) {
+					// Store in context so it's available globally
 					setSessionClient(result.sessionClient);
 					console.log("[Onboarding] Successfully authenticated");
 				} else {
@@ -130,7 +133,7 @@ export default function Onboarding() {
 		};
 
 		authenticateUser();
-	}, [primaryWallet]);
+	}, [primaryWallet, sessionClient, setSessionClient]);
 
 	// Handle username blur for real-time availability check
 	const handleUsernameBlur = async (e: React.FocusEvent<HTMLInputElement>) => {
