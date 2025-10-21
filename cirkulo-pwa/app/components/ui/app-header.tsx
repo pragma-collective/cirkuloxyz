@@ -67,15 +67,15 @@ export function AppHeader({
               New Contribution
             </Button>
 
-            {/* Logout - Hidden on mobile */}
+            {/* Logout - Icon only, visible on all screens */}
             <Button
               variant="ghost"
-              size="sm"
-              className="hidden md:inline-flex"
+              size="icon"
+              className="inline-flex"
               onClick={logout}
+              aria-label="Logout"
             >
-              <LogOut className="size-4" />
-              Logout
+              <LogOut className="size-5" />
             </Button>
 
             {/* Profile Avatar */}
