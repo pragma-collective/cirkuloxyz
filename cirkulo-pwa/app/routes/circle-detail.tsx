@@ -6,6 +6,7 @@ import { CircleHero } from "app/components/circle/circle-hero";
 import { CircleProgress } from "app/components/circle/circle-progress";
 import { CircleActivityFeed } from "app/components/circle/circle-activity-feed";
 import { UserAvatar } from "app/components/ui/user-avatar";
+import { InviteModal } from "app/components/circle/invite-modal";
 import { mockCircles, mockCircleActivity } from "app/lib/mock-data";
 import type { FeedItem } from "app/types/feed";
 import { Home, Compass, PlusCircle, Bell, User } from "lucide-react";
@@ -63,6 +64,7 @@ export default function CircleDetail({ loaderData }: Route.ComponentProps) {
 	// State management
 	const [activityItems, setActivityItems] =
 		useState<FeedItem[]>(mockCircleActivity);
+	const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
 
 	// Convert Lens group to Circle format
 	const circle = useMemo(() => {
@@ -101,9 +103,8 @@ export default function CircleDetail({ loaderData }: Route.ComponentProps) {
 
 	// Handle invite action
 	const handleInvite = useCallback(() => {
-		console.log("Invite friends to circle:", circleId);
-		// TODO: Implement invite modal/flow
-	}, [circleId]);
+		setIsInviteModalOpen(true);
+	}, []);
 
 	// Handle share action
 	const handleShare = useCallback(() => {
@@ -219,7 +220,7 @@ export default function CircleDetail({ loaderData }: Route.ComponentProps) {
 	}
 
 	// Check if user is a member (mock: always true for circles in mockCircles)
-	const isMember = mockCircles.some((c) => c.id === circleId);
+	const isMember = true;// mockCircles.some((c) => c.id === circleId);
 
 	return (
 		<AuthenticatedLayout
@@ -237,6 +238,14 @@ export default function CircleDetail({ loaderData }: Route.ComponentProps) {
 				onShare={handleShare}
 				onJoin={handleJoin}
 				isMember={isMember}
+			/>
+
+			{/* Invite Modal */}
+			<InviteModal
+				isOpen={isInviteModalOpen}
+				onClose={() => setIsInviteModalOpen(false)}
+				circleName={circle.name}
+				circleId={circleId!}
 			/>
 
 			{/* Main Content */}
