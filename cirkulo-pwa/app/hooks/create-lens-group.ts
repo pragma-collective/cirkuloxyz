@@ -1,6 +1,6 @@
 import { group, GroupMetadataSchema } from "@lens-protocol/metadata";
 import { createGroup, fetchGroup } from "@lens-protocol/client/actions";
-import { uri, evmAddress } from "@lens-protocol/client";
+import { uri, evmAddress, GroupRuleExecuteOn } from "@lens-protocol/client";
 import { handleOperationWith } from "@lens-protocol/client/viem";
 import { storageClient } from "../lib/grove-storage";
 import type { SessionClient } from "@lens-protocol/client";
@@ -96,11 +96,36 @@ export async function createLensGroup(
 
     console.log("[CreateLensGroup] Metadata uploaded:", metadataUri);
 
-    // Step 3: Deploy group contract and fetch created group
-    console.log("[CreateLensGroup] Creating group on-chain...");
+    // Step 3: Configure custom invite rule
+    const ruleContractAddress = import.meta.env.VITE_LENS_INVITE_RULE_CONTRACT_ADDRESS;
+    
+    if (!ruleContractAddress) {
+      console.error("[CreateLensGroup] VITE_LENS_INVITE_RULE_CONTRACT_ADDRESS not configured");
+      return {
+        success: false,
+        error: "Invite rule contract address not configured",
+      };
+    }
+
+    console.log("[CreateLensGroup] Using invite rule contract:", ruleContractAddress);
+
+    // Step 4: Deploy group contract with custom invite rule
+    console.log("[CreateLensGroup] Creating group on-chain with custom rule...");
     const createResult = await createGroup(sessionClient, {
       metadataUri: uri(metadataUri),
       owner: evmAddress(ownerAddress),
+      rules: {
+        required: [
+          {
+            unknownRule: {
+              address: evmAddress(ruleContractAddress),
+              executeOn: [GroupRuleExecuteOn.Joining],
+              params: [], // Empty rule params for initial configuration
+            },
+          },
+        ],
+        anyOf: [],
+      },
     })
       .andThen(handleOperationWith(walletClient))
       .andThen(sessionClient.waitForTransaction)
