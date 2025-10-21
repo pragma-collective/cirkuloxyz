@@ -4,9 +4,11 @@ FROM node:22-alpine AS builder
 # Set working directory
 WORKDIR /app
 
-# Accept build argument for Dynamic environment ID
+# Accept build arguments for environment variables
 ARG VITE_DYNAMIC_ENVIRONMENT_ID
+ARG VITE_LENS_APP_ADDRESS
 ENV VITE_DYNAMIC_ENVIRONMENT_ID=$VITE_DYNAMIC_ENVIRONMENT_ID
+ENV VITE_LENS_APP_ADDRESS=$VITE_LENS_APP_ADDRESS
 
 # Copy package files
 COPY package.json package-lock.json* ./

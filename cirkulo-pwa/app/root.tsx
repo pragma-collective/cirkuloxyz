@@ -75,6 +75,10 @@ export function Layout({ children }: { children: React.ReactNode }) {
                 onAuthSuccess: () => {
                   authEvents.emit("authSuccess");
                 },
+                onLogout: (user) => {
+                  console.log("[Dynamic] User logged out:", user ? "user present" : "no user");
+                  authEvents.emit("logout");
+                },
               },
             }}
           >

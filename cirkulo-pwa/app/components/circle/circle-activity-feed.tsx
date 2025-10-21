@@ -1,4 +1,4 @@
-import * as React from "react";
+import { useState, useMemo } from "react";
 import type { FeedItem } from "app/types/feed";
 import { Card, CardContent, CardHeader, CardTitle } from "app/components/ui/card";
 import { Button } from "app/components/ui/button";
@@ -20,10 +20,10 @@ export function CircleActivityFeed({
   onComment,
   className,
 }: CircleActivityFeedProps) {
-  const [filter, setFilter] = React.useState<ActivityFilter>("all");
+  const [filter, setFilter] = useState<ActivityFilter>("all");
 
   // Filter items based on selected filter
-  const filteredItems = React.useMemo(() => {
+  const filteredItems = useMemo(() => {
     if (filter === "all") return items;
     if (filter === "contributions") {
       return items.filter((item) => item.type === "contribution");

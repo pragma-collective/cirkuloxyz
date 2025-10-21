@@ -1,12 +1,11 @@
 # Task
 
-Now we have dynamic integrated, we're only gonna use it for its embedded wallets for our users.
-The actual authentication will utilize lens accounts. Once we have a dynamic user account and its address,
-we can check if it has an existing lens account, if yes, we go to the dashboard, if not we'll show the onboarding screen.
+The next flow we're going to integrate is the "No lens profile" flow that shows the onboarding page.
+The onboarding page is where we're going to mint the lens profile for the user. 
 
-Also now we have a working authentication. Let's create a wrapper component what handles the authentication logic / checks
-for pages that requires authentication. You can check the docs https://reactrouter.com/start/framework/routing.
+Use the lens.txt file for implementation details for "Creating a user".
 
-As for the lens docs, you can read docs/lens.txt
+I've create a create-lens-account.ts hook, this is where we'll put all the code related to minting a 
+lens profile
 
 frontend-developer to implement code

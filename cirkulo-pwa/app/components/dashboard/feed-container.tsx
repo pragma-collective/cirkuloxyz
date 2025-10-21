@@ -1,4 +1,4 @@
-import * as React from "react";
+import { useState } from "react";
 import { Button } from "app/components/ui/button";
 import { Filter, ChevronDown } from "lucide-react";
 import { ContributionItem } from "./feed-items/contribution-item";
@@ -33,7 +33,7 @@ export function FeedContainer({
   onComment,
   onShare,
 }: FeedContainerProps) {
-  const [showFilterMenu, setShowFilterMenu] = React.useState(false);
+  const [showFilterMenu, setShowFilterMenu] = useState(false);
 
   const handleFilterClick = (newFilter: FeedFilter) => {
     onFilterChange?.(newFilter);

@@ -1,4 +1,4 @@
-import * as React from "react";
+import { useMemo, useCallback } from "react";
 import type { Route } from "./+types/circle-members";
 import { useNavigate, useParams } from "react-router";
 import { AuthenticatedLayout } from "app/components/layouts/authenticated-layout";
@@ -31,19 +31,19 @@ export default function CircleMembersPage() {
 	const circleId = params.id;
 
 	// Find the circle from mock data
-	const circle = React.useMemo(() => {
+	const circle = useMemo(() => {
 		const allCircles = [...mockCircles, ...mockPublicCircles];
 		return allCircles.find((c) => c.id === circleId);
 	}, [circleId]);
 
 	// Handle invite action
-	const handleInvite = React.useCallback(() => {
+	const handleInvite = useCallback(() => {
 		console.log("Invite friends to circle:", circleId);
 		// TODO: Implement invite modal/flow
 	}, [circleId]);
 
 	// Handle member click
-	const handleMemberClick = React.useCallback((userId: string) => {
+	const handleMemberClick = useCallback((userId: string) => {
 		console.log("View member profile:", userId);
 		// TODO: Navigate to member profile
 	}, []);

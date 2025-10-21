@@ -1,4 +1,4 @@
-import * as React from "react";
+import { useMemo } from "react";
 import type { Circle } from "app/types/feed";
 import { Card, CardContent, CardHeader, CardTitle } from "app/components/ui/card";
 import { Trophy, Target } from "lucide-react";
@@ -21,7 +21,7 @@ export function CircleProgress({ circle, className }: CircleProgressProps) {
   };
 
   // Calculate next milestone
-  const nextMilestone = React.useMemo(() => {
+  const nextMilestone = useMemo(() => {
     const milestones = [25, 50, 75, 100];
     const current = circle.progress;
     const next = milestones.find((m) => m > current);

@@ -12,17 +12,16 @@ import type {
 
 // Mock users
 export const mockUsers: User[] = [
-  { id: "user1", hasProfile: true, name: "Alex Chen", hasLensAccount: true },
-  { id: "user2", hasProfile: true, name: "Sarah Johnson", hasLensAccount: true },
-  { id: "user3", hasProfile: true, name: "Mike Rodriguez", hasLensAccount: true },
-  { id: "user4", hasProfile: true, name: "Emma Thompson", hasLensAccount: true },
-  { id: "user5", hasProfile: true, name: "David Kim", hasLensAccount: true },
+  { id: "user1", name: "Alex Chen", hasLensAccount: true },
+  { id: "user2", name: "Sarah Johnson", hasLensAccount: true },
+  { id: "user3", name: "Mike Rodriguez", hasLensAccount: true },
+  { id: "user4", name: "Emma Thompson", hasLensAccount: true },
+  { id: "user5", name: "David Kim", hasLensAccount: true },
 ];
 
 // Mock current user (logged in user)
 export const mockCurrentUser: User = {
   id: "current-user",
-  hasProfile: true,
   name: "Alex Chen",
   lensUsername: "alexchen",
   bio: "Saving for adventures and helping friends reach their goals. Passionate about community-driven finance and Bitcoin.",

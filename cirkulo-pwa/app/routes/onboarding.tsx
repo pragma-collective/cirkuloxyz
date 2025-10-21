@@ -1,489 +1,555 @@
-import * as React from "react";
+import React, { useState, useEffect } from "react";
 import type { Route } from "./+types/onboarding";
 import { useNavigate } from "react-router";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { XershaLogo } from "app/components/xersha-logo";
 import { Button } from "app/components/ui/button";
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
+	Card,
+	CardContent,
+	CardDescription,
+	CardHeader,
+	CardTitle,
 } from "app/components/ui/card";
-import { useAuth } from "app/context/auth-context";
+import { ProfilePhotoUpload } from "app/components/ui/profile-photo-upload";
 import {
-  CheckCircle2,
-  Loader2,
-  Info,
-  AlertCircle,
-  User,
-  AtSign,
-  FileText,
+	CheckCircle2,
+	Loader2,
+	Info,
+	AlertCircle,
+	User,
+	AtSign,
+	FileText,
 } from "lucide-react";
 import { cn } from "app/lib/utils";
+import { storageClient } from "app/lib/grove-storage";
+import { account } from "@lens-protocol/metadata";
+import {
+	authenticateAsOnboardingUser,
+	checkUsername,
+	useCreateLensAccount,
+	type SessionClient,
+} from "app/hooks/create-lens-account";
+import { useDynamicContext } from "@dynamic-labs/sdk-react-core";
+import {
+	onboardingSchema,
+	type OnboardingFormData,
+} from "app/schemas/onboarding-schema";
+
+// Lens Protocol app address from environment variable
+const APP_ADDRESS = import.meta.env.VITE_LENS_APP_ADDRESS;
 
 export function meta({}: Route.MetaArgs) {
-  return [
-    { title: "Complete Your Profile - Xersha" },
-    {
-      name: "description",
-      content: "Create your Xersha profile to start saving with friends",
-    },
-  ];
-}
-
-// Form field validation errors
-interface FormErrors {
-  name?: string;
-  lensUsername?: string;
-  bio?: string;
-}
-
-// Form data interface
-interface FormData {
-  name: string;
-  lensUsername: string;
-  bio: string;
+	return [
+		{ title: "Complete Your Profile - Xersha" },
+		{
+			name: "description",
+			content: "Create your Xersha profile to start saving with friends",
+		},
+	];
 }
 
 export default function Onboarding() {
-  const navigate = useNavigate();
-  const { createProfile } = useAuth();
+	const navigate = useNavigate();
+	const { primaryWallet } = useDynamicContext();
+	const { createAccount, isCreating } = useCreateLensAccount();
 
-  // Form state
-  const [formData, setFormData] = React.useState<FormData>({
-    name: "",
-    lensUsername: "",
-    bio: "",
-  });
+	// Session state for early authentication
+	const [sessionClient, setSessionClient] = useState<SessionClient | null>(
+		null,
+	);
+	const [isAuthenticating, setIsAuthenticating] = useState(false);
+	const [authError, setAuthError] = useState<string | null>(null);
 
-  const [errors, setErrors] = React.useState<FormErrors>({});
-  const [touchedFields, setTouchedFields] = React.useState<Set<keyof FormData>>(
-    new Set()
-  );
-  const [isSubmitting, setIsSubmitting] = React.useState(false);
-  const [isSuccess, setIsSuccess] = React.useState(false);
-  const [showTooltip, setShowTooltip] = React.useState(false);
+	// UI state
+	const [isSuccess, setIsSuccess] = useState(false);
+	const [showTooltip, setShowTooltip] = useState(false);
+	const [isCheckingUsername, setIsCheckingUsername] = useState(false);
 
-  // Validation functions
-  const validateName = (value: string): string | undefined => {
-    if (!value.trim()) {
-      return "Name is required";
-    }
-    if (value.trim().length < 2) {
-      return "Name must be at least 2 characters";
-    }
-    if (!/^[a-zA-Z\s-]+$/.test(value)) {
-      return "Name can only contain letters, spaces, and hyphens";
-    }
-    return undefined;
-  };
+	// React Hook Form setup
+	const {
+		register,
+		handleSubmit,
+		watch,
+		setValue,
+		setError,
+		formState: { errors, isSubmitting },
+	} = useForm<OnboardingFormData>({
+		resolver: zodResolver(onboardingSchema),
+		defaultValues: {
+			name: "",
+			lensUsername: "",
+			bio: "",
+			profilePhoto: null,
+		},
+	});
 
-  const validateLensUsername = (value: string): string | undefined => {
-    if (!value.trim()) {
-      return "Lens username is required";
-    }
-    if (value.trim().length < 3) {
-      return "Username must be at least 3 characters";
-    }
-    if (value.trim().length > 26) {
-      return "Username must be no more than 26 characters";
-    }
-    if (!/^[a-z0-9_]+$/.test(value)) {
-      return "Username can only contain lowercase letters, numbers, and underscores";
-    }
-    return undefined;
-  };
+	// Watch bio field for character count
+	const bioValue = watch("bio") || "";
+	const bioCharCount = bioValue.length;
+	const bioMaxChars = 280;
 
-  const validateBio = (value: string): string | undefined => {
-    if (value.length > 280) {
-      return "Bio must be no more than 280 characters";
-    }
-    return undefined;
-  };
+	// Authenticate as onboarding user when page loads
+	useEffect(() => {
+		const authenticateUser = async () => {
+			console.log("test", primaryWallet, APP_ADDRESS);
+			if (!primaryWallet || !APP_ADDRESS) {
+				console.log("[Onboarding] Waiting for wallet connection");
+				return;
+			}
 
-  // Validate single field
-  const validateField = (
-    fieldName: keyof FormData,
-    value: string
-  ): string | undefined => {
-    switch (fieldName) {
-      case "name":
-        return validateName(value);
-      case "lensUsername":
-        return validateLensUsername(value);
-      case "bio":
-        return validateBio(value);
-      default:
-        return undefined;
-    }
-  };
+			setIsAuthenticating(true);
+			setAuthError(null);
 
-  // Handle field change
-  const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-  ) => {
-    const { name, value } = e.target;
-    const fieldName = name as keyof FormData;
+			try {
+				// @ts-expect-error - getWalletClient exists at runtime but not in type definition
+				const walletClient = await primaryWallet.getWalletClient();
+				const result = await authenticateAsOnboardingUser(
+					primaryWallet.address,
+					APP_ADDRESS,
+					walletClient,
+				);
 
-    setFormData((prev) => ({
-      ...prev,
-      [fieldName]: value,
-    }));
+				if (result.sessionClient) {
+					setSessionClient(result.sessionClient);
+					console.log("[Onboarding] Successfully authenticated");
+				} else {
+					const errorMsg = result.error?.message || "Authentication failed";
+					setAuthError(errorMsg);
+					console.error("[Onboarding] Authentication failed:", result.error);
+				}
+			} catch (err) {
+				const errorMsg =
+					err instanceof Error ? err.message : "Authentication failed";
+				setAuthError(errorMsg);
+				console.error("[Onboarding] Authentication error:", err);
+			} finally {
+				setIsAuthenticating(false);
+			}
+		};
 
-    // Clear error for this field if it exists
-    if (errors[fieldName]) {
-      setErrors((prev) => ({
-        ...prev,
-        [fieldName]: undefined,
-      }));
-    }
-  };
+		authenticateUser();
+	}, [primaryWallet]);
 
-  // Handle field blur
-  const handleBlur = (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-    const fieldName = name as keyof FormData;
+	// Handle username blur for real-time availability check
+	const handleUsernameBlur = async (e: React.FocusEvent<HTMLInputElement>) => {
+		const username = e.target.value;
 
-    setTouchedFields((prev) => new Set(prev).add(fieldName));
+		// Only check if username passes basic validation and we have a session
+		if (!username.trim() || errors.lensUsername || !sessionClient) {
+			return;
+		}
 
-    const error = validateField(fieldName, value);
-    setErrors((prev) => ({
-      ...prev,
-      [fieldName]: error,
-    }));
-  };
+		setIsCheckingUsername(true);
 
-  // Validate all fields
-  const validateForm = (): boolean => {
-    const newErrors: FormErrors = {
-      name: validateName(formData.name),
-      lensUsername: validateLensUsername(formData.lensUsername),
-      bio: validateBio(formData.bio),
-    };
+		try {
+			const availability = await checkUsername(username.trim(), sessionClient);
 
-    setErrors(newErrors);
-    setTouchedFields(new Set(["name", "lensUsername", "bio"]));
+			if (!availability.available) {
+				setError("lensUsername", {
+					type: "manual",
+					message: availability.reason || "Username is not available",
+				});
+			}
+		} catch (err) {
+			console.error("[Onboarding] Username check error:", err);
+			// Don't show error to user for network issues during blur
+		} finally {
+			setIsCheckingUsername(false);
+		}
+	};
 
-    // Check if there are any errors
-    return !Object.values(newErrors).some((error) => error !== undefined);
-  };
+	// Handle form submission
+	const onSubmit = async (data: OnboardingFormData) => {
+		try {
+			// Check if we have a session client and wallet
+			if (!sessionClient) {
+				setError("lensUsername", {
+					type: "manual",
+					message: "Authentication required. Please refresh the page.",
+				});
+				return;
+			}
 
-  // Handle form submission
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+			if (!primaryWallet) {
+				setError("lensUsername", {
+					type: "manual",
+					message: "Wallet not connected. Please connect your wallet.",
+				});
+				return;
+			}
 
-    // Validate form
-    if (!validateForm()) {
-      return;
-    }
+			// Upload profile photo and metadata to Grove
+			console.log("[Onboarding] Uploading metadata to Grove storage...");
 
-    setIsSubmitting(true);
+			let profilePictureUri: string | undefined;
 
-    try {
-      // Create profile
-      await createProfile({
-        name: formData.name.trim(),
-        lensUsername: formData.lensUsername.trim(),
-        bio: formData.bio.trim() || undefined,
-      });
+			// Upload profile photo if provided
+			if (data.profilePhoto) {
+				try {
+					console.log("[Onboarding] Uploading profile photo...");
+					const photoResponse = await storageClient.uploadFile(
+						data.profilePhoto,
+					);
+					profilePictureUri = photoResponse.uri;
+					console.log(
+						"[Onboarding] Profile photo uploaded:",
+						profilePictureUri,
+					);
+				} catch (uploadError) {
+					console.error("[Onboarding] Photo upload failed:", uploadError);
+					setError("profilePhoto", {
+						type: "manual",
+						message: "Photo upload failed. Continuing without photo.",
+					});
+					// Photo is optional, continue without it
+				}
+			}
 
-      // Show success state
-      setIsSuccess(true);
+			// Create account metadata and upload to Grove
+			console.log("[Onboarding] Creating and uploading account metadata...");
+			const metadataResponse = await storageClient.uploadAsJson(
+				account({
+					name: data.name,
+					picture: profilePictureUri, // lens://... URI from Grove
+					bio: data.bio || undefined,
+				}),
+			);
 
-      // Navigate to dashboard after 1.5 seconds
-      setTimeout(() => {
-        navigate("/dashboard");
-      }, 1500);
-    } catch (error) {
-      console.error("Profile creation failed:", error);
-      setIsSubmitting(false);
-      // In a real app, you'd show an error message here
-    }
-  };
+			console.log("[Onboarding] Metadata uploaded to:", metadataResponse.uri);
 
-  // Character count for bio
-  const bioCharCount = formData.bio.length;
-  const bioMaxChars = 280;
+			// Create Lens account with metadata URI
+			const result = await createAccount({
+				username: data.lensUsername.trim(),
+				metadataUri: metadataResponse.uri, // lens://... URI from Grove
+				walletAddress: primaryWallet.address,
+				appAddress: APP_ADDRESS,
+				sessionClient, // Reuse existing session
+			});
 
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-primary-50 via-white to-secondary-50 relative overflow-hidden">
-      {/* Decorative background blobs */}
-      <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
-        <div className="absolute -top-20 -left-20 w-96 h-96 bg-primary-500/10 rounded-full blur-3xl" />
-        <div className="absolute top-1/3 -right-32 w-[500px] h-[500px] bg-secondary-500/10 rounded-full blur-3xl" />
-        <div className="absolute -bottom-32 left-1/4 w-96 h-96 bg-primary-400/10 rounded-full blur-3xl" />
-      </div>
+			if (result.error) {
+				console.error("[Onboarding] Account creation failed:", result.error);
+				setError("lensUsername", {
+					type: "manual",
+					message: result.error?.message || "Failed to create account",
+				});
+				return;
+			}
 
-      {/* Main content */}
-      <div className="relative z-10 flex min-h-screen flex-col items-center justify-center p-4 sm:p-6 lg:p-8">
-        <div className="w-full max-w-md space-y-6">
-          {/* Logo */}
-          <div className="flex flex-col items-center space-y-2">
-            <XershaLogo size="md" />
-          </div>
+			console.log("[Onboarding] Account created successfully:", {
+				txHash: result.txHash,
+				accountAddress: result.accountAddress,
+			});
 
-          {/* Onboarding card */}
-          <Card className="border-0 shadow-2xl bg-white/90 backdrop-blur-sm">
-            <CardHeader className="space-y-2">
-              <CardTitle className="text-2xl font-bold text-center text-neutral-900">
-                Create Your Profile
-              </CardTitle>
-              <CardDescription className="text-center text-base text-neutral-600">
-                Tell us about yourself to join the community
-              </CardDescription>
-            </CardHeader>
+			// Show success state
+			setIsSuccess(true);
 
-            <CardContent>
-              <form onSubmit={handleSubmit} className="space-y-5">
-                {/* Name field */}
-                <FormField
-                  label="Name"
-                  name="name"
-                  type="text"
-                  placeholder="Enter your full name"
-                  value={formData.name}
-                  onChange={handleChange}
-                  onBlur={handleBlur}
-                  error={touchedFields.has("name") ? errors.name : undefined}
-                  icon={<User className="size-5" />}
-                  required
-                  disabled={isSubmitting || isSuccess}
-                />
+			// Navigate to dashboard after 1.5 seconds
+			setTimeout(() => {
+				navigate("/dashboard");
+			}, 1500);
+		} catch (error) {
+			console.error("[Onboarding] Account creation failed:", error);
+			setError("lensUsername", {
+				type: "manual",
+				message:
+					error instanceof Error ? error.message : "Failed to create account",
+			});
+		}
+	};
 
-                {/* Lens username field */}
-                <FormField
-                  label="Lens Username"
-                  name="lensUsername"
-                  type="text"
-                  placeholder="yourname"
-                  value={formData.lensUsername}
-                  onChange={handleChange}
-                  onBlur={handleBlur}
-                  error={
-                    touchedFields.has("lensUsername")
-                      ? errors.lensUsername
-                      : undefined
-                  }
-                  icon={<AtSign className="size-5" />}
-                  required
-                  disabled={isSubmitting || isSuccess}
-                  helperText={
-                    <span className="flex items-center gap-1">
-                      Your unique identifier on Lens Protocol
-                      <button
-                        type="button"
-                        className="relative inline-flex"
-                        onMouseEnter={() => setShowTooltip(true)}
-                        onMouseLeave={() => setShowTooltip(false)}
-                        onClick={(e) => {
-                          e.preventDefault();
-                          setShowTooltip(!showTooltip);
-                        }}
-                      >
-                        <Info className="size-3.5 text-info-600 hover:text-info-700 transition-colors" />
-                        {showTooltip && (
-                          <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-64 p-3 bg-neutral-900 text-white text-xs rounded-lg shadow-xl z-50">
-                            <div className="space-y-1">
-                              <p className="font-semibold">What is Lens Protocol?</p>
-                              <p className="text-neutral-300">
-                                Lens is a decentralized social graph that lets you own
-                                your social identity and connections across apps.
-                              </p>
-                            </div>
-                            {/* Tooltip arrow */}
-                            <div className="absolute top-full left-1/2 -translate-x-1/2 -mt-px border-4 border-transparent border-t-neutral-900" />
-                          </div>
-                        )}
-                      </button>
-                    </span>
-                  }
-                />
+	return (
+		<div className="min-h-screen bg-gradient-to-br from-primary-50 via-white to-secondary-50 relative overflow-hidden">
+			{/* Decorative background blobs */}
+			<div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
+				<div className="absolute -top-20 -left-20 w-96 h-96 bg-primary-500/10 rounded-full blur-3xl" />
+				<div className="absolute top-1/3 -right-32 w-[500px] h-[500px] bg-secondary-500/10 rounded-full blur-3xl" />
+				<div className="absolute -bottom-32 left-1/4 w-96 h-96 bg-primary-400/10 rounded-full blur-3xl" />
+			</div>
 
-                {/* Bio field */}
-                <FormField
-                  label="Bio"
-                  name="bio"
-                  type="textarea"
-                  placeholder="Tell us a bit about yourself... (optional)"
-                  value={formData.bio}
-                  onChange={handleChange}
-                  onBlur={handleBlur}
-                  error={touchedFields.has("bio") ? errors.bio : undefined}
-                  icon={<FileText className="size-5" />}
-                  disabled={isSubmitting || isSuccess}
-                  helperText={
-                    <span
-                      className={cn(
-                        "text-xs",
-                        bioCharCount > bioMaxChars
-                          ? "text-error-600"
-                          : "text-neutral-500"
-                      )}
-                    >
-                      {bioCharCount}/{bioMaxChars} characters
-                    </span>
-                  }
-                />
+			{/* Main content */}
+			<div className="relative z-10 flex min-h-screen flex-col items-center justify-center p-4 sm:p-6 lg:p-8">
+				<div className="w-full max-w-md space-y-6">
+					{/* Logo */}
+					<div className="flex flex-col items-center space-y-2">
+						<XershaLogo size="md" />
+					</div>
 
-                {/* Submit button */}
-                <Button
-                  type="submit"
-                  size="lg"
-                  className={cn(
-                    "w-full text-base transition-all duration-200",
-                    isSuccess &&
-                      "bg-success-600 hover:bg-success-600 active:bg-success-600"
-                  )}
-                  disabled={isSubmitting || isSuccess}
-                >
-                  {isSubmitting ? (
-                    <>
-                      <Loader2 className="size-5 animate-spin" />
-                      Minting Profile...
-                    </>
-                  ) : isSuccess ? (
-                    <>
-                      <CheckCircle2 className="size-5" />
-                      Profile Created!
-                    </>
-                  ) : (
-                    "Mint Profile"
-                  )}
-                </Button>
-              </form>
-            </CardContent>
-          </Card>
+					{/* Onboarding card */}
+					<Card className="border-0 shadow-2xl bg-white/90 backdrop-blur-sm">
+						<CardHeader className="space-y-2">
+							<CardTitle className="text-2xl font-bold text-center text-neutral-900">
+								Create Your Profile
+							</CardTitle>
+							<CardDescription className="text-center text-base text-neutral-600">
+								Tell us about yourself to join the community
+							</CardDescription>
+						</CardHeader>
 
-          {/* Trust indicator */}
-          <div className="flex justify-center">
-            <div className="flex items-center gap-2 text-sm text-neutral-600">
-              <CheckCircle2 className="size-4 text-success-600" />
-              <span>Your profile is stored securely on-chain</span>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
+						<CardContent>
+							<form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+								{/* Profile Photo Upload */}
+								<div className="flex flex-col items-center">
+									<ProfilePhotoUpload
+										value={watch("profilePhoto") ?? null}
+										onChange={(file) => setValue("profilePhoto", file)}
+										error={errors.profilePhoto?.message}
+										disabled={isSubmitting || isSuccess}
+									/>
+								</div>
+
+								{/* Name field */}
+								<FormField
+									label="Name"
+									type="text"
+									placeholder="Enter your full name"
+									error={errors.name?.message}
+									icon={<User className="size-5" />}
+									required
+									disabled={isSubmitting || isSuccess}
+									{...register("name")}
+								/>
+
+								{/* Lens username field */}
+								<FormField
+									label="Lens Username"
+									type="text"
+									placeholder="yourname"
+									error={errors.lensUsername?.message}
+									icon={<AtSign className="size-5" />}
+									required
+									disabled={isSubmitting || isSuccess}
+									onBlurCapture={handleUsernameBlur}
+									helperText={
+										<span className="flex items-center gap-1">
+											Your unique identifier on Lens Protocol
+											<button
+												type="button"
+												className="relative inline-flex"
+												onMouseEnter={() => setShowTooltip(true)}
+												onMouseLeave={() => setShowTooltip(false)}
+												onClick={(e) => {
+													e.preventDefault();
+													setShowTooltip(!showTooltip);
+												}}
+											>
+												<Info className="size-3.5 text-info-600 hover:text-info-700 transition-colors" />
+												{showTooltip && (
+													<div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-64 p-3 bg-neutral-900 text-white text-xs rounded-lg shadow-xl z-50">
+														<div className="space-y-1">
+															<p className="font-semibold">
+																What is Lens Protocol?
+															</p>
+															<p className="text-neutral-300">
+																Lens is a decentralized social graph that lets
+																you own your social identity and connections
+																across apps.
+															</p>
+														</div>
+														{/* Tooltip arrow */}
+														<div className="absolute top-full left-1/2 -translate-x-1/2 -mt-px border-4 border-transparent border-t-neutral-900" />
+													</div>
+												)}
+											</button>
+										</span>
+									}
+									{...register("lensUsername")}
+								/>
+
+								{/* Bio field */}
+								<FormField
+									label="Bio"
+									type="textarea"
+									placeholder="Tell us a bit about yourself... (optional)"
+									error={errors.bio?.message}
+									icon={<FileText className="size-5" />}
+									disabled={isSubmitting || isSuccess}
+									helperText={
+										<span
+											className={cn(
+												"text-xs",
+												bioCharCount > bioMaxChars
+													? "text-error-600"
+													: "text-neutral-500",
+											)}
+										>
+											{bioCharCount}/{bioMaxChars} characters
+										</span>
+									}
+									{...register("bio")}
+								/>
+
+								{/* Submit button */}
+								<Button
+									type="submit"
+									size="lg"
+									className={cn(
+										"w-full text-base transition-all duration-200",
+										isSuccess &&
+											"bg-success-600 hover:bg-success-600 active:bg-success-600",
+									)}
+									disabled={isSubmitting || isSuccess}
+								>
+									{isSubmitting ? (
+										<>
+											<Loader2 className="size-5 animate-spin" />
+											Minting Profile...
+										</>
+									) : isSuccess ? (
+										<>
+											<CheckCircle2 className="size-5" />
+											Profile Created!
+										</>
+									) : (
+										"Mint Profile"
+									)}
+								</Button>
+							</form>
+						</CardContent>
+					</Card>
+
+					{/* Trust indicator */}
+					<div className="flex justify-center">
+						<div className="flex items-center gap-2 text-sm text-neutral-600">
+							<CheckCircle2 className="size-4 text-success-600" />
+							<span>Your profile is stored securely on-chain</span>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	);
 }
 
-// Form Field Component
-interface FormFieldProps {
-  label: string;
-  name: string;
-  type: "text" | "textarea";
-  placeholder: string;
-  value: string;
-  onChange: (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-  ) => void;
-  onBlur: (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement>) => void;
-  error?: string;
-  icon?: React.ReactNode;
-  required?: boolean;
-  disabled?: boolean;
-  helperText?: React.ReactNode;
+// Form Field Component with react-hook-form support
+interface FormFieldProps
+	extends React.InputHTMLAttributes<HTMLInputElement | HTMLTextAreaElement> {
+	label: string;
+	type: "text" | "textarea";
+	error?: string;
+	icon?: React.ReactNode;
+	required?: boolean;
+	helperText?: React.ReactNode;
 }
 
-function FormField({
-  label,
-  name,
-  type,
-  placeholder,
-  value,
-  onChange,
-  onBlur,
-  error,
-  icon,
-  required = false,
-  disabled = false,
-  helperText,
-}: FormFieldProps) {
-  const hasError = !!error;
+const FormField = React.forwardRef<
+	HTMLInputElement | HTMLTextAreaElement,
+	FormFieldProps
+>(
+	(
+		{
+			label,
+			name,
+			type,
+			placeholder,
+			error,
+			icon,
+			required = false,
+			disabled = false,
+			helperText,
+			...rest
+		},
+		ref,
+	) => {
+		const hasError = !!error;
 
-  const inputClasses = cn(
-    "w-full rounded-lg border-2 bg-white px-4 text-neutral-900 placeholder:text-neutral-400 transition-all duration-200 outline-none",
-    "focus:ring-[3px]",
-    hasError
-      ? "border-error-500 focus:border-error-500 focus:ring-error-500/20"
-      : "border-neutral-300 focus:border-primary-500 focus:ring-primary-500/30",
-    disabled && "opacity-60 cursor-not-allowed",
-    type === "textarea" ? "py-3 min-h-[100px] resize-none" : "h-12"
-  );
+		const inputClasses = cn(
+			"w-full rounded-lg border-2 bg-white px-4 text-neutral-900 placeholder:text-neutral-400 transition-all duration-200 outline-none",
+			"focus:ring-[3px]",
+			hasError
+				? "border-error-500 focus:border-error-500 focus:ring-error-500/20"
+				: "border-neutral-300 focus:border-primary-500 focus:ring-primary-500/30",
+			disabled && "opacity-60 cursor-not-allowed",
+			type === "textarea" ? "py-3 min-h-[100px] resize-none" : "h-12",
+		);
 
-  return (
-    <div className="space-y-2">
-      {/* Label */}
-      <label htmlFor={name} className="block text-sm font-medium text-neutral-700">
-        {label}
-        {required && <span className="text-error-500 ml-1">*</span>}
-      </label>
+		return (
+			<div className="space-y-2">
+				{/* Label */}
+				<label
+					htmlFor={name}
+					className="block text-sm font-medium text-neutral-700"
+				>
+					{label}
+					{required && <span className="text-error-500 ml-1">*</span>}
+				</label>
 
-      {/* Input wrapper with icon */}
-      <div className="relative">
-        {icon && (
-          <div className="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-400 pointer-events-none">
-            {icon}
-          </div>
-        )}
+				{/* Input wrapper with icon */}
+				<div className="relative">
+					{icon && (
+						<div className="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-400 pointer-events-none">
+							{icon}
+						</div>
+					)}
 
-        {type === "textarea" ? (
-          <textarea
-            id={name}
-            name={name}
-            placeholder={placeholder}
-            value={value}
-            onChange={onChange}
-            onBlur={onBlur}
-            disabled={disabled}
-            className={cn(inputClasses, icon && "pl-12")}
-            aria-invalid={hasError}
-            aria-describedby={
-              error ? `${name}-error` : helperText ? `${name}-helper` : undefined
-            }
-          />
-        ) : (
-          <input
-            type={type}
-            id={name}
-            name={name}
-            placeholder={placeholder}
-            value={value}
-            onChange={onChange}
-            onBlur={onBlur}
-            disabled={disabled}
-            className={cn(inputClasses, icon && "pl-12")}
-            aria-invalid={hasError}
-            aria-describedby={
-              error ? `${name}-error` : helperText ? `${name}-helper` : undefined
-            }
-          />
-        )}
+					{type === "textarea" ? (
+						<textarea
+							ref={ref as React.ForwardedRef<HTMLTextAreaElement>}
+							id={name}
+							name={name}
+							placeholder={placeholder}
+							disabled={disabled}
+							className={cn(inputClasses, icon && "pl-12")}
+							aria-invalid={hasError}
+							aria-describedby={
+								error
+									? `${name}-error`
+									: helperText
+										? `${name}-helper`
+										: undefined
+							}
+							{...rest}
+						/>
+					) : (
+						<input
+							ref={ref as React.ForwardedRef<HTMLInputElement>}
+							type={type}
+							id={name}
+							name={name}
+							placeholder={placeholder}
+							disabled={disabled}
+							className={cn(inputClasses, icon && "pl-12")}
+							aria-invalid={hasError}
+							aria-describedby={
+								error
+									? `${name}-error`
+									: helperText
+										? `${name}-helper`
+										: undefined
+							}
+							{...rest}
+						/>
+					)}
 
-        {/* Error icon */}
-        {hasError && (
-          <div className="absolute right-4 top-1/2 -translate-y-1/2 text-error-500">
-            <AlertCircle className="size-5" />
-          </div>
-        )}
-      </div>
+					{/* Error icon */}
+					{hasError && (
+						<div className="absolute right-4 top-1/2 -translate-y-1/2 text-error-500">
+							<AlertCircle className="size-5" />
+						</div>
+					)}
+				</div>
 
-      {/* Error message */}
-      {error && (
-        <p id={`${name}-error`} className="text-sm text-error-600 flex items-center gap-1.5">
-          <AlertCircle className="size-4 shrink-0" />
-          {error}
-        </p>
-      )}
+				{/* Error message */}
+				{error && (
+					<p
+						id={`${name}-error`}
+						className="text-sm text-error-600 flex items-center gap-1.5"
+					>
+						<AlertCircle className="size-4 shrink-0" />
+						{error}
+					</p>
+				)}
 
-      {/* Helper text */}
-      {!error && helperText && (
-        <p id={`${name}-helper`} className="text-xs text-neutral-500">
-          {helperText}
-        </p>
-      )}
-    </div>
-  );
-}
+				{/* Helper text */}
+				{!error && helperText && (
+					<p id={`${name}-helper`} className="text-xs text-neutral-500">
+						{helperText}
+					</p>
+				)}
+			</div>
+		);
+	},
+);
+
+FormField.displayName = "FormField";

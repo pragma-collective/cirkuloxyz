@@ -1,4 +1,4 @@
-import * as React from "react";
+import { useState, useMemo } from "react";
 import type { Route } from "./+types/explore";
 import { useNavigate } from "react-router";
 import { AuthenticatedLayout } from "app/components/layouts/authenticated-layout";
@@ -23,14 +23,14 @@ export function meta({}: Route.MetaArgs) {
 
 export default function Explore() {
   const navigate = useNavigate();
-  const [searchQuery, setSearchQuery] = React.useState("");
-  const [activeCategory, setActiveCategory] = React.useState<CircleCategory | "all">(
+  const [searchQuery, setSearchQuery] = useState("");
+  const [activeCategory, setActiveCategory] = useState<CircleCategory | "all">(
     "all"
   );
-  const [sortBy, setSortBy] = React.useState("popular");
+  const [sortBy, setSortBy] = useState("popular");
 
   // Filter and sort circles
-  const filteredCircles = React.useMemo(() => {
+  const filteredCircles = useMemo(() => {
     let circles = [...mockPublicCircles];
 
     // Filter by search query
@@ -75,7 +75,7 @@ export default function Explore() {
   }, [searchQuery, activeCategory, sortBy]);
 
   // Calculate category counts
-  const categoryCounts = React.useMemo(() => {
+  const categoryCounts = useMemo(() => {
     const counts: Record<string, number> = {
       all: mockPublicCircles.length,
     };
