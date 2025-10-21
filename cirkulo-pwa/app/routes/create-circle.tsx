@@ -1,4 +1,4 @@
-import { useState, useMemo, type ChangeEvent, type FocusEvent, type FormEvent, type ReactNode } from "react";
+import { useState, useEffect, useMemo, type ChangeEvent, type FocusEvent, type FormEvent, type ReactNode } from "react";
 import type { Route } from "./+types/create-circle";
 import { useNavigate } from "react-router";
 import { XershaLogo } from "app/components/xersha-logo";
@@ -24,6 +24,10 @@ import {
   ArrowLeft,
 } from "lucide-react";
 import { cn } from "app/lib/utils";
+import { useDynamicContext } from "@dynamic-labs/sdk-react-core";
+import { type SessionClient } from "app/hooks/create-lens-account";
+import { useCreateLensGroup } from "app/hooks/create-lens-group";
+import { lensClient } from "app/lib/lens";
 
 export function meta({}: Route.MetaArgs) {
   return [
@@ -55,6 +59,13 @@ interface FormData {
 
 export default function CreateCircle() {
   const navigate = useNavigate();
+  const { primaryWallet } = useDynamicContext();
+  const { createGroup, isCreating, error: groupCreationError } = useCreateLensGroup();
+
+  // Session state for authentication
+  const [sessionClient, setSessionClient] = useState<SessionClient | null>(null);
+  const [isAuthenticating, setIsAuthenticating] = useState(false);
+  const [authError, setAuthError] = useState<string | null>(null);
 
   // Form state
   const [formData, setFormData] = useState<FormData>({
@@ -160,6 +171,36 @@ export default function CreateCircle() {
     }
   };
 
+  // Resume existing Lens session when component mounts
+  useEffect(() => {
+    const resumeSession = async () => {
+      setIsAuthenticating(true);
+      setAuthError(null);
+
+      try {
+        console.log("[CreateCircle] Resuming Lens session...");
+        const resumed = await lensClient.resumeSession();
+
+        if (resumed.isOk()) {
+          setSessionClient(resumed.value);
+          console.log("[CreateCircle] Session resumed successfully");
+        } else {
+          const errorMsg = resumed.error.message || "No active session found";
+          setAuthError(errorMsg);
+          console.error("[CreateCircle] Session resume failed:", resumed.error);
+        }
+      } catch (err) {
+        const errorMsg = err instanceof Error ? err.message : "Failed to resume session";
+        setAuthError(errorMsg);
+        console.error("[CreateCircle] Session resume error:", err);
+      } finally {
+        setIsAuthenticating(false);
+      }
+    };
+
+    resumeSession();
+  }, []); // No dependencies - only run once on mount
+
   // Handle input field change
   const handleChange = (
     e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -249,19 +290,59 @@ export default function CreateCircle() {
       return;
     }
 
+    // Check if we have a session client and wallet
+    if (!sessionClient) {
+      setErrors((prev) => ({
+        ...prev,
+        name: "Authentication required. Please refresh the page.",
+      }));
+      return;
+    }
+
+    if (!primaryWallet) {
+      setErrors((prev) => ({
+        ...prev,
+        name: "Wallet not connected. Please connect your wallet.",
+      }));
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
-      // TODO: Create circle via API
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 2000));
-
-      console.log("Creating circle with data:", {
+      console.log("[CreateCircle] Creating Lens group with data:", {
         name: formData.name.trim(),
         description: formData.description.trim(),
         savingType: formData.savingType,
         contributionSchedule: formData.contributionSchedule,
         endDate: formData.endDate,
+      });
+
+      // Get wallet client for transaction signing
+      // @ts-expect-error - getWalletClient exists at runtime but not in type definition
+      const walletClient = await primaryWallet.getWalletClient();
+
+      // Create Lens group
+      const result = await createGroup({
+        name: formData.name.trim(),
+        description: formData.description.trim(),
+        ownerAddress: primaryWallet.address,
+        sessionClient,
+        walletClient,
+      });
+
+      if (!result.success) {
+        setErrors((prev) => ({
+          ...prev,
+          name: result.error || "Failed to create group",
+        }));
+        setIsSubmitting(false);
+        return;
+      }
+
+      console.log("[CreateCircle] Group created successfully:", {
+        transactionHash: result.transactionHash,
+        groupAddress: result.groupAddress,
       });
 
       // Show success state
@@ -272,9 +353,12 @@ export default function CreateCircle() {
         navigate("/dashboard");
       }, 2000);
     } catch (error) {
-      console.error("Circle creation failed:", error);
+      console.error("[CreateCircle] Group creation failed:", error);
+      setErrors((prev) => ({
+        ...prev,
+        name: error instanceof Error ? error.message : "Failed to create group",
+      }));
       setIsSubmitting(false);
-      // In a real app, you'd show an error message here
     }
   };
 
@@ -337,6 +421,24 @@ export default function CreateCircle() {
             </CardHeader>
 
             <CardContent>
+              {/* Authentication status */}
+              {isAuthenticating && (
+                <div className="mb-6 p-4 bg-primary-50 border border-primary-200 rounded-lg flex items-center gap-3">
+                  <Loader2 className="size-5 text-primary-600 animate-spin" />
+                  <p className="text-sm text-primary-700">Authenticating...</p>
+                </div>
+              )}
+
+              {authError && (
+                <div className="mb-6 p-4 bg-error-50 border border-error-200 rounded-lg flex items-start gap-3">
+                  <AlertCircle className="size-5 text-error-600 shrink-0 mt-0.5" />
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-error-700">Authentication Error</p>
+                    <p className="text-sm text-error-600 mt-1">{authError}</p>
+                  </div>
+                </div>
+              )}
+
               <form onSubmit={handleSubmit} className="space-y-6">
                 {/* Circle Name */}
                 <FormField
@@ -478,17 +580,22 @@ export default function CreateCircle() {
                     isSuccess &&
                       "bg-success-600 hover:bg-success-600 active:bg-success-600"
                   )}
-                  disabled={isSubmitting || isSuccess}
+                  disabled={isSubmitting || isSuccess || isAuthenticating || !!authError}
                 >
                   {isSubmitting ? (
                     <>
                       <Loader2 className="size-5 animate-spin" />
-                      Creating Circle...
+                      Creating Group on Lens...
                     </>
                   ) : isSuccess ? (
                     <>
                       <CheckCircle2 className="size-5" />
-                      Circle Created!
+                      Group Created!
+                    </>
+                  ) : isAuthenticating ? (
+                    <>
+                      <Loader2 className="size-5 animate-spin" />
+                      Authenticating...
                     </>
                   ) : (
                     "Create Circle"
