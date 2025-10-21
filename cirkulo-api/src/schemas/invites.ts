@@ -26,6 +26,10 @@ export const InviteResponseSchema = z.object({
 	groupAddress: z.string().describe("Group address the invite is for"),
 	inviteId: z.string().describe("Database ID of the created invite"),
 	inviteCode: z.string().describe("Invite code (UUID)"),
+	txHash: z
+		.string()
+		.optional()
+		.describe("Transaction hash from on-chain registration"),
 	emailId: z.string().optional().describe("Email service provider ID"),
 });
 

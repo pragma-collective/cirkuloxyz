@@ -29,6 +29,7 @@ export const invites = pgTable("invites", {
 	status: inviteStatusEnum("status").notNull().default("pending"),
 	expiresAt: timestamp("expires_at").notNull(), // When invite expires
 	acceptedAt: timestamp("accepted_at"), // When invite was accepted
+	registeredTxHash: text("registered_tx_hash"), // Transaction hash from on-chain registration
 	createdAt: timestamp("created_at").defaultNow().notNull(),
 	updatedAt: timestamp("updated_at")
 		.defaultNow()

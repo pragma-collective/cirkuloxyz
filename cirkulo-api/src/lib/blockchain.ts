@@ -92,7 +92,7 @@ function getRuleContract(): ethers.Contract {
 
 export interface RegisterInviteParams {
 	configSalt: string;
-	inviteeAddress: string;
+	senderAddress: string;
 	inviteCode: string;
 	expiresAt: Date;
 }
@@ -100,7 +100,8 @@ export interface RegisterInviteParams {
 /**
  * Register an invite on-chain
  *
- * Called when user accepts invite and provides wallet address.
+ * Called when invite is sent by a group member.
+ * Uses sender's address to register the invite code on-chain.
  *
  * @param params - Invite registration parameters
  * @returns Transaction hash
@@ -114,7 +115,7 @@ export async function registerInvite(
 
 		console.log("📝 Registering invite on-chain:", {
 			configSalt: params.configSalt,
-			invitee: params.inviteeAddress,
+			sender: params.senderAddress,
 			expiresAt: params.expiresAt.toISOString(),
 		});
 
@@ -129,7 +130,7 @@ export async function registerInvite(
 		// Call smart contract to register invite
 		const tx = await contract.registerInvite(
 			params.configSalt,
-			params.inviteeAddress,
+			params.senderAddress,
 			inviteCodeHash,
 			expiresAtTimestamp,
 		);

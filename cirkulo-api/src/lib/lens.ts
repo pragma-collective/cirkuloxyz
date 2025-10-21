@@ -85,6 +85,7 @@ export async function isGroupMember(
 		}
 
 		const members = result.value.items;
+		console.log("here: ", members, memberAddress);
 
 		// Check if memberAddress is in the list of members
 		const isMember = members.some(

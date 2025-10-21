@@ -1,0 +1,1 @@
+ALTER TABLE "invites" ADD COLUMN "registered_tx_hash" text;

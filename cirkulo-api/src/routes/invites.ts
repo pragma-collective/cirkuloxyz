@@ -2,6 +2,7 @@ import { OpenAPIHono } from "@hono/zod-openapi";
 import { and, eq } from "drizzle-orm";
 import { db } from "../db";
 import { invites as invitesTable } from "../db/schema";
+import { registerInvite } from "../lib/blockchain";
 import { sendInviteEmail } from "../lib/email";
 import { fetchGroup, getLensUsername, isGroupMember } from "../lib/lens";
 import type { AuthContext } from "../lib/middleware";
@@ -114,7 +115,6 @@ invites.openapi(inviteUserRoute, async (c) => {
 		const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
 
 		// 6. Create invite record in database
-		// NO blockchain registration - frontend will handle via Lens Protocol joinGroup()
 		const [newInvite] = await db
 			.insert(invitesTable)
 			.values({
@@ -129,7 +129,47 @@ invites.openapi(inviteUserRoute, async (c) => {
 
 		console.log(`✅ Invite created in database: ${newInvite.id}`);
 
-		// 7. Send invite email with Lens username
+		// 7. Register invite on-chain
+		let txHash: string | undefined;
+		try {
+			txHash = await registerInvite({
+				configSalt,
+				senderAddress,
+				inviteCode: newInvite.code,
+				expiresAt,
+			});
+
+			console.log(`✅ Invite registered on-chain: ${txHash}`);
+
+			// Update database with transaction hash
+			await db
+				.update(invitesTable)
+				.set({ registeredTxHash: txHash })
+				.where(eq(invitesTable.id, newInvite.id));
+		} catch (blockchainError) {
+			console.error("❌ Failed to register invite on-chain:", blockchainError);
+
+			// Clean up the database record since blockchain registration failed
+			await db.delete(invitesTable).where(eq(invitesTable.id, newInvite.id));
+
+			console.log(
+				`🗑️ Deleted invite ${newInvite.id} from database due to blockchain failure`,
+			);
+
+			// Return error response
+			return c.json(
+				{
+					error: "Failed to register invite on blockchain",
+					details:
+						blockchainError instanceof Error
+							? blockchainError.message
+							: "Unknown blockchain error",
+				},
+				500,
+			);
+		}
+
+		// 8. Send invite email with Lens username
 		const emailResult = await sendInviteEmail({
 			to: recipientEmail,
 			inviterName,
@@ -144,6 +184,7 @@ invites.openapi(inviteUserRoute, async (c) => {
 				groupAddress,
 				inviteId: newInvite.id,
 				inviteCode: newInvite.code,
+				txHash,
 				emailId: emailResult.data?.id,
 			},
 			200,
