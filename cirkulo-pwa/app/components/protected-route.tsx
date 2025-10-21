@@ -12,7 +12,7 @@ import { Loader2 } from "lucide-react";
  * - Post-authentication routing handled by AuthContext
  */
 export default function ProtectedRoute() {
-	const { user, isLoading } = useAuth();
+	const { isLoading } = useAuth();
 
 	// Show loading state while checking authentication
 	if (isLoading) {
@@ -25,12 +25,6 @@ export default function ProtectedRoute() {
 			</div>
 		);
 	}
-
-	// Redirect to login if not authenticated (no wallet connected)
-	//if (!user) {
-	//	console.log("user", user);
-	//	return <Navigate to="/login" replace />;
-	//}
 
 	// User is authenticated, render the protected route
 	return <Outlet />;

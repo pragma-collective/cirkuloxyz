@@ -163,7 +163,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
 	// Handle post-authentication navigation
 	useEffect(() => {
-		console.log("LENS ACCOUNT", isCheckingLens, lensAccounts, !isAuthenticated);
 		if (isCheckingLens || !isAuthenticated) return;
 
 		if (sessionClient) return; // user already has selected account
@@ -173,14 +172,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 		const shouldBeOnSelectAccount = lensAccounts.length >= 2;
 		const shouldBeOnDashboard = lensAccounts.length === 1;
 
-		console.log("shouldBeOnOnboarding", shouldBeOnOnboarding);
 		// Skip if already on correct destination page
 		if (
 			(location.pathname === "/dashboard" && shouldBeOnDashboard) ||
 			(location.pathname === "/onboarding" && shouldBeOnOnboarding) ||
 			(location.pathname === "/select-account" && shouldBeOnSelectAccount)
 		) {
-			console.log("HERE");
 			return;
 		}
 
