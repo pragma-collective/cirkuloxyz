@@ -29,9 +29,9 @@ import {
 	authenticateAsOnboardingUser,
 	checkUsername,
 	useCreateLensAccount,
-	type SessionClient,
 } from "app/hooks/create-lens-account";
 import { useDynamicContext } from "@dynamic-labs/sdk-react-core";
+import { useAuth } from "app/context/auth-context";
 import {
 	onboardingSchema,
 	type OnboardingFormData,
@@ -53,12 +53,10 @@ export function meta({}: Route.MetaArgs) {
 export default function Onboarding() {
 	const navigate = useNavigate();
 	const { primaryWallet } = useDynamicContext();
+	const { sessionClient, setSessionClient } = useAuth();
 	const { createAccount, isCreating } = useCreateLensAccount();
 
-	// Session state for early authentication
-	const [sessionClient, setSessionClient] = useState<SessionClient | null>(
-		null,
-	);
+	// Authentication state
 	const [isAuthenticating, setIsAuthenticating] = useState(false);
 	const [authError, setAuthError] = useState<string | null>(null);
 
@@ -93,41 +91,49 @@ export default function Onboarding() {
 	// Authenticate as onboarding user when page loads
 	useEffect(() => {
 		const authenticateUser = async () => {
-			if (primaryWallet || APP_ADDRESS) {
+			if (!primaryWallet || !APP_ADDRESS) {
 				console.log("[Onboarding] Waiting for wallet connection");
-				setIsAuthenticating(true);
-				setAuthError(null);
+				return;
+			}
 
-				//try {
-				//	// @ts-expect-error - getWalletClient exists at runtime but not in type definition
-				//	const walletClient = await primaryWallet.getWalletClient();
-				//	const result = await authenticateAsOnboardingUser(
-				//		primaryWallet.address,
-				//		APP_ADDRESS,
-				//		walletClient,
-				//	);
-				//
-				//	if (result.sessionClient) {
-				//		setSessionClient(result.sessionClient);
-				//		console.log("[Onboarding] Successfully authenticated");
-				//	} else {
-				//		const errorMsg = result.error?.message || "Authentication failed";
-				//		setAuthError(errorMsg);
-				//		console.error("[Onboarding] Authentication failed:", result.error);
-				//	}
-				//} catch (err) {
-				//	const errorMsg =
-				//		err instanceof Error ? err.message : "Authentication failed";
-				//	setAuthError(errorMsg);
-				//	console.error("[Onboarding] Authentication error:", err);
-				//} finally {
-				//	setIsAuthenticating(false);
-				//}
+			// Skip if already authenticated
+			if (sessionClient) {
+				return;
+			}
+
+			setIsAuthenticating(true);
+			setAuthError(null);
+
+			try {
+				// @ts-expect-error - getWalletClient exists at runtime but not in type definition
+				const walletClient = await primaryWallet.getWalletClient();
+				const result = await authenticateAsOnboardingUser(
+					primaryWallet.address,
+					APP_ADDRESS,
+					walletClient,
+				);
+
+				if (result.sessionClient) {
+					// Store in context so it's available globally
+					setSessionClient(result.sessionClient);
+					console.log("[Onboarding] Successfully authenticated");
+				} else {
+					const errorMsg = result.error?.message || "Authentication failed";
+					setAuthError(errorMsg);
+					console.error("[Onboarding] Authentication failed:", result.error);
+				}
+			} catch (err) {
+				const errorMsg =
+					err instanceof Error ? err.message : "Authentication failed";
+				setAuthError(errorMsg);
+				console.error("[Onboarding] Authentication error:", err);
+			} finally {
+				setIsAuthenticating(false);
 			}
 		};
 
 		authenticateUser();
-	}, [primaryWallet]);
+	}, [primaryWallet, sessionClient, setSessionClient]);
 
 	// Handle username blur for real-time availability check
 	const handleUsernameBlur = async (e: React.FocusEvent<HTMLInputElement>) => {

@@ -10,6 +10,8 @@ import {
 } from "react";
 import { useNavigate, useLocation } from "react-router";
 import { useDynamicContext } from "@dynamic-labs/sdk-react-core";
+import type { SessionClient } from "@lens-protocol/client";
+import { lensClient } from "app/lib/lens";
 import { authEvents } from "app/lib/auth-events";
 import {
 	useFetchLensAccounts,
@@ -35,6 +37,8 @@ export interface User {
 export interface AuthContextType {
 	user: User | null;
 	isLoading: boolean;
+	sessionClient: SessionClient | null;
+	setSessionClient: (client: SessionClient | null) => void;
 	login: () => Promise<User>;
 	logout: () => void;
 	selectAccount: (account: LensAccount) => void;
@@ -62,6 +66,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 	// Store pending login promise resolver
 	const loginResolverRef = useRef<((user: User) => void) | null>(null);
 
+	// Lens session state
+	const [sessionClient, setSessionClient] = useState<SessionClient | null>(
+		null,
+	);
+
 	// Fetch all Lens accounts for the connected wallet
 	const {
 		lensAccounts,
@@ -83,6 +92,40 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 		}
 		// Don't auto-select if multiple accounts - user must choose
 	}, [lensAccounts]);
+
+	// Resume Lens session from localStorage when user is authenticated
+	useEffect(() => {
+		// Only attempt to resume session if user is authenticated with Dynamic
+		if (!isAuthenticated) {
+			return;
+		}
+
+		const resumeSession = async () => {
+			try {
+				console.log("[AuthContext] Resuming Lens session...");
+				const resumed = await lensClient.resumeSession();
+
+				if (resumed.isOk()) {
+					setSessionClient(resumed.value);
+					console.log("[AuthContext] Lens session resumed successfully");
+				} else {
+					// Non-blocking error - user might not have Lens account yet
+					console.log(
+						"[AuthContext] No active Lens session:",
+						resumed.error.message || "No session found",
+					);
+				}
+			} catch (err) {
+				// Non-blocking error - user might not have Lens account yet
+				console.error(
+					"[AuthContext] Session resume error:",
+					err instanceof Error ? err.message : "Failed to resume session",
+				);
+			}
+		};
+
+		resumeSession();
+	}, [isAuthenticated]);
 
 	// Map Dynamic user to our User interface
 	const user: User | null = useMemo(() => {
@@ -198,11 +241,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 	}, [setShowAuthFlow]);
 
 	// Logout function
-	const logout = useCallback(() => {
+	const logout = useCallback(async () => {
+		// First, log out of Lens session if it exists
+		if (sessionClient) {
+			try {
+				console.log("[AuthContext] Logging out of Lens session...");
+				const result = await sessionClient.logout();
+
+				if (result.isOk()) {
+					console.log("[AuthContext] Lens logout successful");
+				} else {
+					console.error("[AuthContext] Lens logout failed:", result.error);
+				}
+			} catch (err) {
+				console.error(
+					"[AuthContext] Lens logout error:",
+					err instanceof Error ? err.message : "Unknown error",
+				);
+			}
+		}
+
+		// Then log out of Dynamic wallet session
 		handleLogOut();
 		setIsLoading(false);
 		setSelectedAccount(undefined);
-	}, [handleLogOut]);
+		setSessionClient(null);
+	}, [handleLogOut, sessionClient]);
 
 	// Select account function
 	const selectAccount = useCallback((account: LensAccount) => {
@@ -213,11 +277,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 		() => ({
 			user,
 			isLoading,
+			sessionClient,
+			setSessionClient,
 			login,
 			logout,
 			selectAccount,
 		}),
-		[user, isLoading, login, logout, selectAccount],
+		[
+			user,
+			isLoading,
+			sessionClient,
+			setSessionClient,
+			login,
+			logout,
+			selectAccount,
+		],
 	);
 
 	return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
