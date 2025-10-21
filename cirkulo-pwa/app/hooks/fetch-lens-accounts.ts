@@ -49,16 +49,10 @@ export function useFetchLensAccounts(
 	useEffect(() => {
 		// Early return if no wallet address
 		if (!walletAddress) {
-			// setLensAccounts([]);
-			// setIsLoading(false);
-			// setError(null);
-
-			console.log("EARLY RETURN");
 			return;
 		}
 
 		const fetchLensAccount = async () => {
-			console.log("FETCHING_LENS");
 			setIsLoading(true);
 			setError(null);
 
