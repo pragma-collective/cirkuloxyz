@@ -9,6 +9,7 @@ import { EmptyState } from "app/components/account-selection/EmptyState";
 import { LoadingState } from "app/components/account-selection/LoadingState";
 import type { LensAccount } from "app/hooks/fetch-lens-accounts";
 import { cn } from "app/lib/utils";
+import { AlertCircle } from "lucide-react";
 
 export function meta({}: Route.MetaArgs) {
 	return [
@@ -24,23 +25,38 @@ export default function SelectAccount() {
 	const navigate = useNavigate();
 	const { user, selectAccount } = useAuth();
 	const [isSelecting, setIsSelecting] = useState(false);
+	const [error, setError] = useState<string | null>(null);
 
 	const lensAccounts = user?.lensAccounts || [];
 	const isLoading = !user;
 
 	const handleSelectAccount = async (account: LensAccount) => {
 		setIsSelecting(true);
+		setError(null); // Clear previous errors
 
 		try {
-			// Select the account in auth context
-			selectAccount(account);
+			// Authenticate with Lens as account owner
+			const result = await selectAccount(account);
 
-			// Navigate to dashboard
+			if (!result.success) {
+				// Authentication failed
+				console.error("[SelectAccount] Authentication failed:", result.error);
+				setError(result.error || "Failed to authenticate with selected account");
+				setIsSelecting(false);
+				return;
+			}
+
+			// Authentication succeeded - navigate to dashboard
 			setTimeout(() => {
 				navigate("/dashboard", { replace: true });
 			}, 300); // Small delay for smooth transition
-		} catch (error) {
-			console.error("[SelectAccount] Error selecting account:", error);
+		} catch (err) {
+			console.error("[SelectAccount] Error selecting account:", err);
+			setError(
+				err instanceof Error
+					? err.message
+					: "An unexpected error occurred. Please try again.",
+			);
 			setIsSelecting(false);
 		}
 	};
@@ -130,6 +146,19 @@ export default function SelectAccount() {
 								: `You have ${lensAccounts.length} Lens accounts. Choose which one to use.`}
 						</p>
 					</div>
+
+					{/* Error Banner */}
+					{error && (
+						<div className="mb-6 p-4 bg-error-50 border-2 border-error-200 rounded-xl flex items-start gap-3 max-w-2xl mx-auto">
+							<AlertCircle className="size-5 text-error-600 shrink-0 mt-0.5" />
+							<div className="flex-1">
+								<p className="text-sm font-medium text-error-700">
+									Authentication Failed
+								</p>
+								<p className="text-sm text-error-600 mt-1">{error}</p>
+							</div>
+						</div>
+					)}
 
 					{/* Account Cards */}
 					{isSingleAccount ? (

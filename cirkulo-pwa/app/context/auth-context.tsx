@@ -17,6 +17,7 @@ import {
 	useFetchLensAccounts,
 	type LensAccount,
 } from "app/hooks/fetch-lens-accounts";
+import { authenticateAsAccountOwner } from "app/hooks/authenticate-account";
 
 // Re-export LensAccount for backward compatibility
 export type { LensAccount };
@@ -41,7 +42,9 @@ export interface AuthContextType {
 	setSessionClient: (client: SessionClient | null) => void;
 	login: () => Promise<User>;
 	logout: () => void;
-	selectAccount: (account: LensAccount) => void;
+	selectAccount: (
+		account: LensAccount,
+	) => Promise<{ success: boolean; error?: string }>;
 }
 
 // Create context with undefined default
@@ -163,7 +166,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 		console.log("LENS ACCOUNT", isCheckingLens, lensAccounts, !isAuthenticated);
 		if (isCheckingLens || !isAuthenticated) return;
 
-		if (selectedAccount) return; // user already has selected account
+		if (sessionClient) return; // user already has selected account
 
 		// Determine which page user should be on based on account count
 		const shouldBeOnOnboarding = lensAccounts.length === 0;
@@ -268,10 +271,98 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 		setSessionClient(null);
 	}, [handleLogOut, sessionClient]);
 
-	// Select account function
-	const selectAccount = useCallback((account: LensAccount) => {
-		setSelectedAccount(account);
-	}, []);
+	// Select account function - authenticates with Lens as account owner
+	const selectAccount = useCallback(
+		async (
+			account: LensAccount,
+		): Promise<{ success: boolean; error?: string }> => {
+			// Check if primaryWallet is available
+			if (!primaryWallet) {
+				console.error(
+					"[AuthContext] Cannot select account: No wallet connected",
+				);
+				return {
+					success: false,
+					error: "No wallet connected. Please try logging in again.",
+				};
+			}
+
+			// Get app address from environment variable
+			const appAddress = import.meta.env.VITE_LENS_APP_ADDRESS;
+			if (!appAddress) {
+				console.error(
+					"[AuthContext] Cannot select account: VITE_LENS_APP_ADDRESS not configured",
+				);
+				return {
+					success: false,
+					error: "App configuration error. Please contact support.",
+				};
+			}
+
+			try {
+				console.log(
+					"[AuthContext] Authenticating as account owner:",
+					account.address,
+				);
+
+				// Get wallet client for signing
+				// @ts-expect-error - getWalletClient exists at runtime but not in type definition
+				const walletClient = await primaryWallet.getWalletClient();
+				if (!walletClient) {
+					return {
+						success: false,
+						error: "Could not access wallet client. Please try again.",
+					};
+				}
+
+				// Authenticate with Lens as account owner
+				const authResult = await authenticateAsAccountOwner(
+					account.address,
+					primaryWallet.address,
+					appAddress,
+					walletClient,
+				);
+
+				if (authResult.error) {
+					console.error(
+						"[AuthContext] Authentication failed:",
+						authResult.error,
+					);
+					return {
+						success: false,
+						error:
+							authResult.error.message ||
+							"Failed to authenticate with selected account",
+					};
+				}
+
+				console.log(
+					"[AuthContext] Successfully authenticated as account owner:",
+					account.address,
+				);
+
+				// Update session client with the new authenticated session
+				if (authResult.sessionClient) {
+					setSessionClient(authResult.sessionClient);
+				}
+
+				// Only update selected account if authentication succeeded
+				setSelectedAccount(account);
+
+				return { success: true };
+			} catch (err) {
+				console.error("[AuthContext] Select account error:", err);
+				return {
+					success: false,
+					error:
+						err instanceof Error
+							? err.message
+							: "Failed to authenticate with selected account",
+				};
+			}
+		},
+		[primaryWallet],
+	);
 
 	const value = useMemo(
 		() => ({
