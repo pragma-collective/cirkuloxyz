@@ -6,42 +6,71 @@ import { CircleHero } from "app/components/circle/circle-hero";
 import { CircleProgress } from "app/components/circle/circle-progress";
 import { CircleActivityFeed } from "app/components/circle/circle-activity-feed";
 import { UserAvatar } from "app/components/ui/user-avatar";
-import {
-	mockCircles,
-	mockPublicCircles,
-	mockCircleActivity,
-} from "app/lib/mock-data";
+import { mockCircles, mockCircleActivity } from "app/lib/mock-data";
 import type { FeedItem } from "app/types/feed";
 import { Home, Compass, PlusCircle, Bell, User } from "lucide-react";
+import { mapGroupToCircle } from "app/lib/map-group-to-circle";
+import { fetchGroup } from "@lens-protocol/client/actions";
+import { evmAddress } from "@lens-protocol/client";
+import { lensClient } from "app/lib/lens";
 
-export function meta({ params }: Route.MetaArgs) {
-	// Find circle for meta tags
-	const allCircles = [...mockCircles, ...mockPublicCircles];
-	const circle = allCircles.find((c) => c.id === params.id);
+// Client-side loader to fetch group data (runs in browser, SPA-compatible)
+export async function clientLoader({ params }: Route.ClientLoaderArgs) {
+	const groupAddress = params.id;
+	
+	if (!groupAddress || !groupAddress.startsWith("0x") || groupAddress.length !== 42) {
+		return { group: null, error: "Invalid address" };
+	}
+
+	try {
+		const result = await fetchGroup(lensClient, {
+			group: evmAddress(groupAddress),
+		});
+
+		if (result.isErr()) {
+			return { group: null, error: result.error.message };
+		}
+
+		return { group: result.value, error: null };
+	} catch (error) {
+		console.error("[ClientLoader] Error fetching group:", error);
+		return { group: null, error: "Failed to fetch group" };
+	}
+}
+
+export function meta({ loaderData }: Route.MetaArgs) {
+	const groupName = loaderData?.group?.metadata?.name;
+	const groupDescription = loaderData?.group?.metadata?.description;
 
 	return [
-		{ title: circle ? `${circle.name} - Xersha` : "Circle - Xersha" },
+		{ title: groupName ? `${groupName} - Xersha` : "Circle - Xersha" },
 		{
 			name: "description",
-			content: circle?.description || "View circle details and activity",
+			content: groupDescription || "View circle details and activity",
 		},
 	];
 }
 
-export default function CircleDetail() {
+export default function CircleDetail({ loaderData }: Route.ComponentProps) {
 	const navigate = useNavigate();
 	const params = useParams();
 	const circleId = params.id;
+
+	// Use group data from loader (already fetched during route load)
+	const group = loaderData?.group;
+	const loaderError = loaderData?.error;
 
 	// State management
 	const [activityItems, setActivityItems] =
 		useState<FeedItem[]>(mockCircleActivity);
 
-	// Find the circle from mock data
+	// Convert Lens group to Circle format
 	const circle = useMemo(() => {
-		const allCircles = [...mockCircles, ...mockPublicCircles];
-		return allCircles.find((c) => c.id === circleId);
-	}, [circleId]);
+		if (group) {
+			return mapGroupToCircle(group);
+		}
+		return null;
+	}, [group]);
 
 	// Handle like action
 	const handleLike = useCallback((itemId: string) => {
@@ -88,6 +117,73 @@ export default function CircleDetail() {
 		// TODO: Implement join functionality
 	}, [circleId]);
 
+	// Navigation items for layout
+	const navItems = [
+		{
+			icon: <Home className="size-6" />,
+			label: "Home",
+			to: "/dashboard",
+		},
+		{
+			icon: <Compass className="size-6" />,
+			label: "Explore",
+			to: "/explore",
+		},
+		{
+			icon: <PlusCircle className="size-6" />,
+			label: "Create",
+			onClick: () => navigate("/create-circle"),
+		},
+		{
+			icon: <Bell className="size-6" />,
+			label: "Alerts",
+			badge: 0,
+		},
+		{
+			icon: <User className="size-6" />,
+			label: "Profile",
+			onClick: () => navigate("/profile"),
+		},
+	];
+
+	// Show error state if group fetch failed
+	if (loaderError) {
+		return (
+			<AuthenticatedLayout
+				notificationCount={3}
+				onNotificationClick={() => console.log("Notifications clicked")}
+				onProfileClick={() => navigate("/profile")}
+				onNewContribution={() => console.log("New contribution clicked")}
+				navItems={navItems}
+			>
+				<div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-12">
+					<div className="max-w-2xl mx-auto text-center space-y-4">
+						<div className="text-6xl mb-4">⚠️</div>
+						<h1 className="text-3xl font-bold text-neutral-900">
+							Error Loading Circle
+						</h1>
+						<p className="text-neutral-600">
+							{loaderError || "Failed to load circle details from Lens Protocol"}
+						</p>
+						<div className="pt-4 space-x-4">
+							<button
+								onClick={() => window.location.reload()}
+								className="px-6 py-3 bg-gradient-to-r from-primary-500 to-secondary-500 text-white rounded-xl font-semibold hover:shadow-lg transition-all"
+							>
+								Try Again
+							</button>
+							<button
+								onClick={() => navigate("/dashboard")}
+								className="px-6 py-3 bg-neutral-200 text-neutral-900 rounded-xl font-semibold hover:bg-neutral-300 transition-all"
+							>
+								Back to Dashboard
+							</button>
+						</div>
+					</div>
+				</div>
+			</AuthenticatedLayout>
+		);
+	}
 
 	// If circle not found, show 404
 	if (!circle) {
@@ -97,33 +193,7 @@ export default function CircleDetail() {
 				onNotificationClick={() => console.log("Notifications clicked")}
 				onProfileClick={() => navigate("/profile")}
 				onNewContribution={() => console.log("New contribution clicked")}
-				navItems={[
-					{
-						icon: <Home className="size-6" />,
-						label: "Home",
-						to: "/dashboard",
-					},
-					{
-						icon: <Compass className="size-6" />,
-						label: "Explore",
-						to: "/explore",
-					},
-					{
-						icon: <PlusCircle className="size-6" />,
-						label: "Create",
-						onClick: () => navigate("/create-circle"),
-					},
-					{
-						icon: <Bell className="size-6" />,
-						label: "Alerts",
-						badge: 0,
-					},
-					{
-						icon: <User className="size-6" />,
-						label: "Profile",
-						onClick: () => navigate("/profile"),
-					},
-				]}
+				navItems={navItems}
 			>
 				<div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-12">
 					<div className="max-w-2xl mx-auto text-center space-y-4">
@@ -157,33 +227,7 @@ export default function CircleDetail() {
 			onNotificationClick={() => console.log("Notifications clicked")}
 			onProfileClick={() => navigate("/profile")}
 			onNewContribution={handleContribute}
-			navItems={[
-				{
-					icon: <Home className="size-6" />,
-					label: "Home",
-					to: "/dashboard",
-				},
-				{
-					icon: <Compass className="size-6" />,
-					label: "Explore",
-					to: "/explore",
-				},
-				{
-					icon: <PlusCircle className="size-6" />,
-					label: "Create",
-					onClick: () => navigate("/create-circle"),
-				},
-				{
-					icon: <Bell className="size-6" />,
-					label: "Alerts",
-					badge: 0,
-				},
-				{
-					icon: <User className="size-6" />,
-					label: "Profile",
-					onClick: () => navigate("/profile"),
-				},
-			]}
+			navItems={navItems}
 		>
 			{/* Hero Section */}
 			<CircleHero
