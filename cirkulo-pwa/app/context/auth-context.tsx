@@ -128,6 +128,41 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 		}
 	}, [user, isCheckingLens, location.pathname, navigate]);
 
+	// Handle session expiration / logout
+	useEffect(() => {
+		const handleLogout = () => {
+			console.log("[Auth] Logout event received, current path:", location.pathname);
+
+			// Check if user is on a protected route
+			const protectedRoutes = [
+				"/dashboard",
+				"/onboarding",
+				"/explore",
+				"/create-circle",
+				"/profile",
+				"/circle",
+			];
+
+			const isOnProtectedRoute = protectedRoutes.some((route) =>
+				location.pathname.startsWith(route),
+			);
+
+			// Redirect to login if on protected route
+			if (isOnProtectedRoute) {
+				console.log("[Auth] Redirecting to login due to session expiration");
+				navigate("/login", { replace: true });
+			}
+		};
+
+		// Listen for logout events (including session expiration)
+		authEvents.on("logout", handleLogout);
+
+		// Cleanup listener on unmount
+		return () => {
+			authEvents.off("logout", handleLogout);
+		};
+	}, [location.pathname, navigate]);
+
 	// Login function - triggers Dynamic auth flow and returns user when ready
 	const login = useCallback(async (): Promise<User> => {
 		setIsLoading(true);

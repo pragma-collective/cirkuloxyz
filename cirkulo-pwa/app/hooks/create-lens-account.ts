@@ -307,8 +307,8 @@ export function useCreateLensAccount(): UseCreateLensAccountReturn {
 				if (!params.username || params.username.trim().length === 0) {
 					throw new Error("Username is required");
 				}
-				if (!params.metadataUri || !params.metadataUri.startsWith("lens://")) {
-					throw new Error("Valid metadata URI is required (must start with lens://)");
+				if (!params.metadataUri) {
+					throw new Error("Metadata URI is required");
 				}
 				if (!params.walletAddress) {
 					throw new Error("Wallet address is required");
