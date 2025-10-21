@@ -25,6 +25,7 @@ export const InviteResponseSchema = z.object({
 		.describe("Email address the invite was sent to"),
 	groupAddress: z.string().describe("Group address the invite is for"),
 	inviteId: z.string().describe("Database ID of the created invite"),
+	inviteCode: z.string().describe("Invite code (UUID)"),
 	emailId: z.string().optional().describe("Email service provider ID"),
 });
 
@@ -72,6 +73,14 @@ export const inviteUserRoute = createRoute({
 		},
 		401: {
 			description: "Unauthorized - Invalid or missing authentication token",
+			content: {
+				"application/json": {
+					schema: ErrorSchema,
+				},
+			},
+		},
+		403: {
+			description: "Forbidden - User is not a member of the group",
 			content: {
 				"application/json": {
 					schema: ErrorSchema,
@@ -203,6 +212,73 @@ export const cancelInviteRoute = createRoute({
 			content: {
 				"application/json": {
 					schema: ErrorSchema,
+				},
+			},
+		},
+		404: {
+			description: "Invite not found",
+			content: {
+				"application/json": {
+					schema: ErrorSchema,
+				},
+			},
+		},
+		500: {
+			description: "Internal server error",
+			content: {
+				"application/json": {
+					schema: ErrorSchema,
+				},
+			},
+		},
+	},
+});
+
+// Mark Accepted Schema - for when user successfully joins on-chain
+export const MarkAcceptedSchema = z.object({
+	inviteCode: z
+		.string()
+		.uuid()
+		.describe("UUID of the invite")
+		.openapi({ example: "550e8400-e29b-41d4-a716-446655440000" }),
+	txHash: z
+		.string()
+		.describe("Transaction hash of the join operation")
+		.openapi({ example: "0x1234567890abcdef..." }),
+});
+
+export const MarkAcceptedResponseSchema = z.object({
+	success: z.boolean(),
+	message: z.string(),
+	data: z.object({
+		inviteId: z.string(),
+		groupAddress: z.string(),
+		acceptedAt: z.string(),
+	}),
+});
+
+export const markAcceptedRoute = createRoute({
+	method: "post",
+	path: "/mark-accepted",
+	tags: ["Invites"],
+	summary: "Mark invite as accepted",
+	description:
+		"Called after user successfully joins the group on-chain. Updates database status.",
+	request: {
+		body: {
+			content: {
+				"application/json": {
+					schema: MarkAcceptedSchema,
+				},
+			},
+		},
+	},
+	responses: {
+		200: {
+			description: "Invite marked as accepted",
+			content: {
+				"application/json": {
+					schema: MarkAcceptedResponseSchema,
 				},
 			},
 		},
