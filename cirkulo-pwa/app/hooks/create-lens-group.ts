@@ -55,6 +55,15 @@ export async function createLensGroup(
 
     console.log("[CreateLensGroup] Starting group creation:", { name, description, ownerAddress });
 
+    // Validate owner address format
+    if (!ownerAddress || !ownerAddress.startsWith('0x') || ownerAddress.length !== 42) {
+      console.error("[CreateLensGroup] Invalid owner address format:", ownerAddress);
+      return {
+        success: false,
+        error: "Invalid owner address format",
+      };
+    }
+
     // Convert name to Lens-compatible format (alphanumeric and hyphens only)
     const slugifiedName = slugifyGroupName(name);
     console.log("[CreateLensGroup] Slugified name:", { original: name, slugified: slugifiedName });
@@ -107,10 +116,27 @@ export async function createLensGroup(
       };
     }
 
+    // Validate address format
+    if (!ruleContractAddress.startsWith('0x') || ruleContractAddress.length !== 42) {
+      console.error("[CreateLensGroup] Invalid rule contract address format:", ruleContractAddress);
+      return {
+        success: false,
+        error: "Invalid rule contract address format",
+      };
+    }
+
     console.log("[CreateLensGroup] Using invite rule contract:", ruleContractAddress);
 
     // Step 4: Deploy group contract with custom invite rule
     console.log("[CreateLensGroup] Creating group on-chain with custom rule...");
+    console.log("[CreateLensGroup] Group creation params:", {
+      metadataUri,
+      ownerAddress,
+      ruleContractAddress,
+      executeOn: [GroupRuleExecuteOn.Joining],
+    });
+
+    // Try with corrected rule structure - empty params since configure() doesn't need them
     const createResult = await createGroup(sessionClient, {
       metadataUri: uri(metadataUri),
       owner: evmAddress(ownerAddress),
@@ -120,7 +146,7 @@ export async function createLensGroup(
             unknownRule: {
               address: evmAddress(ruleContractAddress),
               executeOn: [GroupRuleExecuteOn.Joining],
-              params: [], // Empty rule params for initial configuration
+              params: [], // Empty params - configure() doesn't need any parameters
             },
           },
         ],
