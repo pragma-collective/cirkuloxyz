@@ -2,14 +2,14 @@ import { useState, useCallback, useEffect, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { X } from "lucide-react";
-import { inviteSchema, type InviteFormData } from "app/schemas/invite-schema";
+import { inviteSchema, type InviteFormData } from "~/schemas/invite-schema";
+import { useSendInvite } from "~/hooks/use-send-invite";
 
 export interface InviteModalProps {
 	isOpen: boolean;
 	onClose: () => void;
 	circleName: string;
 	circleId: string;
-	onSubmit: (emails: string[]) => Promise<void>;
 }
 
 /**
@@ -21,10 +21,12 @@ export function InviteModal({
 	onClose,
 	circleName,
 	circleId,
-	onSubmit,
 }: InviteModalProps) {
 	const [success, setSuccess] = useState(false);
 	const modalRef = useRef<HTMLDivElement>(null);
+
+	// Setup TanStack Query mutation for sending invites
+	const { mutateAsync: sendInviteMutation } = useSendInvite();
 
 	// Setup react-hook-form with Zod validation
 	const {
@@ -98,8 +100,11 @@ export function InviteModal({
 	const onSubmitForm = useCallback(
 		async (data: InviteFormData) => {
 			try {
-				// Send single email as array for API consistency
-				await onSubmit([data.email]);
+				// Send invite via API
+				await sendInviteMutation({
+					recipientEmail: data.email,
+					groupAddress: circleId,
+				});
 				setSuccess(true);
 
 				// Close modal after success message
@@ -115,7 +120,7 @@ export function InviteModal({
 				});
 			}
 		},
-		[onSubmit, onClose, setError]
+		[sendInviteMutation, circleId, onClose, setError]
 	);
 
 	// Handle backdrop click
