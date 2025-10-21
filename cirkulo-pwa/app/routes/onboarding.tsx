@@ -12,6 +12,7 @@ import {
 	CardHeader,
 	CardTitle,
 } from "app/components/ui/card";
+import { ProfilePhotoUpload } from "app/components/ui/profile-photo-upload";
 import {
 	CheckCircle2,
 	Loader2,
@@ -71,6 +72,7 @@ export default function Onboarding() {
 		register,
 		handleSubmit,
 		watch,
+		setValue,
 		setError,
 		formState: { errors, isSubmitting },
 	} = useForm<OnboardingFormData>({
@@ -287,6 +289,16 @@ export default function Onboarding() {
 
 						<CardContent>
 							<form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+								{/* Profile Photo Upload */}
+								<div className="flex flex-col items-center">
+									<ProfilePhotoUpload
+										value={watch("profilePhoto") ?? null}
+										onChange={(file) => setValue("profilePhoto", file)}
+										error={errors.profilePhoto?.message}
+										disabled={isSubmitting || isSuccess}
+									/>
+								</div>
+
 								{/* Name field */}
 								<FormField
 									label="Name"
