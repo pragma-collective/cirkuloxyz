@@ -9,6 +9,9 @@ import {
   Share2,
   UserPlus,
   TrendingUp,
+  RefreshCw,
+  Target,
+  Heart,
 } from "lucide-react";
 import { cn } from "app/lib/utils";
 
@@ -47,6 +50,25 @@ export function CircleHero({
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     return Math.max(0, diffDays);
   }, [circle.endDate]);
+
+  // Get circle type label
+  const getCircleTypeLabel = (type: string) => {
+    switch (type) {
+      case "rotating": return "Rotating Savings Circle (ROSCA)";
+      case "fundraising": return "Fundraising Campaign";
+      case "contribution": return "Savings Circle";
+      default: return "Circle";
+    }
+  };
+
+  // Get contribute button text
+  const getContributeButtonText = (type: string) => {
+    switch (type) {
+      case "fundraising": return "Donate Now";
+      case "rotating": return "Contribute to Round";
+      default: return "Contribute Now";
+    }
+  };
 
   return (
     <div className="relative">
@@ -118,81 +140,209 @@ export function CircleHero({
             </div>
           </div>
 
-          {/* Quick Stats Cards */}
+          {/* Quick Stats Cards - Conditional based on circle type */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mb-6">
-            {/* Progress */}
-            <Card className="p-4 bg-white/90 backdrop-blur-sm border-0 shadow-lg">
-              <div className="flex items-start gap-3">
-                <div className="p-2 bg-gradient-to-br from-primary-400 to-primary-600 rounded-lg">
-                  <TrendingUp className="size-4 sm:size-5 text-white" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-xs text-neutral-600 mb-1">Progress</p>
-                  <p className="text-lg sm:text-xl font-bold text-neutral-900">
-                    {circle.progress}%
-                  </p>
-                </div>
-              </div>
-            </Card>
+            {circle.circleType === "rotating" ? (
+              <>
+                {/* Rotating Circle Stats */}
+                <Card className="p-4 bg-white/90 backdrop-blur-sm border-0 shadow-lg">
+                  <div className="flex items-start gap-3">
+                    <div className="p-2 bg-gradient-to-br from-primary-400 to-primary-600 rounded-lg">
+                      <RefreshCw className="size-4 sm:size-5 text-white" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs text-neutral-600 mb-1">Current Round</p>
+                      <p className="text-lg sm:text-xl font-bold text-neutral-900">
+                        Round {Math.max(1, Math.ceil(circle.progress / 10))}
+                      </p>
+                    </div>
+                  </div>
+                </Card>
 
-            {/* Amount Saved */}
-            <Card className="p-4 bg-white/90 backdrop-blur-sm border-0 shadow-lg">
-              <div className="flex items-start gap-3">
-                <div className="p-2 bg-gradient-to-br from-success-400 to-success-600 rounded-lg">
-                  <DollarSign className="size-4 sm:size-5 text-white" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-xs text-neutral-600 mb-1">Saved</p>
-                  <p className="text-lg sm:text-xl font-bold text-neutral-900">
-                    {formatCurrency(circle.currentAmount)}
-                  </p>
-                </div>
-              </div>
-            </Card>
+                <Card className="p-4 bg-white/90 backdrop-blur-sm border-0 shadow-lg">
+                  <div className="flex items-start gap-3">
+                    <div className="p-2 bg-gradient-to-br from-success-400 to-success-600 rounded-lg">
+                      <DollarSign className="size-4 sm:size-5 text-white" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs text-neutral-600 mb-1">Per Round</p>
+                      <p className="text-lg sm:text-xl font-bold text-neutral-900">
+                        {formatCurrency(circle.goalAmount / (circle.memberCount || 12))}
+                      </p>
+                    </div>
+                  </div>
+                </Card>
 
-            {/* Goal */}
-            <Card className="p-4 bg-white/90 backdrop-blur-sm border-0 shadow-lg">
-              <div className="flex items-start gap-3">
-                <div className="p-2 bg-gradient-to-br from-secondary-400 to-secondary-600 rounded-lg">
-                  <TrendingUp className="size-4 sm:size-5 text-white" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-xs text-neutral-600 mb-1">Goal</p>
-                  <p className="text-lg sm:text-xl font-bold text-neutral-900">
-                    {formatCurrency(circle.goalAmount)}
-                  </p>
-                </div>
-              </div>
-            </Card>
+                <Card className="p-4 bg-white/90 backdrop-blur-sm border-0 shadow-lg">
+                  <div className="flex items-start gap-3">
+                    <div className="p-2 bg-gradient-to-br from-secondary-400 to-secondary-600 rounded-lg">
+                      <Users className="size-4 sm:size-5 text-white" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs text-neutral-600 mb-1">Your Position</p>
+                      <p className="text-lg sm:text-xl font-bold text-neutral-900">
+                        #5
+                      </p>
+                    </div>
+                  </div>
+                </Card>
 
-            {/* Days Left */}
-            <Card className="p-4 bg-white/90 backdrop-blur-sm border-0 shadow-lg">
-              <div className="flex items-start gap-3">
-                <div className="p-2 bg-gradient-to-br from-warning-400 to-warning-600 rounded-lg">
-                  <Calendar className="size-4 sm:size-5 text-white" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-xs text-neutral-600 mb-1">Days Left</p>
-                  <p className="text-lg sm:text-xl font-bold text-neutral-900">
-                    {daysLeft}
-                  </p>
-                </div>
-              </div>
-            </Card>
+                <Card className="p-4 bg-white/90 backdrop-blur-sm border-0 shadow-lg">
+                  <div className="flex items-start gap-3">
+                    <div className="p-2 bg-gradient-to-br from-warning-400 to-warning-600 rounded-lg">
+                      <Calendar className="size-4 sm:size-5 text-white" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs text-neutral-600 mb-1">Next Payout</p>
+                      <p className="text-lg sm:text-xl font-bold text-neutral-900">
+                        {30 - (new Date().getDate() % 30)} days
+                      </p>
+                    </div>
+                  </div>
+                </Card>
+              </>
+            ) : circle.circleType === "fundraising" ? (
+              <>
+                {/* Fundraising Circle Stats */}
+                <Card className="p-4 bg-white/90 backdrop-blur-sm border-0 shadow-lg">
+                  <div className="flex items-start gap-3">
+                    <div className="p-2 bg-gradient-to-br from-success-400 to-success-600 rounded-lg">
+                      <Heart className="size-4 sm:size-5 text-white" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs text-neutral-600 mb-1">Raised</p>
+                      <p className="text-lg sm:text-xl font-bold text-neutral-900">
+                        {formatCurrency(circle.currentAmount)}
+                      </p>
+                    </div>
+                  </div>
+                </Card>
+
+                <Card className="p-4 bg-white/90 backdrop-blur-sm border-0 shadow-lg">
+                  <div className="flex items-start gap-3">
+                    <div className="p-2 bg-gradient-to-br from-primary-400 to-primary-600 rounded-lg">
+                      <Target className="size-4 sm:size-5 text-white" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs text-neutral-600 mb-1">Goal</p>
+                      <p className="text-lg sm:text-xl font-bold text-neutral-900">
+                        {formatCurrency(circle.goalAmount)}
+                      </p>
+                    </div>
+                  </div>
+                </Card>
+
+                <Card className="p-4 bg-white/90 backdrop-blur-sm border-0 shadow-lg">
+                  <div className="flex items-start gap-3">
+                    <div className="p-2 bg-gradient-to-br from-secondary-400 to-secondary-600 rounded-lg">
+                      <TrendingUp className="size-4 sm:size-5 text-white" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs text-neutral-600 mb-1">Progress</p>
+                      <p className="text-lg sm:text-xl font-bold text-neutral-900">
+                        {circle.progress}%
+                      </p>
+                    </div>
+                  </div>
+                </Card>
+
+                <Card className="p-4 bg-white/90 backdrop-blur-sm border-0 shadow-lg">
+                  <div className="flex items-start gap-3">
+                    <div className="p-2 bg-gradient-to-br from-warning-400 to-warning-600 rounded-lg">
+                      <Calendar className="size-4 sm:size-5 text-white" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs text-neutral-600 mb-1">Deadline</p>
+                      <p className="text-lg sm:text-xl font-bold text-neutral-900">
+                        {daysLeft} days
+                      </p>
+                    </div>
+                  </div>
+                </Card>
+              </>
+            ) : (
+              <>
+                {/* Contribution Circle Stats (default) */}
+                <Card className="p-4 bg-white/90 backdrop-blur-sm border-0 shadow-lg">
+                  <div className="flex items-start gap-3">
+                    <div className="p-2 bg-gradient-to-br from-primary-400 to-primary-600 rounded-lg">
+                      <TrendingUp className="size-4 sm:size-5 text-white" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs text-neutral-600 mb-1">Progress</p>
+                      <p className="text-lg sm:text-xl font-bold text-neutral-900">
+                        {circle.progress}%
+                      </p>
+                    </div>
+                  </div>
+                </Card>
+
+                <Card className="p-4 bg-white/90 backdrop-blur-sm border-0 shadow-lg">
+                  <div className="flex items-start gap-3">
+                    <div className="p-2 bg-gradient-to-br from-success-400 to-success-600 rounded-lg">
+                      <DollarSign className="size-4 sm:size-5 text-white" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs text-neutral-600 mb-1">Saved</p>
+                      <p className="text-lg sm:text-xl font-bold text-neutral-900">
+                        {formatCurrency(circle.currentAmount)}
+                      </p>
+                    </div>
+                  </div>
+                </Card>
+
+                <Card className="p-4 bg-white/90 backdrop-blur-sm border-0 shadow-lg">
+                  <div className="flex items-start gap-3">
+                    <div className="p-2 bg-gradient-to-br from-secondary-400 to-secondary-600 rounded-lg">
+                      <Target className="size-4 sm:size-5 text-white" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs text-neutral-600 mb-1">Goal</p>
+                      <p className="text-lg sm:text-xl font-bold text-neutral-900">
+                        {formatCurrency(circle.goalAmount)}
+                      </p>
+                    </div>
+                  </div>
+                </Card>
+
+                <Card className="p-4 bg-white/90 backdrop-blur-sm border-0 shadow-lg">
+                  <div className="flex items-start gap-3">
+                    <div className="p-2 bg-gradient-to-br from-warning-400 to-warning-600 rounded-lg">
+                      <Calendar className="size-4 sm:size-5 text-white" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs text-neutral-600 mb-1">Days Left</p>
+                      <p className="text-lg sm:text-xl font-bold text-neutral-900">
+                        {daysLeft}
+                      </p>
+                    </div>
+                  </div>
+                </Card>
+              </>
+            )}
           </div>
 
           {/* Action Buttons */}
           <div className="flex flex-col gap-2.5 sm:flex-row sm:gap-3">
             {isMember ? (
               <>
-                {/* Primary Action - Contribute Now */}
+                {/* Primary Action - Contribute/Donate Now */}
                 <Button
                   size="lg"
                   onClick={onContribute}
-                  className="w-full sm:w-auto gap-2 px-6 sm:px-8 bg-gradient-to-r from-primary-500 to-secondary-500 hover:from-primary-600 hover:to-secondary-600 text-white shadow-lg"
+                  className={cn(
+                    "w-full sm:w-auto gap-2 px-6 sm:px-8 text-white shadow-lg",
+                    circle.circleType === "fundraising"
+                      ? "bg-gradient-to-r from-success-500 to-teal-500 hover:from-success-600 hover:to-teal-600"
+                      : "bg-gradient-to-r from-primary-500 to-secondary-500 hover:from-primary-600 hover:to-secondary-600"
+                  )}
                 >
-                  <DollarSign className="size-5" />
-                  Contribute Now
+                  {circle.circleType === "fundraising" ? (
+                    <Heart className="size-5" />
+                  ) : (
+                    <DollarSign className="size-5" />
+                  )}
+                  {getContributeButtonText(circle.circleType)}
                 </Button>
 
                 {/* Secondary Actions - Grouped Horizontally on Mobile */}

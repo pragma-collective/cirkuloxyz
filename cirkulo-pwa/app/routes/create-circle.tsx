@@ -26,6 +26,7 @@ import { cn } from "app/lib/utils";
 import { useDynamicContext } from "@dynamic-labs/sdk-react-core";
 import { useAuth } from "app/context/auth-context";
 import { useCreateLensGroup } from "app/hooks/create-lens-group";
+import { useSaveCircle } from "~/hooks/use-save-circle";
 import { xershaFactoryAbi, getXershaFactoryAddress } from "app/lib/abi";
 import { parseEther, decodeEventLog } from "viem";
 import { citreaTestnet } from "app/lib/wagmi";
@@ -68,6 +69,7 @@ export default function CreateCircle() {
   const { primaryWallet } = useDynamicContext();
   const { sessionClient } = useAuth();
   const { createGroup, isCreating, error: groupCreationError } = useCreateLensGroup();
+  const saveCircleMutation = useSaveCircle();
 
   // Wagmi hooks for contract interaction
   const { writeContractAsync } = useWriteContract();
@@ -76,6 +78,9 @@ export default function CreateCircle() {
   const { data: txReceipt, isLoading: isWaitingForTx } = useWaitForTransactionReceipt({
     hash: poolDeploymentTxHash,
   });
+
+  // Store lens group address for later use in API call
+  const [lensGroupAddress, setLensGroupAddress] = useState<string | undefined>();
 
   // Form state
   const [formData, setFormData] = useState<FormData>({
@@ -403,6 +408,9 @@ export default function CreateCircle() {
 
       if (!result.groupAddress) return;
 
+      // Store lens group address for later use in API call
+      setLensGroupAddress(result.groupAddress);
+
       // Call XershaFactory to create pool based on circle type
       try {
         const factoryAddress = getXershaFactoryAddress();
@@ -411,9 +419,9 @@ export default function CreateCircle() {
 
         // Switch to Citrea network using wagmi
         // NOTE: DONT REMOVE YET FOR FURTHER TESTING (jhuds)
-        // console.log("[CreateCircle] Switching to Citrea Testnet using wagmi...");
-        // await switchChainAsync({ chainId: citreaTestnet.id });
-        // console.log("[CreateCircle] Chain switched to Citrea");
+        console.log("[CreateCircle] Switching to Citrea Testnet using wagmi...");
+        await switchChainAsync({ chainId: citreaTestnet.id });
+        console.log("[CreateCircle] Chain switched to Citrea");
 
         let txHash;
 
@@ -521,51 +529,90 @@ export default function CreateCircle() {
 
   // Handle transaction receipt and extract pool address
   useEffect(() => {
-    if (txReceipt && poolDeploymentTxHash) {
+    if (txReceipt && poolDeploymentTxHash && lensGroupAddress) {
       console.log("[CreateCircle] Transaction confirmed! Receipt:", txReceipt);
 
       // Extract pool address from PoolCreated event in logs
-      try {
-        const poolCreatedLog = txReceipt.logs.find((log) => {
-          try {
-            const decoded = decodeEventLog({
-              abi: xershaFactoryAbi,
-              data: log.data,
-              topics: log.topics,
-            });
-            return decoded.eventName === "PoolCreated";
-          } catch {
-            return false;
-          }
-        });
-
-        if (poolCreatedLog) {
-          const decoded = decodeEventLog({
-            abi: xershaFactoryAbi,
-            data: poolCreatedLog.data,
-            topics: poolCreatedLog.topics,
+      const processReceipt = async () => {
+        try {
+          const poolCreatedLog = txReceipt.logs.find((log) => {
+            try {
+              const decoded = decodeEventLog({
+                abi: xershaFactoryAbi,
+                data: log.data,
+                topics: log.topics,
+              });
+              return decoded.eventName === "PoolCreated";
+            } catch {
+              return false;
+            }
           });
 
-          if (decoded.eventName === "PoolCreated") {
-            const poolAddress = decoded.args.poolAddress;
-            console.log("[CreateCircle] Pool deployed at:", poolAddress);
+          if (poolCreatedLog) {
+            const decoded = decodeEventLog({
+              abi: xershaFactoryAbi,
+              data: poolCreatedLog.data,
+              topics: poolCreatedLog.topics,
+            });
 
-            // Now we can set success and navigate
-            setIsSuccess(true);
+            if (decoded.eventName === "PoolCreated") {
+              const poolAddress = decoded.args.poolAddress;
+              console.log("[CreateCircle] Pool deployed at:", poolAddress);
 
-            // Navigate after 2 seconds
-            setTimeout(() => {
-              navigate("/dashboard");
-            }, 2000);
+              // Save circle to database before setting success
+              console.log("[CreateCircle] Saving circle to database...");
+
+              try {
+                await saveCircleMutation.mutateAsync({
+                  circleName: formData.name.trim(),
+                  poolAddress: poolAddress as string,
+                  lensGroupAddress,
+                  poolDeploymentTxHash,
+                  circleType: formData.circleType as "contribution" | "rotating" | "fundraising",
+                });
+
+                console.log("[CreateCircle] Circle saved to database successfully");
+              } catch (saveError) {
+                console.error("[CreateCircle] Failed to save circle to database:", saveError);
+                setErrors((prev) => ({
+                  ...prev,
+                  name: saveError instanceof Error
+                    ? `Circle created but failed to save configuration: ${saveError.message}`
+                    : "Circle created but failed to save configuration",
+                }));
+                setIsSubmitting(false);
+                return;
+              }
+
+              // Now we can set success and navigate to circle detail
+              setIsSuccess(true);
+
+              // Navigate to circle detail page after 2 seconds
+              setTimeout(() => {
+                navigate(`/circle/${lensGroupAddress}`);
+              }, 2000);
+            }
+          } else {
+            console.error("[CreateCircle] PoolCreated event not found in transaction logs");
+            setErrors((prev) => ({
+              ...prev,
+              name: "Pool created but couldn't extract pool address from transaction",
+            }));
+            setIsSubmitting(false);
           }
-        } else {
-          console.error("[CreateCircle] PoolCreated event not found in transaction logs");
+        } catch (error) {
+          console.error("[CreateCircle] Failed to process pool deployment:", error);
+          setErrors((prev) => ({
+            ...prev,
+            name: error instanceof Error ? error.message : "Failed to process pool deployment",
+          }));
+          setIsSubmitting(false);
         }
-      } catch (error) {
-        console.error("[CreateCircle] Failed to decode pool address from receipt:", error);
-      }
+      };
+
+      processReceipt();
     }
-  }, [txReceipt, poolDeploymentTxHash, navigate]);
+  }, [txReceipt, poolDeploymentTxHash, lensGroupAddress, navigate, sessionClient, formData]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary-50 via-white to-secondary-50 relative overflow-hidden">

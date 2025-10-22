@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import type { Circle } from "app/types/feed";
 import { Card, CardContent, CardHeader, CardTitle } from "app/components/ui/card";
-import { Trophy, Target } from "lucide-react";
+import { Trophy, Target, RefreshCw, Users } from "lucide-react";
 import { cn } from "app/lib/utils";
 
 export interface CircleProgressProps {
@@ -19,6 +19,116 @@ export function CircleProgress({ circle, className }: CircleProgressProps) {
       maximumFractionDigits: 0,
     }).format(amount);
   };
+
+  // For rotating circles, show round-based progress
+  if (circle.circleType === "rotating") {
+    const totalRounds = circle.memberCount || 12;
+    const currentRound = Math.max(1, Math.ceil((circle.progress / 100) * totalRounds));
+    const daysUntilNextPayout = 30 - (new Date().getDate() % 30);
+
+    return (
+      <Card className={cn("bg-white/90 backdrop-blur-sm border-0 shadow-lg", className)}>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-xl sm:text-2xl">Round Progress</CardTitle>
+            {currentRound === totalRounds && (
+              <div className="flex items-center gap-2 text-success-600">
+                <Trophy className="size-5" />
+                <span className="text-sm font-semibold">All Rounds Complete!</span>
+              </div>
+            )}
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          {/* Round Display */}
+          <div className="text-center space-y-3">
+            <div className="relative inline-flex items-center justify-center">
+              {/* Circular Progress */}
+              <svg className="size-40 sm:size-48 -rotate-90" viewBox="0 0 200 200">
+                <circle
+                  cx="100"
+                  cy="100"
+                  r="85"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="12"
+                  className="text-neutral-200"
+                />
+                <circle
+                  cx="100"
+                  cy="100"
+                  r="85"
+                  fill="none"
+                  stroke="url(#round-gradient)"
+                  strokeWidth="12"
+                  strokeLinecap="round"
+                  strokeDasharray={`${((currentRound - 1) / totalRounds) * 534.07} 534.07`}
+                  className="transition-all duration-1000 ease-out"
+                />
+                <defs>
+                  <linearGradient id="round-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stopColor="oklch(0.72 0.14 45)" />
+                    <stop offset="100%" stopColor="oklch(0.70 0.14 290)" />
+                  </linearGradient>
+                </defs>
+              </svg>
+
+              {/* Center Content */}
+              <div className="absolute inset-0 flex flex-col items-center justify-center">
+                <div className="text-4xl sm:text-5xl font-bold text-neutral-900">
+                  Round {currentRound}
+                </div>
+                <div className="text-sm text-neutral-600 mt-1">of {totalRounds}</div>
+              </div>
+            </div>
+
+            <div className="space-y-1">
+              <div className="text-2xl sm:text-3xl font-bold text-neutral-900">
+                {formatCurrency(circle.goalAmount / totalRounds)}
+              </div>
+              <div className="text-sm text-neutral-600">
+                per round contribution
+              </div>
+            </div>
+          </div>
+
+          {/* Next Payout Info */}
+          {currentRound < totalRounds && (
+            <div className="bg-neutral-50 rounded-xl p-4 flex items-center gap-3">
+              <div className="p-2 bg-gradient-to-br from-primary-400 to-secondary-400 rounded-lg">
+                <RefreshCw className="size-5 text-white" />
+              </div>
+              <div className="flex-1">
+                <p className="text-sm font-semibold text-neutral-900">
+                  Next Payout in {daysUntilNextPayout} days
+                </p>
+                <p className="text-xs text-neutral-600 mt-0.5">
+                  Recipient: Member #{currentRound + 1}
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* All Rounds Complete */}
+          {currentRound === totalRounds && (
+            <div className="bg-gradient-to-br from-success-50 to-success-100 rounded-xl p-4 border-2 border-success-500">
+              <div className="flex items-center gap-3">
+                <div className="text-3xl">🎉</div>
+                <div className="flex-1">
+                  <p className="text-sm font-bold text-success-900">
+                    All rounds completed!
+                  </p>
+                  <p className="text-xs text-success-700 mt-0.5">
+                    Everyone has received their payout
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    );
+  }
 
   // Calculate next milestone
   const nextMilestone = useMemo(() => {

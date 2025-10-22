@@ -15,7 +15,7 @@ export interface Circle {
   name: string;
   emoji?: string;
   description?: string;
-  savingType: "rotating" | "contribution";
+  circleType: "rotating" | "contribution" | "fundraising";
   contributionSchedule: "weekly" | "bi-weekly" | "monthly";
   endDate: string;
   goalName: string;
