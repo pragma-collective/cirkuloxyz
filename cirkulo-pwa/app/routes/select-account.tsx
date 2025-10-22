@@ -113,9 +113,6 @@ export default function SelectAccount() {
 		);
 	}
 
-	// Show featured card for single account, grid for multiple
-	const isSingleAccount = lensAccounts.length === 1;
-
 	return (
 		<div className="min-h-screen bg-gradient-to-br from-primary-50 via-white to-secondary-50 relative overflow-hidden">
 			{/* Decorative background blobs */}
@@ -136,12 +133,12 @@ export default function SelectAccount() {
 					{/* Header */}
 					<div className="text-center mb-8">
 						<h1 className="text-3xl md:text-4xl font-bold text-neutral-900 mb-3">
-							{isSingleAccount
+							{lensAccounts.length === 1
 								? "Welcome Back!"
 								: "Select Your Account"}
 						</h1>
 						<p className="text-lg text-neutral-600">
-							{isSingleAccount
+							{lensAccounts.length === 1
 								? "Continue with your Lens account"
 								: `You have ${lensAccounts.length} Lens accounts. Choose which one to use.`}
 						</p>
@@ -161,37 +158,22 @@ export default function SelectAccount() {
 					)}
 
 					{/* Account Cards */}
-					{isSingleAccount ? (
-						// Featured card for single account
-						<div className="max-w-lg mx-auto">
+					<div
+						className={cn(
+							"grid gap-4 grid-cols-1",
+							lensAccounts.length > 1 && "md:grid-cols-2",
+							lensAccounts.length > 4 && "lg:grid-cols-3",
+						)}
+					>
+						{lensAccounts.map((account) => (
 							<AccountCard
-								account={lensAccounts[0]}
-								variant="featured"
+								key={account.address}
+								account={account}
 								onSelect={handleSelectAccount}
 								isSelecting={isSelecting}
 							/>
-						</div>
-					) : (
-						// Grid for multiple accounts
-						<div
-							className={cn(
-								"grid gap-4",
-								"grid-cols-1",
-								"md:grid-cols-2",
-								lensAccounts.length > 4 && "lg:grid-cols-3",
-							)}
-						>
-							{lensAccounts.map((account) => (
-								<AccountCard
-									key={account.address}
-									account={account}
-									variant="compact"
-									onSelect={handleSelectAccount}
-									isSelecting={isSelecting}
-								/>
-							))}
-						</div>
-					)}
+						))}
+					</div>
 				</div>
 			</div>
 		</div>
