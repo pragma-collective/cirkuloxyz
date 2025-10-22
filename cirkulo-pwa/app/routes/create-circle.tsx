@@ -27,6 +27,9 @@ import { cn } from "app/lib/utils";
 import { useDynamicContext } from "@dynamic-labs/sdk-react-core";
 import { useAuth } from "app/context/auth-context";
 import { useCreateLensGroup } from "app/hooks/create-lens-group";
+import { lensClient } from "app/lib/lens";
+import { xershaFactoryAbi, getXershaFactoryAddress } from "app/lib/abi";
+import { encodeFunctionData } from "viem";
 
 export function meta({}: Route.MetaArgs) {
   return [
@@ -344,6 +347,68 @@ export default function CreateCircle() {
         transactionHash: result.transactionHash,
         groupAddress: result.groupAddress,
       });
+      */
+
+      // TEMPORARY: Mock group address for testing XershaFactory
+      const result = {
+        success: true,
+        groupAddress: "0x1234567890123456789012345678901234567890" as `0x${string}`,
+      };
+      console.log("[CreateCircle] Using mock group address for testing:", result.groupAddress);
+
+      // TEST: Call XershaFactory.createSavingsPool
+      try {
+        console.log("[CreateCircle] Calling XershaFactory.createSavingsPool...");
+
+        const factoryAddress = getXershaFactoryAddress();
+        console.log("[CreateCircle] Factory address:", factoryAddress);
+
+        // Encode the function call data
+        const data = encodeFunctionData({
+          abi: xershaFactoryAbi,
+          functionName: "createSavingsPool",
+          args: [result.groupAddress, formData.name.trim()],
+        });
+
+        // Send transaction using wallet client
+        const txHash = await walletClient.sendTransaction({
+          to: factoryAddress,
+          data,
+          chain: walletClient.chain,
+          account: walletClient.account,
+        });
+
+        console.log("[CreateCircle] Transaction sent:", txHash);
+        console.log("[CreateCircle] Waiting for confirmation...");
+
+        // Wait for transaction receipt
+        const receipt = await walletClient.waitForTransactionReceipt({ hash: txHash });
+
+        console.log("[CreateCircle] Transaction confirmed!");
+        console.log("[CreateCircle] Block number:", receipt.blockNumber);
+        console.log("[CreateCircle] Gas used:", receipt.gasUsed);
+        console.log("[CreateCircle] Status:", receipt.status);
+
+        // Look for PoolCreated event in logs
+        if (receipt.logs && receipt.logs.length > 0) {
+          console.log("[CreateCircle] Event logs:", receipt.logs);
+          // The first topic is the event signature, second is circleId, third is poolAddress
+          const poolCreatedLog = receipt.logs[0];
+          if (poolCreatedLog && poolCreatedLog.topics && poolCreatedLog.topics.length >= 3) {
+            // Extract pool address from indexed parameter (topic[2])
+            const poolAddress = `0x${poolCreatedLog.topics[2]?.slice(-40)}`;
+            console.log("[CreateCircle] Pool created at address:", poolAddress);
+          }
+        }
+      } catch (contractError) {
+        console.error("[CreateCircle] XershaFactory call failed:", contractError);
+        setErrors((prev) => ({
+          ...prev,
+          name: contractError instanceof Error ? contractError.message : "Failed to create pool",
+        }));
+        setIsSubmitting(false);
+        return;
+      }
 
       // Show success state
       setIsSuccess(true);
