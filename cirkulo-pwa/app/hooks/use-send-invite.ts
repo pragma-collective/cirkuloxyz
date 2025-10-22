@@ -20,8 +20,6 @@ export interface SendInviteRequest {
  * Based on the API schema from cirkulo-api
  */
 export interface SendInviteResponse {
-	success: boolean;
-	message: string;
 	inviteId: string;
 	inviteCode: string;
 	expiresAt: string;
