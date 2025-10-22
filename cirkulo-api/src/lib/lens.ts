@@ -85,6 +85,7 @@ export async function isGroupMember(
 		}
 
 		const members = result.value.items;
+		console.log("here: ", members, memberAddress);
 
 		// Check if memberAddress is in the list of members
 		const isMember = members.some(
@@ -133,10 +134,49 @@ export async function fetchGroup(groupAddress: string): Promise<{
 
 		// Extract configSalt from the first required rule
 		// According to Lens Protocol docs: group.rules.required[0].id is the configSalt
-		const configSalt = group.rules?.required?.[0]?.id || groupAddress;
+		const rawConfigSalt = group.rules?.required?.[0]?.id || groupAddress;
+
+		console.log(`📝 Raw configSalt from Lens:`, {
+			rawConfigSalt,
+			type: typeof rawConfigSalt,
+			isString: typeof rawConfigSalt === "string",
+			startsWithHex:
+				typeof rawConfigSalt === "string" && rawConfigSalt.startsWith("0x"),
+		});
+
+		// The configSalt might be in different formats from Lens Protocol
+		let configSalt: string;
+
+		if (typeof rawConfigSalt === "string") {
+			if (rawConfigSalt.startsWith("0x")) {
+				// Already a hex string
+				configSalt = rawConfigSalt;
+			} else {
+				// Check if it's a Base64 encoded JSON or just use as-is
+				try {
+					// Try to decode as Base64 if it looks like one
+					if (rawConfigSalt.length > 20 && !rawConfigSalt.includes(" ")) {
+						const decoded = Buffer.from(rawConfigSalt, "base64").toString(
+							"utf-8",
+						);
+						const parsed = JSON.parse(decoded);
+						configSalt =
+							parsed.config_salt || parsed.configSalt || rawConfigSalt;
+					} else {
+						configSalt = rawConfigSalt;
+					}
+				} catch {
+					// Not Base64 JSON, use as-is
+					configSalt = rawConfigSalt;
+				}
+			}
+		} else {
+			// Convert to string if it's not already
+			configSalt = String(rawConfigSalt);
+		}
 
 		console.log(`✅ Fetched group: ${group.metadata?.name || "Unknown"}`);
-		console.log(`📝 ConfigSalt: ${configSalt}`);
+		console.log(`📝 Final ConfigSalt: ${configSalt}`);
 
 		return {
 			address: group.address,

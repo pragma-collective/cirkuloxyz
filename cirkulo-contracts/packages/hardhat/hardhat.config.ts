@@ -174,7 +174,7 @@ const config: HardhatUserConfig = {
         network: "lensTestnet",
         chainId: 37111,
         urls: {
-          apiURL: "https://explorer-api.testnet.lens.xyz",
+          apiURL: "https://explorer-api.testnet.lens.xyz/api",
           browserURL: "https://explorer.testnet.lens.xyz",
         },
       },

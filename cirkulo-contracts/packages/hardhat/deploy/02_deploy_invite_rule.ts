@@ -109,5 +109,6 @@ const deployInviteRule: DeployFunction = async function (hre: HardhatRuntimeEnvi
 };
 
 export default deployInviteRule;
+deployInviteRule.id = "deploy_invite_only_group_rule";
 deployInviteRule.tags = ["InviteOnlyGroupRule", "invite"];
 deployInviteRule.dependencies = []; // No dependencies

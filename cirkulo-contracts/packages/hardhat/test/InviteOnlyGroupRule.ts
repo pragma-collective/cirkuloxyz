@@ -8,6 +8,7 @@ describe("InviteOnlyGroupRule", function () {
   let inviteRule: InviteOnlyGroupRule;
   let owner: SignerWithAddress;
   let backend: SignerWithAddress;
+  let inviter: SignerWithAddress;
   let invitee: SignerWithAddress;
   let attacker: SignerWithAddress;
   let newBackend: SignerWithAddress;
@@ -15,10 +16,11 @@ describe("InviteOnlyGroupRule", function () {
   const configSalt = ethers.encodeBytes32String("test-group-1");
   const inviteCode = "SECRET123";
   const inviteCodeHash = ethers.keccak256(ethers.toUtf8Bytes(inviteCode));
+  const PARAM__INVITE_CODE = "0x5797e5205a2d50babd9c0c4d9ab1fc2eb654e110118c575a0c6efc620e7e055e"; // keccak256("lens.param.inviteCode")
 
   beforeEach(async function () {
     // Get signers
-    [owner, backend, invitee, attacker, newBackend] = await ethers.getSigners();
+    [owner, backend, inviter, invitee, attacker, newBackend] = await ethers.getSigners();
 
     // Deploy contract
     const InviteOnlyGroupRule = await ethers.getContractFactory("InviteOnlyGroupRule");
@@ -50,13 +52,13 @@ describe("InviteOnlyGroupRule", function () {
       await expect(
         inviteRule.connect(backend).registerInvite(
           configSalt,
-          invitee.address,
+          inviter.address,
           inviteCodeHash,
           expiresAt
         )
       )
         .to.emit(inviteRule, "InviteRegistered")
-        .withArgs(configSalt, invitee.address, inviteCodeHash, expiresAt);
+        .withArgs(configSalt, inviter.address, inviteCodeHash, expiresAt);
     });
 
     it("Should not allow non-backend to register invite", async function () {
@@ -65,7 +67,7 @@ describe("InviteOnlyGroupRule", function () {
       await expect(
         inviteRule.connect(attacker).registerInvite(
           configSalt,
-          invitee.address,
+          inviter.address,
           inviteCodeHash,
           expiresAt
         )
@@ -74,58 +76,57 @@ describe("InviteOnlyGroupRule", function () {
 
     it("Should allow multiple invites for same group", async function () {
       const expiresAt = (await time.latest()) + 86400;
-      const invitee2 = attacker;
 
       // Register first invite
       await inviteRule.connect(backend).registerInvite(
         configSalt,
-        invitee.address,
+        inviter.address,
         inviteCodeHash,
         expiresAt
       );
 
-      // Register second invite
+      // Register second invite with different code
       const inviteCode2 = "SECRET456";
       const inviteCodeHash2 = ethers.keccak256(ethers.toUtf8Bytes(inviteCode2));
 
       await expect(
         inviteRule.connect(backend).registerInvite(
           configSalt,
-          invitee2.address,
+          inviter.address,
           inviteCodeHash2,
           expiresAt
         )
       )
         .to.emit(inviteRule, "InviteRegistered")
-        .withArgs(configSalt, invitee2.address, inviteCodeHash2, expiresAt);
+        .withArgs(configSalt, inviter.address, inviteCodeHash2, expiresAt);
     });
 
-    it("Should allow overwriting existing invite", async function () {
+    it("Should allow same inviter to create multiple invites", async function () {
       const expiresAt1 = (await time.latest()) + 86400;
       const expiresAt2 = (await time.latest()) + 172800; // 48 hours
 
       // Register initial invite
       await inviteRule.connect(backend).registerInvite(
         configSalt,
-        invitee.address,
+        inviter.address,
         inviteCodeHash,
         expiresAt1
       );
 
-      // Overwrite with new invite
+      // Create another invite with different code
       const newInviteCode = "NEWSECRET789";
       const newInviteCodeHash = ethers.keccak256(ethers.toUtf8Bytes(newInviteCode));
 
       await expect(
         inviteRule.connect(backend).registerInvite(
           configSalt,
-          invitee.address,
+          inviter.address,
           newInviteCodeHash,
           expiresAt2
         )
       )
         .to.emit(inviteRule, "InviteRegistered")
-        .withArgs(configSalt, invitee.address, newInviteCodeHash, expiresAt2);
+        .withArgs(configSalt, inviter.address, newInviteCodeHash, expiresAt2);
     });
   });
 
@@ -134,9 +135,10 @@ describe("InviteOnlyGroupRule", function () {
 
     beforeEach(async function () {
       expiresAt = (await time.latest()) + 86400;
+      // Register invite created by 'inviter'
       await inviteRule.connect(backend).registerInvite(
         configSalt,
-        invitee.address,
+        inviter.address,
         inviteCodeHash,
         expiresAt
       );
@@ -144,9 +146,10 @@ describe("InviteOnlyGroupRule", function () {
 
     it("Should validate correct invite code", async function () {
       const ruleParams = [
-        { key: "inviteCode", value: ethers.toUtf8Bytes(inviteCode) }
+        { key: PARAM__INVITE_CODE, value: ethers.AbiCoder.defaultAbiCoder().encode(["string"], [inviteCode]) }
       ];
 
+      // 'invitee' uses the code to join
       await expect(
         inviteRule.processJoining(
           configSalt,
@@ -156,13 +159,13 @@ describe("InviteOnlyGroupRule", function () {
         )
       )
         .to.emit(inviteRule, "InviteUsed")
-        .withArgs(configSalt, invitee.address, inviteCodeHash);
+        .withArgs(configSalt, invitee.address, inviteCodeHash, inviter.address);
     });
 
     it("Should reject wrong invite code", async function () {
       const wrongCode = "WRONGCODE";
       const ruleParams = [
-        { key: "inviteCode", value: ethers.toUtf8Bytes(wrongCode) }
+        { key: PARAM__INVITE_CODE, value: ethers.AbiCoder.defaultAbiCoder().encode(["string"], [wrongCode]) }
       ];
 
       await expect(
@@ -176,18 +179,20 @@ describe("InviteOnlyGroupRule", function () {
     });
 
     it("Should reject non-existent invite", async function () {
+      const unregisteredCode = "UNREGISTERED";
       const ruleParams = [
-        { key: "inviteCode", value: ethers.toUtf8Bytes(inviteCode) }
+        { key: PARAM__INVITE_CODE, value: ethers.AbiCoder.defaultAbiCoder().encode(["string"], [unregisteredCode]) }
       ];
 
+      // Anyone trying to use a code that was never registered should fail
       await expect(
         inviteRule.processJoining(
           configSalt,
-          attacker.address, // Not invited
+          attacker.address,
           [],
           ruleParams
         )
-      ).to.be.revertedWithCustomError(inviteRule, "InviteNotFound");
+      ).to.be.revertedWithCustomError(inviteRule, "InvalidInviteCode");
     });
 
     it("Should reject expired invite", async function () {
@@ -195,7 +200,7 @@ describe("InviteOnlyGroupRule", function () {
       await time.increaseTo(expiresAt + 1);
 
       const ruleParams = [
-        { key: "inviteCode", value: ethers.toUtf8Bytes(inviteCode) }
+        { key: PARAM__INVITE_CODE, value: ethers.AbiCoder.defaultAbiCoder().encode(["string"], [inviteCode]) }
       ];
 
       await expect(
@@ -210,7 +215,7 @@ describe("InviteOnlyGroupRule", function () {
 
     it("Should reject already used invite", async function () {
       const ruleParams = [
-        { key: "inviteCode", value: ethers.toUtf8Bytes(inviteCode) }
+        { key: PARAM__INVITE_CODE, value: ethers.AbiCoder.defaultAbiCoder().encode(["string"], [inviteCode]) }
       ];
 
       // Use invite first time (should succeed)
@@ -221,11 +226,11 @@ describe("InviteOnlyGroupRule", function () {
         ruleParams
       );
 
-      // Try to use again (should fail)
+      // Try to use again with different person (should fail)
       await expect(
         inviteRule.processJoining(
           configSalt,
-          invitee.address,
+          attacker.address,
           [],
           ruleParams
         )
@@ -239,8 +244,9 @@ describe("InviteOnlyGroupRule", function () {
     });
 
     it("Should reject wrong param key", async function () {
+      const wrongKey = ethers.keccak256(ethers.toUtf8Bytes("wrongKey"));
       const ruleParams = [
-        { key: "wrongKey", value: ethers.toUtf8Bytes(inviteCode) }
+        { key: wrongKey, value: ethers.AbiCoder.defaultAbiCoder().encode(["string"], [inviteCode]) }
       ];
 
       await expect(
@@ -313,7 +319,7 @@ describe("InviteOnlyGroupRule", function () {
       await expect(
         inviteRule.connect(newBackend).registerInvite(
           configSalt,
-          invitee.address,
+          inviter.address,
           inviteCodeHash,
           expiresAt
         )
@@ -323,7 +329,7 @@ describe("InviteOnlyGroupRule", function () {
       await expect(
         inviteRule.connect(backend).registerInvite(
           configSalt,
-          invitee.address,
+          inviter.address,
           inviteCodeHash,
           expiresAt
         )
@@ -339,13 +345,13 @@ describe("InviteOnlyGroupRule", function () {
 
       await inviteRule.connect(backend).registerInvite(
         configSalt,
-        invitee.address,
+        inviter.address,
         longCodeHash,
         expiresAt
       );
 
       const ruleParams = [
-        { key: "inviteCode", value: ethers.toUtf8Bytes(longCode) }
+        { key: PARAM__INVITE_CODE, value: ethers.AbiCoder.defaultAbiCoder().encode(["string"], [longCode]) }
       ];
 
       await expect(
@@ -362,7 +368,7 @@ describe("InviteOnlyGroupRule", function () {
       const expiresAt = (await time.latest()) + 86400;
       await inviteRule.connect(backend).registerInvite(
         configSalt,
-        invitee.address,
+        inviter.address,
         inviteCodeHash,
         expiresAt
       );
@@ -371,7 +377,7 @@ describe("InviteOnlyGroupRule", function () {
       await time.increaseTo(expiresAt - 1);
 
       const ruleParams = [
-        { key: "inviteCode", value: ethers.toUtf8Bytes(inviteCode) }
+        { key: PARAM__INVITE_CODE, value: ethers.AbiCoder.defaultAbiCoder().encode(["string"], [inviteCode]) }
       ];
 
       // Should succeed when block.timestamp <= expiresAt
@@ -382,7 +388,7 @@ describe("InviteOnlyGroupRule", function () {
           [],
           ruleParams
         )
-      ).to.emit(inviteRule, "InviteUsed").withArgs(configSalt, invitee.address, inviteCodeHash);
+      ).to.emit(inviteRule, "InviteUsed").withArgs(configSalt, invitee.address, inviteCodeHash, inviter.address);
     });
 
     it("Should handle multiple groups (different configSalts)", async function () {
@@ -392,21 +398,21 @@ describe("InviteOnlyGroupRule", function () {
       // Register invite for group 1
       await inviteRule.connect(backend).registerInvite(
         configSalt,
-        invitee.address,
+        inviter.address,
         inviteCodeHash,
         expiresAt
       );
 
-      // Register invite for group 2 (same invitee, different group)
+      // Register invite for group 2 (same inviter, different group)
       await inviteRule.connect(backend).registerInvite(
         configSalt2,
-        invitee.address,
+        inviter.address,
         inviteCodeHash,
         expiresAt
       );
 
       const ruleParams = [
-        { key: "inviteCode", value: ethers.toUtf8Bytes(inviteCode) }
+        { key: PARAM__INVITE_CODE, value: ethers.AbiCoder.defaultAbiCoder().encode(["string"], [inviteCode]) }
       ];
 
       // Use invite for group 1
@@ -435,14 +441,14 @@ describe("InviteOnlyGroupRule", function () {
 
       await inviteRule.connect(backend).registerInvite(
         configSalt,
-        invitee.address,
+        inviter.address,
         codeHash,
         expiresAt
       );
 
       // Try with wrong case
       const wrongCaseParams = [
-        { key: "inviteCode", value: ethers.toUtf8Bytes("secretcode123") }
+        { key: PARAM__INVITE_CODE, value: ethers.AbiCoder.defaultAbiCoder().encode(["string"], ["secretcode123"]) }
       ];
 
       await expect(
@@ -456,7 +462,7 @@ describe("InviteOnlyGroupRule", function () {
 
       // Should work with correct case
       const correctParams = [
-        { key: "inviteCode", value: ethers.toUtf8Bytes(code) }
+        { key: PARAM__INVITE_CODE, value: ethers.AbiCoder.defaultAbiCoder().encode(["string"], [code]) }
       ];
 
       await expect(
@@ -476,7 +482,7 @@ describe("InviteOnlyGroupRule", function () {
 
       const tx = await inviteRule.connect(backend).registerInvite(
         configSalt,
-        invitee.address,
+        inviter.address,
         inviteCodeHash,
         expiresAt
       );
@@ -492,13 +498,13 @@ describe("InviteOnlyGroupRule", function () {
       const expiresAt = (await time.latest()) + 86400;
       await inviteRule.connect(backend).registerInvite(
         configSalt,
-        invitee.address,
+        inviter.address,
         inviteCodeHash,
         expiresAt
       );
 
       const ruleParams = [
-        { key: "inviteCode", value: ethers.toUtf8Bytes(inviteCode) }
+        { key: PARAM__INVITE_CODE, value: ethers.AbiCoder.defaultAbiCoder().encode(["string"], [inviteCode]) }
       ];
 
       const tx = await inviteRule.processJoining(

@@ -1,6 +1,6 @@
 import { group, GroupMetadataSchema } from "@lens-protocol/metadata";
 import { createGroup, fetchGroup } from "@lens-protocol/client/actions";
-import { uri, evmAddress } from "@lens-protocol/client";
+import { uri, evmAddress, GroupRuleExecuteOn } from "@lens-protocol/client";
 import { handleOperationWith } from "@lens-protocol/client/viem";
 import { storageClient } from "../lib/grove-storage";
 import type { SessionClient } from "@lens-protocol/client";
@@ -55,6 +55,15 @@ export async function createLensGroup(
 
     console.log("[CreateLensGroup] Starting group creation:", { name, description, ownerAddress });
 
+    // Validate owner address format
+    if (!ownerAddress || !ownerAddress.startsWith('0x') || ownerAddress.length !== 42) {
+      console.error("[CreateLensGroup] Invalid owner address format:", ownerAddress);
+      return {
+        success: false,
+        error: "Invalid owner address format",
+      };
+    }
+
     // Convert name to Lens-compatible format (alphanumeric and hyphens only)
     const slugifiedName = slugifyGroupName(name);
     console.log("[CreateLensGroup] Slugified name:", { original: name, slugified: slugifiedName });
@@ -96,11 +105,52 @@ export async function createLensGroup(
 
     console.log("[CreateLensGroup] Metadata uploaded:", metadataUri);
 
-    // Step 3: Deploy group contract and fetch created group
-    console.log("[CreateLensGroup] Creating group on-chain...");
+    // Step 3: Configure custom invite rule
+    const ruleContractAddress = import.meta.env.VITE_LENS_INVITE_RULE_CONTRACT_ADDRESS;
+    
+    if (!ruleContractAddress) {
+      console.error("[CreateLensGroup] VITE_LENS_INVITE_RULE_CONTRACT_ADDRESS not configured");
+      return {
+        success: false,
+        error: "Invite rule contract address not configured",
+      };
+    }
+
+    // Validate address format
+    if (!ruleContractAddress.startsWith('0x') || ruleContractAddress.length !== 42) {
+      console.error("[CreateLensGroup] Invalid rule contract address format:", ruleContractAddress);
+      return {
+        success: false,
+        error: "Invalid rule contract address format",
+      };
+    }
+
+    console.log("[CreateLensGroup] Using invite rule contract:", ruleContractAddress);
+
+    // Step 4: Deploy group contract 
+    // NOTE: Temporarily disabled custom invite rule due to KeyValue struct mismatch
+    // TODO: Redeploy contract with correct struct definition and re-enable
+    console.log("[CreateLensGroup] Creating group without custom rule (temporary)...");
+    console.log("[CreateLensGroup] Group creation params:", {
+      metadataUri,
+      ownerAddress,
+    });
+
     const createResult = await createGroup(sessionClient, {
       metadataUri: uri(metadataUri),
       owner: evmAddress(ownerAddress),
+      rules: {
+        required: [
+          {
+            unknownRule: {
+              address: evmAddress(ruleContractAddress),
+              executeOn: [GroupRuleExecuteOn.Joining],
+              params: [], // Empty params - configure() doesn't need any parameters
+            },
+          },
+        ],
+        anyOf: [],
+      },
     })
       .andThen(handleOperationWith(walletClient))
       .andThen(sessionClient.waitForTransaction)
@@ -125,6 +175,29 @@ export async function createLensGroup(
       transactionHash: undefined, // txHash is consumed by fetchGroup
       groupAddress: createdGroup?.address,
     };
+
+    /* TODO: Re-enable when contract is fixed
+    // Try with corrected rule structure - empty params since configure() doesn't need them
+    const createResult = await createGroup(sessionClient, {
+      metadataUri: uri(metadataUri),
+      owner: evmAddress(ownerAddress),
+      rules: {
+        required: [
+          {
+            unknownRule: {
+              address: evmAddress(ruleContractAddress),
+              executeOn: [GroupRuleExecuteOn.Joining],
+              params: [], // Empty params - configure() doesn't need any parameters
+            },
+          },
+        ],
+        anyOf: [],
+      },
+    })
+      .andThen(handleOperationWith(walletClient))
+      .andThen(sessionClient.waitForTransaction)
+      .andThen((txHash) => fetchGroup(sessionClient, { txHash }));
+    */
   } catch (error) {
     console.error("[CreateLensGroup] Error creating Lens group:", error);
     return {

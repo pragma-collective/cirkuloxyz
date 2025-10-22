@@ -67,7 +67,7 @@ interface IGroupRule {
 
 /// @notice Key-value pair structure used by Lens Protocol
 struct KeyValue {
-    string key;
+    bytes32 key;
     bytes value;
 }
 
@@ -95,7 +95,7 @@ contract InviteOnlyGroupRule is IGroupRule {
     // ========== EVENTS ==========
     event InviteRegistered(
         bytes32 indexed configSalt,
-        address indexed invitee,
+        address indexed inviter,
         bytes32 indexed inviteCodeHash,
         uint256 expiresAt
     );
@@ -103,7 +103,8 @@ contract InviteOnlyGroupRule is IGroupRule {
     event InviteUsed(
         bytes32 indexed configSalt,
         address indexed invitee,
-        bytes32 indexed inviteCodeHash
+        bytes32 indexed inviteCodeHash,
+        address inviter
     );
     
     event BackendUpdated(
@@ -121,15 +122,16 @@ contract InviteOnlyGroupRule is IGroupRule {
     /// @notice Contract owner (can update backend address)
     address public owner;
     
-    /// @notice Mapping of configSalt -> invitee -> invite data
-    /// @dev configSalt is unique per group, allowing same contract for multiple groups
-    mapping(bytes32 => mapping(address => InviteData)) public invites;
+    /// @notice Mapping of configSalt -> inviteCodeHash -> invite data
+    /// @dev configSalt is unique per group, inviteCodeHash is unique per invite
+    mapping(bytes32 => mapping(bytes32 => InviteData)) public invites;
     
     /// @notice Invite data structure
     struct InviteData {
-        bytes32 codeHash;      // Keccak256 hash of invite code (for privacy)
+        address inviter;       // Address of person who created the invite
         uint256 expiresAt;     // Expiration timestamp
         bool used;             // Whether invite was used
+        address usedBy;        // Address that used this invite (set when used)
     }
     
     // ========== MODIFIERS ==========
@@ -161,29 +163,33 @@ contract InviteOnlyGroupRule is IGroupRule {
     // ========== BACKEND FUNCTIONS ==========
     
     /**
-     * @notice Register an invite for a specific address
-     * @dev Only callable by backend signer
-     * @param configSalt Configuration identifier (unique per group)
-     * @param invitee Address that will receive the invite
-     * @param inviteCodeHash Keccak256 hash of the invite code
-     * @param expiresAt Expiration timestamp (Unix timestamp)
+     * @notice Register a new invite for a group
+     * @dev Only callable by the designated backend address
+     * @param configSalt The configuration salt for the group
+     * @param inviter The address creating the invite
+     * @param inviteCodeHash The hash of the invite code
+     * @param expiresAt The expiration timestamp (0 for no expiration)
      */
     function registerInvite(
         bytes32 configSalt,
-        address invitee,
+        address inviter,
         bytes32 inviteCodeHash,
         uint256 expiresAt
     ) external onlyBackend {
-        if (invitee == address(0)) revert InvalidAddress();
-        if (expiresAt <= block.timestamp) revert InviteExpired();
+        if (inviter == address(0)) revert InvalidAddress();
+        if (inviteCodeHash == bytes32(0)) revert InvalidInviteCode();
         
-        invites[configSalt][invitee] = InviteData({
-            codeHash: inviteCodeHash,
-            expiresAt: expiresAt,
-            used: false
-        });
+        InviteData storage invite = invites[configSalt][inviteCodeHash];
         
-        emit InviteRegistered(configSalt, invitee, inviteCodeHash, expiresAt);
+        // Allow re-registration if not yet used
+        if (invite.used) revert InviteAlreadyUsed();
+        
+        invite.inviter = inviter;
+        invite.expiresAt = expiresAt;
+        invite.used = false;
+        invite.usedBy = address(0);
+        
+        emit InviteRegistered(configSalt, inviter, inviteCodeHash, expiresAt);
     }
     
     /**
@@ -228,18 +234,16 @@ contract InviteOnlyGroupRule is IGroupRule {
         emit RuleConfigured(configSalt);
     }
     
+    // Parameter keys (using Lens Protocol pattern)
+    /// @custom:keccak lens.param.inviteCode
+    bytes32 constant PARAM__INVITE_CODE = 0x5797e5205a2d50babd9c0c4d9ab1fc2eb654e110118c575a0c6efc620e7e055e;
+    
     /**
-     * @notice Validate when someone tries to join the group
-     * @dev Called by Lens Protocol when user attempts to join
-     * @param configSalt Configuration identifier (identifies the group)
-     * @param account Address attempting to join
-     * 
-     * Flow:
-     * 1. User provides invite code when joining
-     * 2. Lens Protocol calls this function with code in ruleParams
-     * 3. We validate the code against stored hash
-     * 4. If valid: mark as used, allow join (no revert)
-     * 5. If invalid: revert with specific error
+     * @notice Process a join request (IGroupRule interface)
+     * @dev Validates invite code and marks it as used
+     * @param configSalt The configuration salt for the group
+     * @param account The account attempting to join
+     * @param ruleParams Rule-specific parameters containing the invite code
      */
     function processJoining(
         bytes32 configSalt,
@@ -247,59 +251,34 @@ contract InviteOnlyGroupRule is IGroupRule {
         KeyValue[] calldata /* primitiveParams */,
         KeyValue[] calldata ruleParams
     ) external override {
-        // Extract invite code from ruleParams
-        // Expected: ruleParams[0] = { key: "inviteCode", value: bytes(inviteCode) }
-        if (ruleParams.length == 0) {
-            revert InvalidInviteCode();
-        }
+        if (account == address(0)) revert InvalidAddress();
         
-        bytes memory inviteCodeBytes;
-        bool found = false;
+        // Extract invite code from params
+        string memory providedCode = _extractInviteCode(ruleParams);
+        if (bytes(providedCode).length == 0) revert InvalidInviteCode();
         
-        for (uint256 i = 0; i < ruleParams.length; i++) {
-            if (keccak256(bytes(ruleParams[i].key)) == keccak256(bytes("inviteCode"))) {
-                inviteCodeBytes = ruleParams[i].value;
-                found = true;
-                break;
-            }
-        }
+        // Hash the provided code
+        bytes32 providedCodeHash = keccak256(abi.encodePacked(providedCode));
         
-        if (!found) {
-            revert InvalidInviteCode();
-        }
-        
-        // Hash the provided invite code
-        bytes32 providedCodeHash = keccak256(inviteCodeBytes);
-        
-        // Get stored invite data
-        InviteData storage invite = invites[configSalt][account];
+        // Get the invite data using the hash as the key
+        InviteData storage invite = invites[configSalt][providedCodeHash];
         
         // Validate invite exists
-        if (invite.codeHash == bytes32(0)) {
-            revert InviteNotFound();
-        }
+        if (invite.inviter == address(0)) revert InvalidInviteCode();
         
-        // Validate not expired (valid up to and including expiresAt timestamp)
-        if (block.timestamp > invite.expiresAt) {
+        // Check if already used
+        if (invite.used) revert InviteAlreadyUsed();
+        
+        // Check expiration
+        if (invite.expiresAt != 0 && block.timestamp > invite.expiresAt) {
             revert InviteExpired();
         }
         
-        // Validate not already used
-        if (invite.used) {
-            revert InviteAlreadyUsed();
-        }
-        
-        // Validate code matches
-        if (invite.codeHash != providedCodeHash) {
-            revert InvalidInviteCode();
-        }
-        
-        // Mark as used (one-time use)
+        // Mark as used and record who used it
         invite.used = true;
+        invite.usedBy = account;
         
-        emit InviteUsed(configSalt, account, providedCodeHash);
-        
-        // No revert = validation passed, user can join
+        emit InviteUsed(configSalt, account, providedCodeHash, invite.inviter);
     }
     
     /**
@@ -366,25 +345,39 @@ contract InviteOnlyGroupRule is IGroupRule {
     // ========== VIEW FUNCTIONS ==========
     
     /**
-     * @notice Check if an address has a valid invite for a group
-     * @param configSalt Group configuration identifier
-     * @param invitee Address to check
-     * @return hasInvite Whether the address has an invite
-     * @return isExpired Whether the invite is expired
-     * @return isUsed Whether the invite was already used
+     * @notice Extract invite code from KeyValue parameters
+     * @dev Helper function to parse Lens Protocol params
+     * @param params Array of KeyValue pairs
+     * @return Invite code string
      */
-    function getInviteStatus(
+    function _extractInviteCode(KeyValue[] calldata params) private pure returns (string memory) {
+        for (uint256 i = 0; i < params.length; i++) {
+            if (params[i].key == PARAM__INVITE_CODE) {
+                return abi.decode(params[i].value, (string));
+            }
+        }
+        return "";
+    }
+    
+    /**
+     * @notice Get invite details by invite code hash
+     * @param configSalt Group configuration identifier
+     * @param inviteCodeHash Hash of the invite code
+     * @return inviter Address that created the invite
+     * @return expiresAt Expiration timestamp
+     * @return used Whether the invite was used
+     * @return usedBy Address that used the invite (if used)
+     */
+    function getInvite(
         bytes32 configSalt,
-        address invitee
+        bytes32 inviteCodeHash
     ) external view returns (
-        bool hasInvite,
-        bool isExpired,
-        bool isUsed
+        address inviter,
+        uint256 expiresAt,
+        bool used,
+        address usedBy
     ) {
-        InviteData storage invite = invites[configSalt][invitee];
-        
-        hasInvite = invite.codeHash != bytes32(0);
-        isExpired = block.timestamp > invite.expiresAt;
-        isUsed = invite.used;
+        InviteData storage invite = invites[configSalt][inviteCodeHash];
+        return (invite.inviter, invite.expiresAt, invite.used, invite.usedBy);
     }
 }
