@@ -4,12 +4,7 @@ import { db } from "../db";
 import { invites as invitesTable } from "../db/schema";
 import { registerInvite } from "../lib/blockchain";
 import { sendInviteEmail } from "../lib/email";
-import {
-	fetchGroup,
-	getLensUsername,
-	isGroupMember,
-	isGroupOwner,
-} from "../lib/lens";
+import { fetchGroup, getLensUsername, isGroupOwner } from "../lib/lens";
 import type { AuthContext } from "../lib/middleware";
 import { authMiddleware } from "../lib/middleware";
 import {
@@ -34,16 +29,16 @@ invites.openapi(getInvitesRoute, async (c) => {
 		// Get authenticated user info from JWT token
 		const jwtPayload = c.get("jwtPayload");
 
-		// Extract user address from act claim
-		// @ts-expect-error - act claim is not in the standard JWTPayload type
-		const userAddress = jwtPayload.act?.sub as string | undefined;
+		// Extract user address from sub claim
+		const userAddress = jwtPayload.sub;
+		console.log(jwtPayload);
 
 		if (!userAddress) {
 			return c.json(
 				{
 					error: "User information not found",
 					details:
-						"Unable to retrieve user's address from authentication token (act.sub claim missing)",
+						"Unable to retrieve user's address from authentication token (sub claim missing)",
 				},
 				400,
 			);
@@ -118,16 +113,15 @@ invites.openapi(inviteUserRoute, async (c) => {
 		// Get authenticated user info from JWT token
 		const jwtPayload = c.get("jwtPayload");
 
-		// Extract sender address from act claim (Account address the token can act on behalf of)
-		// @ts-expect-error - act claim is not in the standard JWTPayload type
-		const senderAddress = jwtPayload.act?.sub as string | undefined;
+		// Extract sender address from sub claim
+		const senderAddress = jwtPayload.sub;
 
 		if (!senderAddress) {
 			return c.json(
 				{
 					error: "Sender information not found",
 					details:
-						"Unable to retrieve sender's address from authentication token (act.sub claim missing)",
+						"Unable to retrieve sender's address from authentication token (sub claim missing)",
 				},
 				400,
 			);
@@ -137,18 +131,20 @@ invites.openapi(inviteUserRoute, async (c) => {
 			`User ${senderAddress} is inviting ${recipientEmail} to group ${groupAddress}`,
 		);
 
-		// 1. Verify sender is a member of the group
-		const isMember = await isGroupMember(groupAddress, senderAddress);
+		// 1. Verify sender is the owner of the group
+		const isOwner = await isGroupOwner(groupAddress, senderAddress);
 
-		if (!isMember) {
+		if (!isOwner) {
 			return c.json(
 				{
-					error: "Unauthorized",
-					details: "You must be a member of the group to send invites",
+					error: "Forbidden",
+					details: "Only the group owner can send invites",
 				},
 				403,
 			);
 		}
+
+		console.log(`✅ User is owner of group ${groupAddress}`);
 
 		// 2. Fetch Lens account username
 		const lensUsername = await getLensUsername(senderAddress);
@@ -299,16 +295,15 @@ invites.openapi(resendInviteRoute, async (c) => {
 		// Get authenticated user info from JWT token
 		const jwtPayload = c.get("jwtPayload");
 
-		// Extract sender address from act claim
-		// @ts-expect-error - act claim is not in the standard JWTPayload type
-		const senderAddress = jwtPayload.act?.sub as string | undefined;
+		// Extract sender address from sub claim
+		const senderAddress = jwtPayload.sub;
 
 		if (!senderAddress) {
 			return c.json(
 				{
 					error: "Sender information not found",
 					details:
-						"Unable to retrieve sender's address from authentication token (act.sub claim missing)",
+						"Unable to retrieve sender's address from authentication token (sub claim missing)",
 				},
 				400,
 			);
@@ -397,16 +392,15 @@ invites.openapi(cancelInviteRoute, async (c) => {
 		// Get authenticated user info from JWT token
 		const jwtPayload = c.get("jwtPayload");
 
-		// Extract sender address from act claim
-		// @ts-expect-error - act claim is not in the standard JWTPayload type
-		const senderAddress = jwtPayload.act?.sub as string | undefined;
+		// Extract sender address from sub claim
+		const senderAddress = jwtPayload.sub;
 
 		if (!senderAddress) {
 			return c.json(
 				{
 					error: "Sender information not found",
 					details:
-						"Unable to retrieve sender's address from authentication token (act.sub claim missing)",
+						"Unable to retrieve sender's address from authentication token (sub claim missing)",
 				},
 				400,
 			);

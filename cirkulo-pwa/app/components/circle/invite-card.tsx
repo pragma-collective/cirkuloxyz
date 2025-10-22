@@ -1,6 +1,6 @@
 import { formatDistanceToNow } from "date-fns";
 import { Copy, MoreVertical, Clock, Mail } from "lucide-react";
-import type { Invite } from "~/routes/circle-invites";
+import type { Invite } from "~/hooks/use-fetch-invites";
 import { useState } from "react";
 
 export interface InviteCardProps {
@@ -23,8 +23,12 @@ export function InviteCard({
 	const [showActions, setShowActions] = useState(false);
 	const [copied, setCopied] = useState(false);
 
+	// Parse ISO 8601 strings to Date objects
+	const expiresAt = new Date(invite.expiresAt);
+	const createdAt = new Date(invite.createdAt);
+
 	const isExpiringSoon =
-		invite.expiresAt.getTime() - Date.now() < 2 * 24 * 60 * 60 * 1000;
+		expiresAt.getTime() - Date.now() < 2 * 24 * 60 * 60 * 1000;
 
 	const handleCopy = async () => {
 		onCopyLink(invite.code);
@@ -55,7 +59,7 @@ export function InviteCard({
 							Pending
 						</span>
 						<span>•</span>
-						<span>{formatDistanceToNow(invite.createdAt, { addSuffix: true })}</span>
+						<span>{formatDistanceToNow(createdAt, { addSuffix: true })}</span>
 					</div>
 				</div>
 
@@ -77,21 +81,21 @@ export function InviteCard({
 						⚠️
 					</span>
 					<p className="text-xs font-semibold text-orange-800">
-						Expires {formatDistanceToNow(invite.expiresAt, { addSuffix: true })}
+						Expires {formatDistanceToNow(expiresAt, { addSuffix: true })}
 					</p>
 				</div>
 			)}
 
 			{!isExpiringSoon && (
 				<p className="text-xs text-neutral-600">
-					Expires {formatDistanceToNow(invite.expiresAt, { addSuffix: true })}
+					Expires {formatDistanceToNow(expiresAt, { addSuffix: true })}
 				</p>
 			)}
 
 			{/* Primary Action - Copy Link */}
 			<button
 				onClick={handleCopy}
-				className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-primary-500 to-secondary-500 text-white font-semibold rounded-xl hover:shadow-lg active:scale-[0.98] transition-all min-h-[44px]"
+				className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-linear-to-r from-primary-500 to-secondary-500 text-white font-semibold rounded-xl hover:shadow-lg active:scale-[0.98] transition-all min-h-[44px]"
 				aria-label="Copy invite link"
 			>
 				<Copy className="size-5" />

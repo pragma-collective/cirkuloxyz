@@ -1,6 +1,6 @@
 import { formatDistanceToNow } from "date-fns";
 import { Copy, RotateCw, Trash2, Clock } from "lucide-react";
-import type { Invite } from "~/routes/circle-invites";
+import type { Invite } from "~/hooks/use-fetch-invites";
 import { InviteCard } from "./invite-card";
 
 export interface InvitesTableProps {
@@ -90,8 +90,12 @@ export function InvitesTable({
 				</thead>
 				<tbody className="divide-y divide-neutral-200">
 					{invites.map((invite) => {
+						// Parse ISO 8601 strings to Date objects
+						const expiresAt = new Date(invite.expiresAt);
+						const createdAt = new Date(invite.createdAt);
+						
 						const isExpiringSoon =
-							invite.expiresAt.getTime() - Date.now() < 2 * 24 * 60 * 60 * 1000; // Less than 2 days
+							expiresAt.getTime() - Date.now() < 2 * 24 * 60 * 60 * 1000; // Less than 2 days
 
 						return (
 							<tr
@@ -118,7 +122,7 @@ export function InvitesTable({
 								{/* Sent */}
 								<td className="px-6 py-4">
 									<span className="text-sm text-neutral-600">
-										{formatDistanceToNow(invite.createdAt, { addSuffix: true })}
+										{formatDistanceToNow(createdAt, { addSuffix: true })}
 									</span>
 								</td>
 
@@ -132,7 +136,7 @@ export function InvitesTable({
 													: "text-neutral-600"
 											}`}
 										>
-											{formatDistanceToNow(invite.expiresAt, {
+											{formatDistanceToNow(expiresAt, {
 												addSuffix: true,
 											})}
 										</span>

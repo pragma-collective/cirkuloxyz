@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from "react";
+import { useCallback, useMemo } from "react";
 import type { Route } from "./+types/circle-invites";
 import { useNavigate, useParams } from "react-router";
 import { AuthenticatedLayout } from "~/components/layouts/authenticated-layout";
@@ -8,43 +8,9 @@ import { fetchGroup } from "@lens-protocol/client/actions";
 import { evmAddress } from "@lens-protocol/client";
 import { lensClient } from "~/lib/lens";
 import { mapGroupToCircle } from "~/lib/map-group-to-circle";
+import { useFetchInvites, type Invite } from "~/hooks/use-fetch-invites";
+import { useQueryClient } from "@tanstack/react-query";
 import { Home, Compass, PlusCircle, Bell, User, ArrowLeft } from "lucide-react";
-
-// Mock invites data matching the DB schema
-const mockInvites = [
-	{
-		id: "1",
-		code: "a1b2c3d4-e5f6-7890-1234-567890abcdef",
-		recipientEmail: "alice@example.com",
-		groupAddress: "0x123...",
-		senderAddress: "0xabc...",
-		status: "pending" as const,
-		expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days from now
-		createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000), // 2 hours ago
-	},
-	{
-		id: "2",
-		code: "b2c3d4e5-f6a7-8901-2345-67890abcdef1",
-		recipientEmail: "bob@example.com",
-		groupAddress: "0x123...",
-		senderAddress: "0xabc...",
-		status: "pending" as const,
-		expiresAt: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000), // 5 days from now
-		createdAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000), // 1 day ago
-	},
-	{
-		id: "3",
-		code: "c3d4e5f6-a7b8-9012-3456-7890abcdef12",
-		recipientEmail: "charlie@example.com",
-		groupAddress: "0x123...",
-		senderAddress: "0xabc...",
-		status: "pending" as const,
-		expiresAt: new Date(Date.now() + 6 * 24 * 60 * 60 * 1000), // 6 days from now
-		createdAt: new Date(Date.now() - 5 * 60 * 60 * 1000), // 5 hours ago
-	},
-];
-
-export type Invite = typeof mockInvites[number];
 
 // Client-side loader to fetch group data
 export async function clientLoader({ params }: Route.ClientLoaderArgs) {
@@ -86,12 +52,17 @@ export default function CircleInvites({ loaderData }: Route.ComponentProps) {
 	const navigate = useNavigate();
 	const params = useParams();
 	const circleId = params.id;
+	const queryClient = useQueryClient();
 
 	const group = loaderData?.group;
 	const loaderError = loaderData?.error;
 
-	// State for invites (mock data for now)
-	const [invites, setInvites] = useState<Invite[]>(mockInvites);
+	// Fetch invites from API
+	const {
+		data: invites,
+		isLoading: isLoadingInvites,
+		error: invitesError,
+	} = useFetchInvites(circleId);
 
 	// Convert Lens group to Circle format
 	const circle = useMemo(() => {
@@ -103,28 +74,16 @@ export default function CircleInvites({ loaderData }: Route.ComponentProps) {
 
 	// Filter only pending invites
 	const pendingInvites = useMemo(() => {
-		return invites.filter((invite) => invite.status === "pending");
+		return invites?.filter((invite) => invite.status === "pending") || [];
 	}, [invites]);
 
 	// Handle successful invite submission
 	const handleInviteSuccess = useCallback((inviteCode: string) => {
 		console.log("Invite sent successfully, code:", inviteCode);
 		
-		// TODO: Fetch updated invites list from API
-		// For now, we can add a mock invite to the list
-		const newInvite: Invite = {
-			id: `${invites.length + 1}`,
-			code: inviteCode,
-			recipientEmail: "new-invite@example.com", // Will be replaced when we fetch from API
-			groupAddress: circleId || "0x123...",
-			senderAddress: "0xabc...",
-			status: "pending",
-			expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-			createdAt: new Date(),
-		};
-
-		setInvites((prev) => [newInvite, ...prev]);
-	}, [circleId, invites.length]);
+		// Invalidate and refetch invites list
+		queryClient.invalidateQueries({ queryKey: ["invites", circleId] });
+	}, [circleId, queryClient]);
 
 	// Handle copy invite link
 	const handleCopyLink = useCallback(async (inviteCode: string) => {
@@ -149,9 +108,9 @@ export default function CircleInvites({ loaderData }: Route.ComponentProps) {
 		// TODO: Implement cancel API call
 		console.log("Cancelling invite:", inviteId);
 		
-		// Mock: Remove from list
-		setInvites((prev) => prev.filter((invite) => invite.id !== inviteId));
-	}, []);
+		// After successful cancel, refetch the invites list
+		queryClient.invalidateQueries({ queryKey: ["invites", circleId] });
+	}, [circleId, queryClient]);
 
 	// Navigation items for layout
 	const navItems = [
@@ -242,7 +201,7 @@ export default function CircleInvites({ loaderData }: Route.ComponentProps) {
 						<div className="pt-4">
 							<button
 								onClick={() => navigate("/dashboard")}
-								className="px-6 py-3 bg-gradient-to-r from-primary-500 to-secondary-500 text-white rounded-xl font-semibold hover:shadow-lg transition-all"
+								className="px-6 py-3 bg-linear-to-r from-primary-500 to-secondary-500 text-white rounded-xl font-semibold hover:shadow-lg transition-all"
 							>
 								Back to Dashboard
 							</button>
@@ -300,23 +259,70 @@ export default function CircleInvites({ loaderData }: Route.ComponentProps) {
 										Pending Invitations
 									</h2>
 									<p className="text-xs sm:text-sm text-neutral-600 mt-0.5 sm:mt-1">
-										{pendingInvites.length} {pendingInvites.length === 1 ? "invite" : "invites"} waiting for acceptance
+										{isLoadingInvites
+											? "Loading invites..."
+											: `${pendingInvites.length} ${pendingInvites.length === 1 ? "invite" : "invites"} waiting for acceptance`}
 									</p>
 								</div>
-								{pendingInvites.length > 0 && (
+								{!isLoadingInvites && pendingInvites.length > 0 && (
 									<div className="px-2.5 sm:px-3 py-1 bg-primary-50 text-primary-700 rounded-full text-xs sm:text-sm font-semibold shrink-0">
 										{pendingInvites.length}
 									</div>
 								)}
 							</div>
 						</div>
-						
-						<InvitesTable
-							invites={pendingInvites}
-							onCopyLink={handleCopyLink}
-							onResend={handleResend}
-							onCancel={handleCancel}
-						/>
+
+						{/* Loading State */}
+						{isLoadingInvites && (
+							<div className="p-8 sm:p-12 text-center">
+								<div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600 mb-4" />
+								<p className="text-neutral-600">Loading invitations...</p>
+							</div>
+						)}
+
+						{/* Error State */}
+						{invitesError && !isLoadingInvites && (
+							<div className="p-8 sm:p-12 text-center space-y-4">
+								<div className="text-4xl mb-2">⚠️</div>
+								<h3 className="text-lg font-semibold text-neutral-900">
+									Failed to Load Invitations
+								</h3>
+								<p className="text-sm text-neutral-600 max-w-md mx-auto">
+									{invitesError instanceof Error
+										? invitesError.message
+										: "Unable to fetch invitations. Please try again."}
+								</p>
+								<button
+									onClick={() => queryClient.invalidateQueries({ queryKey: ["invites", circleId] })}
+									className="px-4 py-2 bg-primary-100 text-primary-700 rounded-lg font-semibold hover:bg-primary-200 transition-colors"
+								>
+									Try Again
+								</button>
+							</div>
+						)}
+
+						{/* Empty State - Only show if not loading and no error */}
+						{!isLoadingInvites && !invitesError && pendingInvites.length === 0 && (
+							<div className="p-8 sm:p-12 text-center space-y-2">
+								<div className="text-4xl mb-2">📭</div>
+								<h3 className="text-lg font-semibold text-neutral-900">
+									No Pending Invitations
+								</h3>
+								<p className="text-sm text-neutral-600">
+									Send an invitation above to get started
+								</p>
+							</div>
+						)}
+
+						{/* Invites Table - Only show if data exists and no error */}
+						{!isLoadingInvites && !invitesError && pendingInvites.length > 0 && (
+							<InvitesTable
+								invites={pendingInvites}
+								onCopyLink={handleCopyLink}
+								onResend={handleResend}
+								onCancel={handleCancel}
+							/>
+						)}
 					</div>
 				</div>
 			</div>

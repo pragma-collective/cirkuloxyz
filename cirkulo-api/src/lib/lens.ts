@@ -210,6 +210,7 @@ export async function isGroupOwner(
 		);
 
 		const group = await fetchGroup(groupAddress);
+		console.log("group data: ", group);
 
 		const isOwner = group.owner.toLowerCase() === userAddress.toLowerCase();
 
