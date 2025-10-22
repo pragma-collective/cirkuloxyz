@@ -127,16 +127,15 @@ export async function createLensGroup(
 
     console.log("[CreateLensGroup] Using invite rule contract:", ruleContractAddress);
 
-    // Step 4: Deploy group contract with custom invite rule
-    console.log("[CreateLensGroup] Creating group on-chain with custom rule...");
+    // Step 4: Deploy group contract 
+    // NOTE: Temporarily disabled custom invite rule due to KeyValue struct mismatch
+    // TODO: Redeploy contract with correct struct definition and re-enable
+    console.log("[CreateLensGroup] Creating group without custom rule (temporary)...");
     console.log("[CreateLensGroup] Group creation params:", {
       metadataUri,
       ownerAddress,
-      ruleContractAddress,
-      executeOn: [GroupRuleExecuteOn.Joining],
     });
 
-    // Try with corrected rule structure - empty params since configure() doesn't need them
     const createResult = await createGroup(sessionClient, {
       metadataUri: uri(metadataUri),
       owner: evmAddress(ownerAddress),
@@ -176,6 +175,29 @@ export async function createLensGroup(
       transactionHash: undefined, // txHash is consumed by fetchGroup
       groupAddress: createdGroup?.address,
     };
+
+    /* TODO: Re-enable when contract is fixed
+    // Try with corrected rule structure - empty params since configure() doesn't need them
+    const createResult = await createGroup(sessionClient, {
+      metadataUri: uri(metadataUri),
+      owner: evmAddress(ownerAddress),
+      rules: {
+        required: [
+          {
+            unknownRule: {
+              address: evmAddress(ruleContractAddress),
+              executeOn: [GroupRuleExecuteOn.Joining],
+              params: [], // Empty params - configure() doesn't need any parameters
+            },
+          },
+        ],
+        anyOf: [],
+      },
+    })
+      .andThen(handleOperationWith(walletClient))
+      .andThen(sessionClient.waitForTransaction)
+      .andThen((txHash) => fetchGroup(sessionClient, { txHash }));
+    */
   } catch (error) {
     console.error("[CreateLensGroup] Error creating Lens group:", error);
     return {

@@ -23,7 +23,7 @@ const INVITE_RULE_ABI = [
 	{
 		inputs: [
 			{ internalType: "bytes32", name: "configSalt", type: "bytes32" },
-			{ internalType: "address", name: "invitee", type: "address" },
+			{ internalType: "address", name: "inviter", type: "address" },
 			{ internalType: "bytes32", name: "inviteCodeHash", type: "bytes32" },
 			{ internalType: "uint256", name: "expiresAt", type: "uint256" },
 		],
@@ -44,7 +44,7 @@ const INVITE_RULE_ABI = [
 			{
 				indexed: true,
 				internalType: "address",
-				name: "invitee",
+				name: "inviter",
 				type: "address",
 			},
 			{
@@ -115,9 +115,50 @@ export async function registerInvite(
 
 		console.log("📝 Registering invite on-chain:", {
 			configSalt: params.configSalt,
+			configSaltType: typeof params.configSalt,
 			sender: params.senderAddress,
 			expiresAt: params.expiresAt.toISOString(),
 		});
+
+		// Parse configSalt - it might be a Base64 JSON string or hex string
+		let processedConfigSalt: string;
+
+		try {
+			// Check if it's a Base64 JSON string
+			if (!params.configSalt.startsWith("0x")) {
+				// Decode Base64 and parse JSON
+				const decoded = Buffer.from(params.configSalt, "base64").toString(
+					"utf-8",
+				);
+				console.log("📝 Decoded configSalt:", decoded);
+
+				const parsed = JSON.parse(decoded);
+				processedConfigSalt = parsed.config_salt || parsed.configSalt;
+				console.log("📝 Extracted configSalt from JSON:", processedConfigSalt);
+			} else {
+				// Already in hex format
+				processedConfigSalt = params.configSalt;
+			}
+		} catch (_parseError) {
+			console.log(
+				"📝 ConfigSalt parsing failed, using as-is:",
+				params.configSalt,
+			);
+			processedConfigSalt = params.configSalt;
+		}
+
+		// Ensure it's a valid bytes32 hex string
+		if (!processedConfigSalt.startsWith("0x")) {
+			processedConfigSalt = `0x${processedConfigSalt}`;
+		}
+
+		// Pad to 32 bytes if needed
+		if (processedConfigSalt.length < 66) {
+			// 0x + 64 hex chars = 66
+			processedConfigSalt = processedConfigSalt.padEnd(66, "0");
+		}
+
+		console.log("📝 Final configSalt for contract:", processedConfigSalt);
 
 		// Hash the invite code for privacy (never store plain code on-chain)
 		const inviteCodeHash = ethers.keccak256(
@@ -127,9 +168,16 @@ export async function registerInvite(
 		// Convert expiration date to Unix timestamp
 		const expiresAtTimestamp = Math.floor(params.expiresAt.getTime() / 1000);
 
+		console.log("Registration payload: ", {
+			processedConfigSalt,
+			senderAddress: params.senderAddress,
+			inviteCodeHash,
+			expiresAtTimestamp,
+		});
+
 		// Call smart contract to register invite
 		const tx = await contract.registerInvite(
-			params.configSalt,
+			processedConfigSalt,
 			params.senderAddress,
 			inviteCodeHash,
 			expiresAtTimestamp,

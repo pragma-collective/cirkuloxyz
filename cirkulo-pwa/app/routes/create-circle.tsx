@@ -287,11 +287,46 @@ export default function CreateCircle() {
       // @ts-expect-error - getWalletClient exists at runtime but not in type definition
       const walletClient = await primaryWallet.getWalletClient();
 
+      // Debug wallet address format and try alternative methods
+      console.log("[CreateCircle] Full wallet debug:", {
+        address: primaryWallet.address,
+        walletConnector: primaryWallet.connector?.name,
+        walletType: primaryWallet.connector?.key,
+      });
+
+      // Try to get address from wallet client if direct address fails
+      let walletAddress = primaryWallet.address;
+      
+      if (!walletAddress || walletAddress.length !== 42) {
+        // Try to get address from wallet client
+        try {
+          // @ts-expect-error - getWalletClient exists at runtime but not in type definition
+          const client = await primaryWallet.getWalletClient();
+          if (client?.account?.address) {
+            walletAddress = client.account.address;
+            console.log("[CreateCircle] Using address from wallet client:", walletAddress);
+          }
+        } catch (error) {
+          console.error("[CreateCircle] Error getting address from wallet client:", error);
+        }
+      }
+
+      // Validate wallet address format
+      if (!walletAddress || walletAddress.length !== 42 || !walletAddress.startsWith('0x')) {
+        console.error("[CreateCircle] Invalid wallet address:", walletAddress);
+        setErrors((prev) => ({
+          ...prev,
+          name: "Invalid wallet address. Please reconnect your wallet.",
+        }));
+        setIsSubmitting(false);
+        return;
+      }
+
       // Create Lens group
       const result = await createGroup({
         name: formData.name.trim(),
         description: formData.description.trim(),
-        ownerAddress: primaryWallet.address,
+        ownerAddress: walletAddress,
         sessionClient,
         walletClient,
       });
