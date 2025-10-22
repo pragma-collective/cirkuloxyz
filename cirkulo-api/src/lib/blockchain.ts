@@ -33,6 +33,16 @@ const INVITE_RULE_ABI = [
 		type: "function",
 	},
 	{
+		inputs: [
+			{ internalType: "bytes32", name: "configSalt", type: "bytes32" },
+			{ internalType: "bytes32", name: "inviteCodeHash", type: "bytes32" },
+		],
+		name: "cancelInvite",
+		outputs: [],
+		stateMutability: "nonpayable",
+		type: "function",
+	},
+	{
 		anonymous: false,
 		inputs: [
 			{
@@ -61,6 +71,31 @@ const INVITE_RULE_ABI = [
 			},
 		],
 		name: "InviteRegistered",
+		type: "event",
+	},
+	{
+		anonymous: false,
+		inputs: [
+			{
+				indexed: true,
+				internalType: "bytes32",
+				name: "configSalt",
+				type: "bytes32",
+			},
+			{
+				indexed: true,
+				internalType: "address",
+				name: "inviter",
+				type: "address",
+			},
+			{
+				indexed: true,
+				internalType: "bytes32",
+				name: "inviteCodeHash",
+				type: "bytes32",
+			},
+		],
+		name: "InviteCancelled",
 		type: "event",
 	},
 ];
@@ -213,6 +248,119 @@ export async function registerInvite(
 		}
 
 		throw new Error("Failed to register invite on blockchain");
+	}
+}
+
+export interface CancelInviteParams {
+	configSalt: string;
+	inviteCode: string;
+}
+
+/**
+ * Cancel an invite on-chain and free storage
+ *
+ * Called when a group owner cancels a pending invite.
+ * Deletes the invite data from the contract, reclaiming gas.
+ *
+ * @param params - Invite cancellation parameters
+ * @throws Error if cancellation fails
+ */
+export async function cancelInviteOnChain(
+	params: CancelInviteParams,
+): Promise<void> {
+	try {
+		const contract = getRuleContract();
+
+		console.log("🔗 Cancelling invite on-chain:", {
+			configSalt: params.configSalt,
+			configSaltType: typeof params.configSalt,
+		});
+
+		// Parse configSalt - same logic as registerInvite
+		let processedConfigSalt: string;
+
+		try {
+			// Check if it's a Base64 JSON string
+			if (!params.configSalt.startsWith("0x")) {
+				// Decode Base64 and parse JSON
+				const decoded = Buffer.from(params.configSalt, "base64").toString(
+					"utf-8",
+				);
+				console.log("📝 Decoded configSalt:", decoded);
+
+				const parsed = JSON.parse(decoded);
+				processedConfigSalt = parsed.config_salt || parsed.configSalt;
+				console.log("📝 Extracted configSalt from JSON:", processedConfigSalt);
+			} else {
+				// Already in hex format
+				processedConfigSalt = params.configSalt;
+			}
+		} catch (_parseError) {
+			console.log(
+				"📝 ConfigSalt parsing failed, using as-is:",
+				params.configSalt,
+			);
+			processedConfigSalt = params.configSalt;
+		}
+
+		// Ensure it's a valid bytes32 hex string
+		if (!processedConfigSalt.startsWith("0x")) {
+			processedConfigSalt = `0x${processedConfigSalt}`;
+		}
+
+		// Pad to 32 bytes if needed
+		if (processedConfigSalt.length < 66) {
+			// 0x + 64 hex chars = 66
+			processedConfigSalt = processedConfigSalt.padEnd(66, "0");
+		}
+
+		console.log("📝 Final configSalt for contract:", processedConfigSalt);
+
+		// Hash the invite code (same as registration)
+		const inviteCodeHash = ethers.keccak256(
+			ethers.toUtf8Bytes(params.inviteCode),
+		);
+
+		console.log("Cancellation payload:", {
+			processedConfigSalt,
+			inviteCodeHash,
+		});
+
+		// Call smart contract to cancel invite
+		const tx = await contract.cancelInvite(processedConfigSalt, inviteCodeHash);
+
+		console.log("⏳ Transaction sent, waiting for confirmation:", tx.hash);
+
+		// Wait for transaction to be mined
+		const receipt = await tx.wait();
+
+		console.log("✅ Invite cancelled on-chain:", {
+			txHash: receipt.hash,
+			blockNumber: receipt.blockNumber,
+			gasUsed: receipt.gasUsed.toString(),
+		});
+	} catch (error) {
+		console.error("❌ Failed to cancel invite on-chain:", error);
+
+		// Provide more helpful error messages
+		if (error instanceof Error) {
+			if (error.message.includes("OnlyBackend")) {
+				throw new Error("Backend signer not authorized for this contract");
+			}
+			if (error.message.includes("InviteNotFound")) {
+				throw new Error(
+					"Invite not found or already cancelled on the blockchain",
+				);
+			}
+			if (error.message.includes("InviteNotCancellable")) {
+				throw new Error(
+					"Cannot cancel invite that has already been used by a member",
+				);
+			}
+			throw new Error(`Failed to cancel invite: ${error.message}`);
+		}
+
+		throw new Error("Failed to cancel invite on blockchain");
 	}
 }
 

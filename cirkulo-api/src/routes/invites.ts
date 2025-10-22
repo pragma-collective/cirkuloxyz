@@ -2,7 +2,7 @@ import { OpenAPIHono } from "@hono/zod-openapi";
 import { and, desc, eq } from "drizzle-orm";
 import { db } from "../db";
 import { invites as invitesTable } from "../db/schema";
-import { registerInvite } from "../lib/blockchain";
+import { cancelInviteOnChain, registerInvite } from "../lib/blockchain";
 import { sendInviteEmail } from "../lib/email";
 import { fetchGroup, getLensUsername, isGroupOwner } from "../lib/lens";
 import type { AuthContext } from "../lib/middleware";
@@ -458,7 +458,30 @@ invites.openapi(cancelInviteRoute, async (c) => {
 
 		console.log(`Cancelling invite ${id} by ${senderAddress}`);
 
-		// Update invite status to cancelled
+		// Cancel invite on-chain first
+		try {
+			await cancelInviteOnChain({
+				configSalt: invite.configSalt,
+				inviteCode: invite.code,
+			});
+			console.log(`✅ Invite ${id} cancelled on-chain`);
+		} catch (blockchainError) {
+			console.error("❌ Failed to cancel invite on-chain:", blockchainError);
+
+			// Return error - don't cancel in DB if blockchain fails
+			return c.json(
+				{
+					error: "Failed to cancel invite on blockchain",
+					details:
+						blockchainError instanceof Error
+							? blockchainError.message
+							: "Unknown blockchain error",
+				},
+				500,
+			);
+		}
+
+		// Update invite status to cancelled in database
 		const [cancelledInvite] = await db
 			.update(invitesTable)
 			.set({
@@ -467,6 +490,8 @@ invites.openapi(cancelInviteRoute, async (c) => {
 			})
 			.where(eq(invitesTable.id, id))
 			.returning();
+
+		console.log(`✅ Invite ${id} marked as cancelled in database`);
 
 		// Return success response
 		return c.json(

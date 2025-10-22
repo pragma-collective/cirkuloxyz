@@ -89,6 +89,7 @@ contract InviteOnlyGroupRule is IGroupRule {
     error InviteNotFound();
     error InviteExpired();
     error InviteAlreadyUsed();
+    error InviteNotCancellable();
     error InvalidAddress();
     error InvalidInviteCode();
     
@@ -105,6 +106,12 @@ contract InviteOnlyGroupRule is IGroupRule {
         address indexed invitee,
         bytes32 indexed inviteCodeHash,
         address inviter
+    );
+    
+    event InviteCancelled(
+        bytes32 indexed configSalt,
+        address indexed inviter,
+        bytes32 indexed inviteCodeHash
     );
     
     event BackendUpdated(
@@ -193,6 +200,36 @@ contract InviteOnlyGroupRule is IGroupRule {
     }
     
     /**
+     * @notice Cancel a registered invite and free storage
+     * @dev Only callable by the backend address. Deletes invite data to reclaim gas.
+     * @param configSalt The configuration salt for the group
+     * @param inviteCodeHash The hash of the invite code to cancel
+     * 
+     * IMPORTANT: Cannot cancel invites that have already been used.
+     * This prevents issues with historical data and ensures audit trails.
+     * 
+     * GAS OPTIMIZATION: Using `delete` frees storage and provides gas refund (~15k gas)
+     */
+    function cancelInvite(
+        bytes32 configSalt,
+        bytes32 inviteCodeHash
+    ) external onlyBackend {
+        InviteData storage invite = invites[configSalt][inviteCodeHash];
+        
+        // Validate invite exists
+        if (invite.inviter == address(0)) revert InviteNotFound();
+        
+        // Cannot cancel if already used (preserve audit trail)
+        if (invite.used) revert InviteNotCancellable();
+        
+        // Emit event BEFORE deletion (so we still have data to emit)
+        emit InviteCancelled(configSalt, invite.inviter, inviteCodeHash);
+        
+        // Delete invite data - this zeros out all fields and provides gas refund
+        delete invites[configSalt][inviteCodeHash];
+    }
+    
+    /**
      * @notice Update backend signer address
      * @dev Only callable by contract owner
      * @param newBackend New backend address
@@ -263,8 +300,8 @@ contract InviteOnlyGroupRule is IGroupRule {
         // Get the invite data using the hash as the key
         InviteData storage invite = invites[configSalt][providedCodeHash];
         
-        // Validate invite exists
-        if (invite.inviter == address(0)) revert InvalidInviteCode();
+        // Validate invite exists (if inviter is zero, invite was deleted/cancelled or never existed)
+        if (invite.inviter == address(0)) revert InviteNotFound();
         
         // Check if already used
         if (invite.used) revert InviteAlreadyUsed();
