@@ -38,7 +38,7 @@ A **constellation logo** with 5 connected nodes forming a circle around a radian
 
 ### How Do I See It?
 ```bash
-npm run dev
+pnpm dev
 # Visit: http://localhost:3000/logo-showcase
 # Look at concept #2
 ```
