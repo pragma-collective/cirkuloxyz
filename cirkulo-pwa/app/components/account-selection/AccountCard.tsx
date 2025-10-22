@@ -5,104 +5,63 @@ import type { LensAccount } from "app/hooks/fetch-lens-accounts";
 
 interface AccountCardProps {
 	account: LensAccount;
-	variant?: "featured" | "compact";
 	onSelect: (account: LensAccount) => void;
 	isSelecting?: boolean;
 }
 
 export function AccountCard({
 	account,
-	variant = "compact",
 	onSelect,
 	isSelecting = false,
 }: AccountCardProps) {
-	const isFeatured = variant === "featured";
-
 	// Extract photo from metadata (Grove URI)
 	const photoUri = account.metadata?.picture;
 
 	return (
 		<div
 			className={cn(
-				"bg-white/90 backdrop-blur-sm border-2 border-neutral-200 rounded-3xl transition-all duration-200",
+				"bg-white/90 backdrop-blur-sm border-2 border-neutral-200 rounded-3xl p-6 transition-all duration-200",
 				"hover:border-primary-500 hover:shadow-xl",
-				isFeatured
-					? "p-8 flex flex-col items-center text-center"
-					: "p-6 flex items-center gap-4",
+				"flex flex-col sm:flex-row sm:items-center gap-4",
 			)}
 		>
 			{/* Profile Photo */}
 			<div
 				className={cn(
-					"rounded-full bg-gradient-to-br from-primary-100 to-secondary-100 flex items-center justify-center shrink-0",
-					isFeatured ? "size-24 mb-4" : "size-16",
+					"rounded-full bg-gradient-to-br from-primary-100 to-secondary-100",
+					"flex items-center justify-center shrink-0",
+					"size-14 sm:size-16 mx-auto sm:mx-0",
 				)}
 			>
 				{photoUri ? (
 					<img
 						src={photoUri}
 						alt={account.metadata?.name || account.username}
-						className={cn(
-							"rounded-full object-cover",
-							isFeatured ? "size-24" : "size-16",
-						)}
+						className="size-14 sm:size-16 rounded-full object-cover"
 					/>
 				) : (
-					<User
-						className={cn(
-							"text-primary-600",
-							isFeatured ? "size-12" : "size-8",
-						)}
-						strokeWidth={2}
-					/>
+					<User className="size-7 sm:size-8 text-primary-600" strokeWidth={2} />
 				)}
 			</div>
 
 			{/* Account Info */}
-			<div
-				className={cn(
-					"flex-1",
-					isFeatured ? "flex flex-col items-center" : "min-w-0",
-				)}
-			>
+			<div className="flex-1 text-center sm:text-left">
 				{/* Name */}
 				{account.metadata?.name && (
-					<h3
-						className={cn(
-							"font-semibold text-neutral-900 truncate",
-							isFeatured ? "text-2xl mb-2" : "text-lg mb-1",
-						)}
-					>
+					<h3 className="text-lg font-semibold text-neutral-900 mb-1 break-words">
 						{account.metadata.name}
 					</h3>
 				)}
 
 				{/* Username */}
-				<div
-					className={cn(
-						"flex items-center gap-1 text-neutral-600",
-						isFeatured ? "justify-center mb-3" : "mb-2",
-					)}
-				>
+				<div className="flex items-center justify-center sm:justify-start gap-1 text-neutral-600 mb-2">
 					<AtSign className="size-4 shrink-0" />
-					<span
-						className={cn(
-							"truncate",
-							isFeatured ? "text-base" : "text-sm",
-						)}
-					>
-						{account.username}
-					</span>
+					<span className="text-sm break-words">{account.username}</span>
 				</div>
 
 				{/* Bio */}
 				{account.metadata?.bio && (
-					<p
-						className={cn(
-							"text-neutral-600 line-clamp-2",
-							isFeatured ? "text-base mb-6 max-w-md" : "text-sm mb-3",
-						)}
-					>
+					<p className="text-sm text-neutral-600 line-clamp-4 sm:line-clamp-2">
 						{account.metadata.bio}
 					</p>
 				)}
@@ -112,11 +71,8 @@ export function AccountCard({
 			<Button
 				onClick={() => onSelect(account)}
 				disabled={isSelecting}
-				size={isFeatured ? "lg" : "default"}
-				className={cn(
-					"shrink-0",
-					isFeatured ? "w-full max-w-xs" : "ml-auto",
-				)}
+				size="default"
+				className="w-full sm:w-auto sm:ml-auto shrink-0"
 			>
 				{isSelecting ? "Selecting..." : "Select Account"}
 			</Button>
