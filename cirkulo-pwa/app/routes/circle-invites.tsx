@@ -9,6 +9,9 @@ import { evmAddress } from "@lens-protocol/client";
 import { lensClient } from "~/lib/lens";
 import { mapGroupToCircle } from "~/lib/map-group-to-circle";
 import { useFetchInvites, type Invite } from "~/hooks/use-fetch-invites";
+import { useCancelInvite } from "~/hooks/use-cancel-invite";
+import { useResendInvite } from "~/hooks/use-resend-invite";
+import { toast } from "~/lib/toast";
 import { useQueryClient } from "@tanstack/react-query";
 import { Home, Compass, PlusCircle, Bell, User, ArrowLeft } from "lucide-react";
 
@@ -64,6 +67,10 @@ export default function CircleInvites({ loaderData }: Route.ComponentProps) {
 		error: invitesError,
 	} = useFetchInvites(circleId);
 
+	// Mutation hooks for invite actions
+	const { mutate: cancelInvite, isPending: isCancelling } = useCancelInvite(circleId);
+	const { mutate: resendInvite, isPending: isResending } = useResendInvite(circleId);
+
 	// Convert Lens group to Circle format
 	const circle = useMemo(() => {
 		if (group) {
@@ -81,6 +88,9 @@ export default function CircleInvites({ loaderData }: Route.ComponentProps) {
 	const handleInviteSuccess = useCallback((inviteCode: string) => {
 		console.log("Invite sent successfully, code:", inviteCode);
 		
+		// Show success toast
+		toast.success("Invitation sent successfully!");
+		
 		// Invalidate and refetch invites list
 		queryClient.invalidateQueries({ queryKey: ["invites", circleId] });
 	}, [circleId, queryClient]);
@@ -90,27 +100,58 @@ export default function CircleInvites({ loaderData }: Route.ComponentProps) {
 		const inviteUrl = `${window.location.origin}/join/${inviteCode}`;
 		try {
 			await navigator.clipboard.writeText(inviteUrl);
-			// TODO: Show toast notification
+			toast.success("Invite link copied to clipboard!");
 			console.log("Invite link copied:", inviteUrl);
 		} catch (error) {
 			console.error("Failed to copy invite link:", error);
+			toast.error("Failed to copy invite link");
 		}
 	}, []);
 
 	// Handle resend invite
-	const handleResend = useCallback(async (inviteId: string) => {
-		// TODO: Implement resend API call
-		console.log("Resending invite:", inviteId);
-	}, []);
+	const handleResend = useCallback((inviteId: string) => {
+		resendInvite(inviteId, {
+			onSuccess: () => {
+				toast.success("Invitation resent successfully!");
+			},
+			onError: (error) => {
+				const errorMessage = error instanceof Error 
+					? error.message 
+					: "Failed to resend invitation";
+				toast.error(errorMessage);
+				console.error("Failed to resend invite:", error);
+			},
+		});
+	}, [resendInvite]);
 
 	// Handle cancel invite
-	const handleCancel = useCallback((inviteId: string) => {
-		// TODO: Implement cancel API call
-		console.log("Cancelling invite:", inviteId);
-		
-		// After successful cancel, refetch the invites list
-		queryClient.invalidateQueries({ queryKey: ["invites", circleId] });
-	}, [circleId, queryClient]);
+	const handleCancel = useCallback((inviteId: string, recipientEmail: string) => {
+		// Get confirmation from user
+		const confirmed = window.confirm(
+			`Are you sure you want to cancel the invitation for ${recipientEmail}?\n\n` +
+			"This will:\n" +
+			"• Remove the invite from the blockchain\n" +
+			"• Prevent the recipient from joining with this invite\n" +
+			"• Cannot be undone"
+		);
+
+		if (!confirmed) {
+			return;
+		}
+
+		cancelInvite(inviteId, {
+			onSuccess: () => {
+				toast.success("Invitation cancelled successfully!");
+			},
+			onError: (error) => {
+				const errorMessage = error instanceof Error 
+					? error.message 
+					: "Failed to cancel invitation";
+				toast.error(errorMessage);
+				console.error("Failed to cancel invite:", error);
+			},
+		});
+	}, [cancelInvite]);
 
 	// Navigation items for layout
 	const navItems = [

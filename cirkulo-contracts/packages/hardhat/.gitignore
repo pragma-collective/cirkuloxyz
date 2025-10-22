@@ -22,7 +22,6 @@ cache-zk
 
 # deployments
 deployments/localhost
-deployments/lensTestnet
 deployments-info
 
 # typescript

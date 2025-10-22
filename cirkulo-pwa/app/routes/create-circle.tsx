@@ -411,9 +411,9 @@ export default function CreateCircle() {
 
         // Switch to Citrea network using wagmi
         // NOTE: DONT REMOVE YET FOR FURTHER TESTING (jhuds)
-        // console.log("[CreateCircle] Switching to Citrea Testnet using wagmi...");
-        // await switchChainAsync({ chainId: citreaTestnet.id });
-        // console.log("[CreateCircle] Chain switched to Citrea");
+        console.log("[CreateCircle] Switching to Citrea Testnet using wagmi...");
+        await switchChainAsync({ chainId: citreaTestnet.id });
+        console.log("[CreateCircle] Chain switched to Citrea");
 
         let txHash;
 

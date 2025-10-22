@@ -175,7 +175,7 @@ describe("InviteOnlyGroupRule", function () {
           [],
           ruleParams
         )
-      ).to.be.revertedWithCustomError(inviteRule, "InvalidInviteCode");
+      ).to.be.revertedWithCustomError(inviteRule, "InviteNotFound");
     });
 
     it("Should reject non-existent invite", async function () {
@@ -192,7 +192,7 @@ describe("InviteOnlyGroupRule", function () {
           [],
           ruleParams
         )
-      ).to.be.revertedWithCustomError(inviteRule, "InvalidInviteCode");
+      ).to.be.revertedWithCustomError(inviteRule, "InviteNotFound");
     });
 
     it("Should reject expired invite", async function () {
@@ -337,6 +337,186 @@ describe("InviteOnlyGroupRule", function () {
     });
   });
 
+  describe("cancelInvite", function () {
+    let expiresAt: number;
+
+    beforeEach(async function () {
+      expiresAt = (await time.latest()) + 86400;
+      // Register an invite
+      await inviteRule.connect(backend).registerInvite(
+        configSalt,
+        inviter.address,
+        inviteCodeHash,
+        expiresAt
+      );
+    });
+
+    it("Should allow backend to cancel a pending invite", async function () {
+      await expect(
+        inviteRule.connect(backend).cancelInvite(configSalt, inviteCodeHash)
+      )
+        .to.emit(inviteRule, "InviteCancelled")
+        .withArgs(configSalt, inviter.address, inviteCodeHash);
+
+      // Verify invite is deleted (inviter should be zero address)
+      const invite = await inviteRule.getInvite(configSalt, inviteCodeHash);
+      expect(invite.inviter).to.equal(ethers.ZeroAddress);
+      expect(invite.expiresAt).to.equal(0);
+      expect(invite.used).to.equal(false);
+      expect(invite.usedBy).to.equal(ethers.ZeroAddress);
+    });
+
+    it("Should not allow non-backend to cancel invite", async function () {
+      await expect(
+        inviteRule.connect(attacker).cancelInvite(configSalt, inviteCodeHash)
+      ).to.be.revertedWithCustomError(inviteRule, "OnlyBackend");
+    });
+
+    it("Should not allow canceling non-existent invite", async function () {
+      const nonExistentCodeHash = ethers.keccak256(ethers.toUtf8Bytes("NONEXISTENT"));
+
+      await expect(
+        inviteRule.connect(backend).cancelInvite(configSalt, nonExistentCodeHash)
+      ).to.be.revertedWithCustomError(inviteRule, "InviteNotFound");
+    });
+
+    it("Should not allow canceling already used invite", async function () {
+      // Use the invite first
+      const ruleParams = [
+        { key: PARAM__INVITE_CODE, value: ethers.AbiCoder.defaultAbiCoder().encode(["string"], [inviteCode]) }
+      ];
+
+      await inviteRule.processJoining(
+        configSalt,
+        invitee.address,
+        [],
+        ruleParams
+      );
+
+      // Try to cancel used invite
+      await expect(
+        inviteRule.connect(backend).cancelInvite(configSalt, inviteCodeHash)
+      ).to.be.revertedWithCustomError(inviteRule, "InviteNotCancellable");
+    });
+
+    it("Should prevent using cancelled invite", async function () {
+      // Cancel the invite
+      await inviteRule.connect(backend).cancelInvite(configSalt, inviteCodeHash);
+
+      // Try to use cancelled invite
+      const ruleParams = [
+        { key: PARAM__INVITE_CODE, value: ethers.AbiCoder.defaultAbiCoder().encode(["string"], [inviteCode]) }
+      ];
+
+      await expect(
+        inviteRule.processJoining(
+          configSalt,
+          invitee.address,
+          [],
+          ruleParams
+        )
+      ).to.be.revertedWithCustomError(inviteRule, "InviteNotFound");
+    });
+
+    it("Should allow re-registering after cancellation", async function () {
+      // Cancel the invite
+      await inviteRule.connect(backend).cancelInvite(configSalt, inviteCodeHash);
+
+      // Re-register with same hash
+      const newExpiresAt = (await time.latest()) + 172800; // 48 hours
+      await expect(
+        inviteRule.connect(backend).registerInvite(
+          configSalt,
+          inviter.address,
+          inviteCodeHash,
+          newExpiresAt
+        )
+      )
+        .to.emit(inviteRule, "InviteRegistered")
+        .withArgs(configSalt, inviter.address, inviteCodeHash, newExpiresAt);
+
+      // Verify new invite exists
+      const invite = await inviteRule.getInvite(configSalt, inviteCodeHash);
+      expect(invite.inviter).to.equal(inviter.address);
+      expect(invite.expiresAt).to.equal(newExpiresAt);
+      expect(invite.used).to.equal(false);
+    });
+
+    it("Should free storage slots after cancellation", async function () {
+      // Cancel invite
+      const tx = await inviteRule.connect(backend).cancelInvite(configSalt, inviteCodeHash);
+      const receipt = await tx.wait();
+      const gasUsed = receipt?.gasUsed || 0n;
+
+      // Cancellation should use reasonable gas (with refund applied)
+      // Should be less than 50k gas with refund
+      expect(gasUsed).to.be.lessThan(50000);
+
+      // Verify all fields are zeroed
+      const invite = await inviteRule.getInvite(configSalt, inviteCodeHash);
+      expect(invite.inviter).to.equal(ethers.ZeroAddress);
+      expect(invite.expiresAt).to.equal(0);
+      expect(invite.used).to.equal(false);
+      expect(invite.usedBy).to.equal(ethers.ZeroAddress);
+    });
+
+    it("Should handle canceling multiple invites for same group", async function () {
+      // Register second invite
+      const inviteCode2 = "SECRET456";
+      const inviteCodeHash2 = ethers.keccak256(ethers.toUtf8Bytes(inviteCode2));
+      await inviteRule.connect(backend).registerInvite(
+        configSalt,
+        inviter.address,
+        inviteCodeHash2,
+        expiresAt
+      );
+
+      // Cancel first invite
+      await expect(
+        inviteRule.connect(backend).cancelInvite(configSalt, inviteCodeHash)
+      ).to.emit(inviteRule, "InviteCancelled");
+
+      // Second invite should still be usable
+      const ruleParams = [
+        { key: PARAM__INVITE_CODE, value: ethers.AbiCoder.defaultAbiCoder().encode(["string"], [inviteCode2]) }
+      ];
+
+      await expect(
+        inviteRule.processJoining(
+          configSalt,
+          invitee.address,
+          [],
+          ruleParams
+        )
+      ).to.emit(inviteRule, "InviteUsed");
+    });
+
+    it("Should handle canceling expired invite", async function () {
+      // Fast forward past expiration
+      await time.increaseTo(expiresAt + 1);
+
+      // Should still be able to cancel expired invite
+      await expect(
+        inviteRule.connect(backend).cancelInvite(configSalt, inviteCodeHash)
+      )
+        .to.emit(inviteRule, "InviteCancelled")
+        .withArgs(configSalt, inviter.address, inviteCodeHash);
+    });
+
+    it("Should emit correct event data before deletion", async function () {
+      // Verify invite exists before cancellation
+      const inviteBefore = await inviteRule.getInvite(configSalt, inviteCodeHash);
+      expect(inviteBefore.inviter).to.equal(inviter.address);
+
+      // Cancel and check event
+      await expect(
+        inviteRule.connect(backend).cancelInvite(configSalt, inviteCodeHash)
+      )
+        .to.emit(inviteRule, "InviteCancelled")
+        .withArgs(configSalt, inviter.address, inviteCodeHash);
+    });
+  });
+
   describe("Edge Cases", function () {
     it("Should handle very long invite codes", async function () {
       const longCode = "A".repeat(1000);
@@ -458,7 +638,7 @@ describe("InviteOnlyGroupRule", function () {
           [],
           wrongCaseParams
         )
-      ).to.be.revertedWithCustomError(inviteRule, "InvalidInviteCode");
+      ).to.be.revertedWithCustomError(inviteRule, "InviteNotFound");
 
       // Should work with correct case
       const correctParams = [

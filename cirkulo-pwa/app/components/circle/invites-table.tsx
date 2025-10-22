@@ -7,7 +7,7 @@ export interface InvitesTableProps {
 	invites: Invite[];
 	onCopyLink: (inviteCode: string) => void;
 	onResend: (inviteId: string) => void;
-	onCancel: (inviteId: string) => void;
+	onCancel: (inviteId: string, recipientEmail: string) => void;
 }
 
 /**
@@ -182,7 +182,7 @@ export function InvitesTable({
 														`Cancel invitation for ${invite.recipientEmail}?`
 													)
 												) {
-													onCancel(invite.id);
+													onCancel(invite.id, invite.recipientEmail);
 												}
 											}}
 											className="p-3 text-neutral-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors touch-manipulation"

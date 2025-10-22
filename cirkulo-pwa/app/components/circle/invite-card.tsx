@@ -7,7 +7,7 @@ export interface InviteCardProps {
 	invite: Invite;
 	onCopyLink: (inviteCode: string) => void;
 	onResend: (inviteId: string) => void;
-	onCancel: (inviteId: string) => void;
+	onCancel: (inviteId: string, recipientEmail: string) => void;
 }
 
 /**
@@ -38,7 +38,7 @@ export function InviteCard({
 
 	const handleCancel = () => {
 		if (confirm(`Cancel invitation for ${invite.recipientEmail}?`)) {
-			onCancel(invite.id);
+			onCancel(invite.id, invite.recipientEmail);
 		}
 	};
 
