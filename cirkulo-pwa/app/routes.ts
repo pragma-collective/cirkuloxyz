@@ -25,6 +25,7 @@ export default [
 			route("profile", "routes/profile.tsx"),
 			route("circle/:id", "routes/circle-detail.tsx"),
 			route("circle/:id/members", "routes/circle-members.tsx"),
+			route("circle/:id/invites", "routes/circle-invites.tsx"),
 		]),
 	]),
 ] satisfies RouteConfig;

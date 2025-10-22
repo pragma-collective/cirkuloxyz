@@ -17,14 +17,15 @@ export interface SendInviteRequest {
 
 /**
  * Response from the send invite API
- * Based on the API schema from cirkulo-api
+ * Based on the refactored API schema (no success/message wrapper)
  */
 export interface SendInviteResponse {
-	success: boolean;
-	message: string;
+	recipientEmail: string;
+	groupAddress: string;
 	inviteId: string;
 	inviteCode: string;
-	expiresAt: string;
+	txHash?: string;
+	emailId?: string;
 }
 
 /**

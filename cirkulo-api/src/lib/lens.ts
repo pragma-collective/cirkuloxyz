@@ -106,11 +106,12 @@ export async function isGroupMember(
 /**
  * Fetch group details from Lens Protocol
  * @param groupAddress - The group's address
- * @returns Group details including configSalt
+ * @returns Group details including configSalt and owner
  */
 export async function fetchGroup(groupAddress: string): Promise<{
 	address: string;
 	configSalt: string;
+	owner: string;
 	name?: string;
 	description?: string;
 }> {
@@ -181,19 +182,44 @@ export async function fetchGroup(groupAddress: string): Promise<{
 		return {
 			address: group.address,
 			configSalt,
+			owner: group.owner,
 			name: group.metadata?.name || undefined,
 			description: group.metadata?.description || undefined,
 		};
 	} catch (error) {
 		console.error("Error fetching group:", error);
 
-		// Fallback: use groupAddress as configSalt
-		console.warn(
-			`⚠️ Using groupAddress as fallback configSalt: ${groupAddress}`,
+		// Fallback: throw error as we need the owner information
+		throw error;
+	}
+}
+
+/**
+ * Check if an address is the owner of a group
+ * @param groupAddress - The group's address
+ * @param userAddress - The address to check
+ * @returns true if the address is the owner
+ */
+export async function isGroupOwner(
+	groupAddress: string,
+	userAddress: string,
+): Promise<boolean> {
+	try {
+		console.log(
+			`📡 Checking if ${userAddress} is owner of group ${groupAddress}`,
 		);
-		return {
-			address: groupAddress,
-			configSalt: groupAddress,
-		};
+
+		const group = await fetchGroup(groupAddress);
+		console.log("group data: ", group);
+
+		const isOwner = group.owner.toLowerCase() === userAddress.toLowerCase();
+
+		console.log(`${isOwner ? "✅" : "❌"} Owner check result: ${isOwner}`);
+
+		return isOwner;
+	} catch (error) {
+		console.error("Error checking group ownership:", error);
+		// For security: if we can't verify, deny access
+		return false;
 	}
 }

@@ -1,14 +1,15 @@
 import { OpenAPIHono } from "@hono/zod-openapi";
-import { and, eq } from "drizzle-orm";
+import { and, desc, eq } from "drizzle-orm";
 import { db } from "../db";
 import { invites as invitesTable } from "../db/schema";
 import { registerInvite } from "../lib/blockchain";
 import { sendInviteEmail } from "../lib/email";
-import { fetchGroup, getLensUsername, isGroupMember } from "../lib/lens";
+import { fetchGroup, getLensUsername, isGroupOwner } from "../lib/lens";
 import type { AuthContext } from "../lib/middleware";
 import { authMiddleware } from "../lib/middleware";
 import {
 	cancelInviteRoute,
+	getInvitesRoute,
 	inviteUserRoute,
 	markAcceptedRoute,
 	resendInviteRoute,
@@ -18,6 +19,89 @@ const invites = new OpenAPIHono<AuthContext>();
 
 // Apply auth middleware to all invite routes
 invites.use("/*", authMiddleware);
+
+// Get invites for a group (owner only)
+invites.openapi(getInvitesRoute, async (c) => {
+	try {
+		// Get validated query parameters
+		const { groupAddress } = c.req.valid("query");
+
+		// Get authenticated user info from JWT token
+		const jwtPayload = c.get("jwtPayload");
+
+		// Extract user address from sub claim
+		const userAddress = jwtPayload.sub;
+		console.log(jwtPayload);
+
+		if (!userAddress) {
+			return c.json(
+				{
+					error: "User information not found",
+					details:
+						"Unable to retrieve user's address from authentication token (sub claim missing)",
+				},
+				400,
+			);
+		}
+
+		console.log(
+			`User ${userAddress} is requesting invites for group ${groupAddress}`,
+		);
+
+		// Verify user is the owner of the group
+		const isOwner = await isGroupOwner(groupAddress, userAddress);
+
+		if (!isOwner) {
+			return c.json(
+				{
+					error: "Forbidden",
+					details: "Only the group owner can view invites for this group",
+				},
+				403,
+			);
+		}
+
+		console.log(`✅ User is owner of group ${groupAddress}`);
+
+		// Fetch all invites for the group
+		const groupInvites = await db
+			.select()
+			.from(invitesTable)
+			.where(eq(invitesTable.groupAddress, groupAddress))
+			.orderBy(desc(invitesTable.createdAt));
+
+		console.log(
+			`📧 Found ${groupInvites.length} invites for group ${groupAddress}`,
+		);
+
+		// Format response with ISO 8601 timestamps
+		const formattedInvites = groupInvites.map((invite) => ({
+			id: invite.id,
+			code: invite.code,
+			recipientEmail: invite.recipientEmail,
+			groupAddress: invite.groupAddress,
+			senderAddress: invite.senderAddress,
+			status: invite.status,
+			expiresAt: invite.expiresAt.toISOString(),
+			acceptedAt: invite.acceptedAt?.toISOString(),
+			registeredTxHash: invite.registeredTxHash || undefined,
+			createdAt: invite.createdAt.toISOString(),
+			updatedAt: invite.updatedAt.toISOString(),
+		}));
+
+		return c.json(formattedInvites, 200);
+	} catch (error) {
+		console.error("Error fetching invites:", error);
+
+		return c.json(
+			{
+				error: "Failed to fetch invites",
+				details: error instanceof Error ? error.message : "Unknown error",
+			},
+			500,
+		);
+	}
+});
 
 // Invite user endpoint
 invites.openapi(inviteUserRoute, async (c) => {
@@ -29,16 +113,15 @@ invites.openapi(inviteUserRoute, async (c) => {
 		// Get authenticated user info from JWT token
 		const jwtPayload = c.get("jwtPayload");
 
-		// Extract sender address from act claim (Account address the token can act on behalf of)
-		// @ts-expect-error - act claim is not in the standard JWTPayload type
-		const senderAddress = jwtPayload.act?.sub as string | undefined;
+		// Extract sender address from sub claim
+		const senderAddress = jwtPayload.sub;
 
 		if (!senderAddress) {
 			return c.json(
 				{
 					error: "Sender information not found",
 					details:
-						"Unable to retrieve sender's address from authentication token (act.sub claim missing)",
+						"Unable to retrieve sender's address from authentication token (sub claim missing)",
 				},
 				400,
 			);
@@ -48,18 +131,20 @@ invites.openapi(inviteUserRoute, async (c) => {
 			`User ${senderAddress} is inviting ${recipientEmail} to group ${groupAddress}`,
 		);
 
-		// 1. Verify sender is a member of the group
-		const isMember = await isGroupMember(groupAddress, senderAddress);
+		// 1. Verify sender is the owner of the group
+		const isOwner = await isGroupOwner(groupAddress, senderAddress);
 
-		if (!isMember) {
+		if (!isOwner) {
 			return c.json(
 				{
-					error: "Unauthorized",
-					details: "You must be a member of the group to send invites",
+					error: "Forbidden",
+					details: "Only the group owner can send invites",
 				},
 				403,
 			);
 		}
+
+		console.log(`✅ User is owner of group ${groupAddress}`);
 
 		// 2. Fetch Lens account username
 		const lensUsername = await getLensUsername(senderAddress);
@@ -178,8 +263,6 @@ invites.openapi(inviteUserRoute, async (c) => {
 		// Return success response
 		return c.json(
 			{
-				success: true,
-				message: "Invitation sent successfully",
 				recipientEmail,
 				groupAddress,
 				inviteId: newInvite.id,
@@ -212,16 +295,15 @@ invites.openapi(resendInviteRoute, async (c) => {
 		// Get authenticated user info from JWT token
 		const jwtPayload = c.get("jwtPayload");
 
-		// Extract sender address from act claim
-		// @ts-expect-error - act claim is not in the standard JWTPayload type
-		const senderAddress = jwtPayload.act?.sub as string | undefined;
+		// Extract sender address from sub claim
+		const senderAddress = jwtPayload.sub;
 
 		if (!senderAddress) {
 			return c.json(
 				{
 					error: "Sender information not found",
 					details:
-						"Unable to retrieve sender's address from authentication token (act.sub claim missing)",
+						"Unable to retrieve sender's address from authentication token (sub claim missing)",
 				},
 				400,
 			);
@@ -283,8 +365,6 @@ invites.openapi(resendInviteRoute, async (c) => {
 		// Return success response
 		return c.json(
 			{
-				success: true,
-				message: "Invitation resent successfully",
 				inviteId: invite.id,
 				emailId: emailResult.data?.id,
 			},
@@ -312,16 +392,15 @@ invites.openapi(cancelInviteRoute, async (c) => {
 		// Get authenticated user info from JWT token
 		const jwtPayload = c.get("jwtPayload");
 
-		// Extract sender address from act claim
-		// @ts-expect-error - act claim is not in the standard JWTPayload type
-		const senderAddress = jwtPayload.act?.sub as string | undefined;
+		// Extract sender address from sub claim
+		const senderAddress = jwtPayload.sub;
 
 		if (!senderAddress) {
 			return c.json(
 				{
 					error: "Sender information not found",
 					details:
-						"Unable to retrieve sender's address from authentication token (act.sub claim missing)",
+						"Unable to retrieve sender's address from authentication token (sub claim missing)",
 				},
 				400,
 			);
@@ -392,8 +471,6 @@ invites.openapi(cancelInviteRoute, async (c) => {
 		// Return success response
 		return c.json(
 			{
-				success: true,
-				message: "Invitation cancelled successfully",
 				inviteId: cancelledInvite.id,
 			},
 			200,
@@ -441,14 +518,10 @@ invites.openapi(markAcceptedRoute, async (c) => {
 			console.log(`✅ Invite already marked as accepted`);
 			return c.json(
 				{
-					success: true,
-					message: "Invite already marked as accepted",
-					data: {
-						inviteId: invite.id,
-						groupAddress: invite.groupAddress,
-						acceptedAt:
-							invite.acceptedAt?.toISOString() || new Date().toISOString(),
-					},
+					inviteId: invite.id,
+					groupAddress: invite.groupAddress,
+					acceptedAt:
+						invite.acceptedAt?.toISOString() || new Date().toISOString(),
 				},
 				200,
 			);
@@ -469,14 +542,10 @@ invites.openapi(markAcceptedRoute, async (c) => {
 
 		return c.json(
 			{
-				success: true,
-				message: "Invite marked as accepted",
-				data: {
-					inviteId: updatedInvite.id,
-					groupAddress: updatedInvite.groupAddress,
-					acceptedAt:
-						updatedInvite.acceptedAt?.toISOString() || new Date().toISOString(),
-				},
+				inviteId: updatedInvite.id,
+				groupAddress: updatedInvite.groupAddress,
+				acceptedAt:
+					updatedInvite.acceptedAt?.toISOString() || new Date().toISOString(),
 			},
 			200,
 		);

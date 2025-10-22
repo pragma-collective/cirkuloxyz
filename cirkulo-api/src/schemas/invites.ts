@@ -17,8 +17,6 @@ export const InviteUserSchema = z.object({
 
 // Response Schema
 export const InviteResponseSchema = z.object({
-	success: z.boolean().describe("Whether the invite was sent successfully"),
-	message: z.string().describe("Success message"),
 	recipientEmail: z
 		.string()
 		.email()
@@ -109,18 +107,12 @@ export const InviteIdParamSchema = z.object({
 
 // Resend Response Schema
 export const ResendInviteResponseSchema = z.object({
-	success: z.boolean().describe("Whether the invite was resent successfully"),
-	message: z.string().describe("Success message"),
 	inviteId: z.string().describe("Database ID of the invite"),
 	emailId: z.string().optional().describe("Email service provider ID"),
 });
 
 // Cancel Response Schema
 export const CancelInviteResponseSchema = z.object({
-	success: z
-		.boolean()
-		.describe("Whether the invite was cancelled successfully"),
-	message: z.string().describe("Success message"),
 	inviteId: z.string().describe("Database ID of the cancelled invite"),
 });
 
@@ -252,13 +244,9 @@ export const MarkAcceptedSchema = z.object({
 });
 
 export const MarkAcceptedResponseSchema = z.object({
-	success: z.boolean(),
-	message: z.string(),
-	data: z.object({
-		inviteId: z.string(),
-		groupAddress: z.string(),
-		acceptedAt: z.string(),
-	}),
+	inviteId: z.string(),
+	groupAddress: z.string(),
+	acceptedAt: z.string(),
 });
 
 export const markAcceptedRoute = createRoute({
@@ -288,6 +276,104 @@ export const markAcceptedRoute = createRoute({
 		},
 		404: {
 			description: "Invite not found",
+			content: {
+				"application/json": {
+					schema: ErrorSchema,
+				},
+			},
+		},
+		500: {
+			description: "Internal server error",
+			content: {
+				"application/json": {
+					schema: ErrorSchema,
+				},
+			},
+		},
+	},
+});
+
+// Get Invites Query Schema
+export const GetInvitesQuerySchema = z.object({
+	groupAddress: z
+		.string()
+		.regex(/^0x[a-fA-F0-9]{40}$/, "Invalid Ethereum address")
+		.describe("Ethereum address of the group to filter invites")
+		.openapi({ example: "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb0" }),
+});
+
+// Invite Item Schema
+export const InviteItemSchema = z.object({
+	id: z.string().uuid().describe("Database ID of the invite"),
+	code: z.string().uuid().describe("Invite code (UUID)"),
+	recipientEmail: z.string().email().describe("Email address of the recipient"),
+	groupAddress: z
+		.string()
+		.describe("Ethereum address of the group the invite is for"),
+	senderAddress: z
+		.string()
+		.describe("Ethereum address of the user who sent the invite"),
+	status: z
+		.enum(["pending", "accepted", "expired", "cancelled"])
+		.describe("Current status of the invite"),
+	expiresAt: z.string().describe("ISO 8601 timestamp when invite expires"),
+	acceptedAt: z
+		.string()
+		.optional()
+		.describe("ISO 8601 timestamp when invite was accepted"),
+	registeredTxHash: z
+		.string()
+		.optional()
+		.describe("Transaction hash from on-chain registration"),
+	createdAt: z.string().describe("ISO 8601 timestamp when invite was created"),
+	updatedAt: z
+		.string()
+		.describe("ISO 8601 timestamp when invite was last updated"),
+});
+
+// Get Invites Response Schema - returns array directly
+export const GetInvitesResponseSchema = z.array(InviteItemSchema);
+
+// Get Invites Route Definition
+export const getInvitesRoute = createRoute({
+	method: "get",
+	path: "/",
+	tags: ["Invites"],
+	summary: "Get invites for a group",
+	description:
+		"Retrieves all invites for a specific group. Only the group owner can access this endpoint. Requires authentication.",
+	security: [{ bearerAuth: [] }],
+	request: {
+		query: GetInvitesQuerySchema,
+	},
+	responses: {
+		200: {
+			description: "Invites retrieved successfully",
+			content: {
+				"application/json": {
+					schema: GetInvitesResponseSchema,
+				},
+			},
+		},
+		400: {
+			description:
+				"Invalid request - missing or invalid groupAddress parameter",
+			content: {
+				"application/json": {
+					schema: ErrorSchema,
+				},
+			},
+		},
+		401: {
+			description: "Unauthorized - Invalid or missing authentication token",
+			content: {
+				"application/json": {
+					schema: ErrorSchema,
+				},
+			},
+		},
+		403: {
+			description: "Forbidden - User is not the owner of the group",
 			content: {
 				"application/json": {
 					schema: ErrorSchema,
