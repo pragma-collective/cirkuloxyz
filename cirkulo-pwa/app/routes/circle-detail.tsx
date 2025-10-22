@@ -6,10 +6,12 @@ import { CircleHero } from "app/components/circle/circle-hero";
 import { CircleProgress } from "app/components/circle/circle-progress";
 import { CircleActivityFeed } from "app/components/circle/circle-activity-feed";
 import { UserAvatar } from "app/components/ui/user-avatar";
+import { Button } from "app/components/ui/button";
 import { mockCircles, mockCircleActivity } from "app/lib/mock-data";
 import type { FeedItem } from "app/types/feed";
-import { Home, Compass, PlusCircle, Bell, User } from "lucide-react";
+import { Home, Compass, PlusCircle, Bell, User, Loader2, AlertCircle } from "lucide-react";
 import { mapGroupToCircle } from "app/lib/map-group-to-circle";
+import { useFetchCircle } from "~/hooks/use-fetch-circle";
 import { fetchGroup } from "@lens-protocol/client/actions";
 import { evmAddress } from "@lens-protocol/client";
 import { lensClient } from "app/lib/lens";
@@ -60,17 +62,20 @@ export default function CircleDetail({ loaderData }: Route.ComponentProps) {
 	const group = loaderData?.group;
 	const loaderError = loaderData?.error;
 
+	// Fetch circle data from API
+	const { data: circleData, isLoading: isLoadingCircle, error: circleError } = useFetchCircle(circleId);
+
 	// State management
 	const [activityItems, setActivityItems] =
 		useState<FeedItem[]>(mockCircleActivity);
 
-	// Convert Lens group to Circle format
+	// Convert Lens group to Circle format, merging with API data
 	const circle = useMemo(() => {
 		if (group) {
-			return mapGroupToCircle(group);
+			return mapGroupToCircle(group, circleData?.data);
 		}
 		return null;
-	}, [group]);
+	}, [group, circleData]);
 
 	// Handle like action
 	const handleLike = useCallback((itemId: string) => {
@@ -144,6 +149,70 @@ export default function CircleDetail({ loaderData }: Route.ComponentProps) {
 			onClick: () => navigate("/profile"),
 		},
 	];
+
+	// Show loading state while fetching circle data from API
+	if (isLoadingCircle) {
+		return (
+			<AuthenticatedLayout
+				notificationCount={3}
+				onNotificationClick={() => console.log("Notifications clicked")}
+				onProfileClick={() => navigate("/profile")}
+				onNewContribution={() => console.log("New contribution clicked")}
+				navItems={navItems}
+			>
+				<div className="flex flex-col items-center justify-center py-16 px-4">
+					<Loader2 className="size-12 text-primary-600 animate-spin mb-6" />
+					<h2 className="text-2xl font-bold text-neutral-900 mb-3 text-center">
+						Loading Circle Details
+					</h2>
+					<p className="text-neutral-600 text-center max-w-md">
+						Fetching circle configuration from database...
+					</p>
+				</div>
+			</AuthenticatedLayout>
+		);
+	}
+
+	// Show error state if API fetch failed
+	if (circleError) {
+		return (
+			<AuthenticatedLayout
+				notificationCount={3}
+				onNotificationClick={() => console.log("Notifications clicked")}
+				onProfileClick={() => navigate("/profile")}
+				onNewContribution={() => console.log("New contribution clicked")}
+				navItems={navItems}
+			>
+				<div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-12">
+					<div className="max-w-2xl mx-auto text-center space-y-4">
+						<div className="flex justify-center mb-4">
+							<AlertCircle className="size-16 text-error-500" />
+						</div>
+						<h1 className="text-3xl font-bold text-neutral-900">
+							Error Loading Circle Configuration
+						</h1>
+						<p className="text-neutral-600">
+							Failed to load circle details from database. The circle may not have been configured yet.
+						</p>
+						<div className="pt-4 space-x-4">
+							<Button
+								onClick={() => window.location.reload()}
+								className="bg-gradient-to-r from-primary-500 to-secondary-500 text-white"
+							>
+								Try Again
+							</Button>
+							<Button
+								onClick={() => navigate("/dashboard")}
+								variant="outline"
+							>
+								Back to Dashboard
+							</Button>
+						</div>
+					</div>
+				</div>
+			</AuthenticatedLayout>
+		);
+	}
 
 	// Show error state if group fetch failed
 	if (loaderError) {

@@ -1,41 +1,48 @@
 {
-	"version": "7",
-	"dialect": "postgresql",
-	"entries": [
-		{
-			"idx": 0,
-			"version": "7",
-			"when": 1760714850461,
-			"tag": "0000_sturdy_molecule_man",
-			"breakpoints": true
-		},
-		{
-			"idx": 1,
-			"version": "7",
-			"when": 1760789630204,
-			"tag": "0001_keen_sentinel",
-			"breakpoints": true
-		},
-		{
-			"idx": 2,
-			"version": "7",
-			"when": 1760792955301,
-			"tag": "0002_dazzling_timeslip",
-			"breakpoints": true
-		},
-		{
-			"idx": 3,
-			"version": "7",
-			"when": 1760964902050,
-			"tag": "0003_curious_dark_beast",
-			"breakpoints": true
-		},
-		{
-			"idx": 4,
-			"version": "7",
-			"when": 1761058024452,
-			"tag": "0004_amused_talon",
-			"breakpoints": true
-		}
-	]
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1760714850461,
+      "tag": "0000_sturdy_molecule_man",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1760789630204,
+      "tag": "0001_keen_sentinel",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1760792955301,
+      "tag": "0002_dazzling_timeslip",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1760964902050,
+      "tag": "0003_curious_dark_beast",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1761058024452,
+      "tag": "0004_amused_talon",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1761144948444,
+      "tag": "0005_bumpy_the_watchers",
+      "breakpoints": true
+    }
+  ]
 }

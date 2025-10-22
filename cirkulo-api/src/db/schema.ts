@@ -36,3 +36,19 @@ export const invites = pgTable("invites", {
 		.notNull()
 		.$onUpdate(() => new Date()),
 });
+
+// Circles table - stores off-chain circle configuration
+export const circles = pgTable("circles", {
+	id: uuid("id").defaultRandom().primaryKey(),
+	circleName: text("circle_name").notNull(), // Non-slugified circle name
+	poolAddress: text("pool_address").notNull().unique(), // Xersha pool contract address
+	lensGroupAddress: text("lens_group_address").notNull().unique(), // Lens group address
+	poolDeploymentTxHash: text("pool_deployment_tx_hash"), // Pool creation transaction hash
+	creatorAddress: text("creator_address").notNull(), // Circle creator from JWT act.sub
+	circleType: text("circle_type").notNull(), // "contribution" | "rotating" | "fundraising"
+	createdAt: timestamp("created_at").defaultNow().notNull(),
+	updatedAt: timestamp("updated_at")
+		.defaultNow()
+		.notNull()
+		.$onUpdate(() => new Date()),
+});

@@ -1,42 +1,49 @@
 import type { Group } from "@lens-protocol/client";
 import type { Circle } from "app/types/feed";
+import type { FetchCircleResponse } from "~/hooks/use-fetch-circle";
 
 /**
  * Maps a Lens Protocol Group to the application's Circle type
- * 
- * NOTE: This is a temporary implementation. In the future, this data will come from our API
- * which will provide the full circle configuration including:
- * - Saving type and contribution schedule
- * - Goal amounts and current progress (from smart contracts)
- * - Member details and counts
- * - Circle-specific settings and metadata
- * 
+ *
+ * Now integrates with API data to provide real circle configuration including:
+ * - Circle name (non-slugified) from database
+ * - Circle type (contribution/rotating/fundraising) from database
+ * - Goal amounts and current progress (from smart contracts - TODO)
+ * - Member details and counts (from Lens group - TODO)
+ *
  * @param group - Lens Protocol Group object
+ * @param apiCircleData - Optional circle data from API database
  * @returns Circle object compatible with the app
  */
-export function mapGroupToCircle(group: Group): Circle {
-  // Extract name and description from metadata
-  const name = group.metadata?.name || `Group ${group.address.slice(0, 8)}...`;
+export function mapGroupToCircle(
+  group: Group,
+  apiCircleData?: FetchCircleResponse['data']
+): Circle {
+  // Use API data if available, otherwise fallback to Lens metadata
+  const name = apiCircleData?.circleName || group.metadata?.name || `Group ${group.address.slice(0, 8)}...`;
   const description = group.metadata?.description || "No description available";
+  const circleType = apiCircleData?.circleType || "contribution";
 
-  // Create circle object with available data from Lens Group
+  // Determine if public based on circle type (fundraising circles are public)
+  const isPublic = circleType === "fundraising";
+
+  // Create circle object merging Lens Group + API data
   const circle: Circle = {
     id: group.address,
-    name,
+    name, // Real name from API!
     description,
-    // Default values - these would ideally come from your smart contract or additional metadata
-    savingType: "contribution",
+    circleType, // Real type from API!
     contributionSchedule: "monthly",
-    endDate: new Date(Date.now() + 1000 * 60 * 60 * 24 * 30).toISOString(), // Default 30 days
+    endDate: new Date(Date.now() + 1000 * 60 * 60 * 24 * 30).toISOString(), // Default 30 days - TODO: from contract
     goalName: name,
-    goalAmount: 10000, // Default goal amount
-    currentAmount: 0, // Would come from smart contract
-    memberCount: 0, // Would come from group members query
+    goalAmount: 10000, // Default goal amount - TODO: from contract
+    currentAmount: 0, // TODO: from smart contract
+    memberCount: 0, // TODO: from group members query
     progress: 0,
-    members: [], // Would need separate query to fetch members
-    isPublic: false,
+    members: [], // TODO: separate query to fetch members
+    isPublic,
     category: "other",
-    createdAt: group.timestamp ? new Date(group.timestamp).toISOString() : new Date().toISOString(),
+    createdAt: apiCircleData?.createdAt || (group.timestamp ? new Date(group.timestamp).toISOString() : new Date().toISOString()),
     isActive: true,
   };
 
