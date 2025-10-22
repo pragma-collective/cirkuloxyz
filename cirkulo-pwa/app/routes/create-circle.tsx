@@ -7,7 +7,6 @@ import {
   Card,
   CardContent,
   CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle,
 } from "app/components/ui/card";
@@ -27,9 +26,10 @@ import { cn } from "app/lib/utils";
 import { useDynamicContext } from "@dynamic-labs/sdk-react-core";
 import { useAuth } from "app/context/auth-context";
 import { useCreateLensGroup } from "app/hooks/create-lens-group";
-import { lensClient } from "app/lib/lens";
 import { xershaFactoryAbi, getXershaFactoryAddress } from "app/lib/abi";
-import { encodeFunctionData } from "viem";
+import { parseEther, decodeEventLog } from "viem";
+import { citreaTestnet } from "app/lib/wagmi";
+import { useWriteContract, useWaitForTransactionReceipt, useSwitchChain } from "wagmi";
 
 export function meta({}: Route.MetaArgs) {
   return [
@@ -45,8 +45,10 @@ export function meta({}: Route.MetaArgs) {
 interface FormErrors {
   name?: string;
   description?: string;
-  savingType?: string;
+  circleType?: string;
   contributionSchedule?: string;
+  contributionAmount?: string;
+  goalAmount?: string;
   endDate?: string;
 }
 
@@ -54,8 +56,10 @@ interface FormErrors {
 interface FormData {
   name: string;
   description: string;
-  savingType: "rotating" | "contribution" | "";
-  contributionSchedule: "weekly" | "bi-weekly" | "monthly" | "";
+  circleType: "contribution" | "rotating" | "fundraising" | "";
+  contributionSchedule: "weekly" | "biweekly" | "monthly" | "";
+  contributionAmount: string;
+  goalAmount: string;
   endDate: string;
 }
 
@@ -65,12 +69,22 @@ export default function CreateCircle() {
   const { sessionClient } = useAuth();
   const { createGroup, isCreating, error: groupCreationError } = useCreateLensGroup();
 
+  // Wagmi hooks for contract interaction
+  const { writeContractAsync } = useWriteContract();
+  const { switchChainAsync } = useSwitchChain();
+  const [poolDeploymentTxHash, setPoolDeploymentTxHash] = useState<`0x${string}` | undefined>();
+  const { data: txReceipt, isLoading: isWaitingForTx } = useWaitForTransactionReceipt({
+    hash: poolDeploymentTxHash,
+  });
+
   // Form state
   const [formData, setFormData] = useState<FormData>({
     name: "",
     description: "",
-    savingType: "",
-    contributionSchedule: "",
+    circleType: "",
+    contributionSchedule: "monthly", // Default to monthly
+    contributionAmount: "",
+    goalAmount: "",
     endDate: "",
   });
 
@@ -108,23 +122,56 @@ export default function CreateCircle() {
     return undefined;
   };
 
-  const validateSavingType = (value: string): string | undefined => {
+  const validateCircleType = (value: string): string | undefined => {
     if (!value) {
-      return "Please select a saving type";
+      return "Please select a circle type";
     }
     return undefined;
   };
 
   const validateContributionSchedule = (value: string): string | undefined => {
-    if (!value) {
-      return "Please select a contribution schedule";
-    }
+    // Always valid for now (default to monthly)
     return undefined;
   };
 
-  const validateEndDate = (value: string): string | undefined => {
+  const validateContributionAmount = (value: string, circleType: string): string | undefined => {
+    // Only required for rotating circles
+    if (circleType !== "rotating") return undefined;
+
+    if (!value || value.trim() === "") {
+      return "Contribution amount is required for rotating circles";
+    }
+
+    const amount = parseFloat(value);
+    if (isNaN(amount) || amount <= 0) {
+      return "Contribution amount must be greater than 0";
+    }
+
+    return undefined;
+  };
+
+  const validateGoalAmount = (value: string, circleType: string): string | undefined => {
+    // Only required for fundraising circles
+    if (circleType !== "fundraising") return undefined;
+
+    if (!value || value.trim() === "") {
+      return "Fundraising goal is required";
+    }
+
+    const amount = parseFloat(value);
+    if (isNaN(amount) || amount <= 0) {
+      return "Goal amount must be greater than 0";
+    }
+
+    return undefined;
+  };
+
+  const validateEndDate = (value: string, circleType: string): string | undefined => {
+    // Only required for fundraising circles
+    if (circleType !== "fundraising") return undefined;
+
     if (!value) {
-      return "End date is required";
+      return "Deadline is required for fundraising circles";
     }
 
     const selectedDate = new Date(value);
@@ -138,11 +185,11 @@ export default function CreateCircle() {
     maxDate.setFullYear(maxDate.getFullYear() + 2);
 
     if (selectedDate < tomorrow) {
-      return "End date must be at least tomorrow";
+      return "Deadline must be at least tomorrow";
     }
 
     if (selectedDate > maxDate) {
-      return "End date cannot be more than 2 years from today";
+      return "Deadline cannot be more than 2 years from today";
     }
 
     return undefined;
@@ -158,12 +205,16 @@ export default function CreateCircle() {
         return validateName(value);
       case "description":
         return validateDescription(value);
-      case "savingType":
-        return validateSavingType(value);
+      case "circleType":
+        return validateCircleType(value);
       case "contributionSchedule":
         return validateContributionSchedule(value);
+      case "contributionAmount":
+        return validateContributionAmount(value, formData.circleType);
+      case "goalAmount":
+        return validateGoalAmount(value, formData.circleType);
       case "endDate":
-        return validateEndDate(value);
+        return validateEndDate(value, formData.circleType);
       default:
         return undefined;
     }
@@ -192,7 +243,7 @@ export default function CreateCircle() {
 
   // Handle radio button change
   const handleRadioChange = (
-    fieldName: "savingType" | "contributionSchedule",
+    fieldName: "circleType" | "contributionSchedule",
     value: string
   ) => {
     setFormData((prev) => ({
@@ -233,16 +284,16 @@ export default function CreateCircle() {
     const newErrors: FormErrors = {
       name: validateName(formData.name),
       description: validateDescription(formData.description),
-      savingType: validateSavingType(formData.savingType),
-      contributionSchedule: validateContributionSchedule(
-        formData.contributionSchedule
-      ),
-      endDate: validateEndDate(formData.endDate),
+      circleType: validateCircleType(formData.circleType),
+      contributionSchedule: validateContributionSchedule(formData.contributionSchedule),
+      contributionAmount: validateContributionAmount(formData.contributionAmount, formData.circleType),
+      goalAmount: validateGoalAmount(formData.goalAmount, formData.circleType),
+      endDate: validateEndDate(formData.endDate, formData.circleType),
     };
 
     setErrors(newErrors);
     setTouchedFields(
-      new Set(["name", "description", "savingType", "contributionSchedule", "endDate"])
+      new Set(["name", "description", "circleType", "contributionSchedule", "contributionAmount", "goalAmount", "endDate"])
     );
 
     // Check if there are any errors
@@ -281,8 +332,10 @@ export default function CreateCircle() {
       console.log("[CreateCircle] Creating Lens group with data:", {
         name: formData.name.trim(),
         description: formData.description.trim(),
-        savingType: formData.savingType,
+        circleType: formData.circleType,
         contributionSchedule: formData.contributionSchedule,
+        contributionAmount: formData.contributionAmount,
+        goalAmount: formData.goalAmount,
         endDate: formData.endDate,
       });
 
@@ -347,59 +400,85 @@ export default function CreateCircle() {
         transactionHash: result.transactionHash,
         groupAddress: result.groupAddress,
       });
-      */
 
-      // TEMPORARY: Mock group address for testing XershaFactory
-      const result = {
-        success: true,
-        groupAddress: "0x1234567890123456789012345678901234567890" as `0x${string}`,
-      };
-      console.log("[CreateCircle] Using mock group address for testing:", result.groupAddress);
+      if (!result.groupAddress) return;
 
-      // TEST: Call XershaFactory.createSavingsPool
+      // Call XershaFactory to create pool based on circle type
       try {
-        console.log("[CreateCircle] Calling XershaFactory.createSavingsPool...");
-
         const factoryAddress = getXershaFactoryAddress();
         console.log("[CreateCircle] Factory address:", factoryAddress);
+        console.log("[CreateCircle] Circle type:", formData.circleType);
 
-        // Encode the function call data
-        const data = encodeFunctionData({
-          abi: xershaFactoryAbi,
-          functionName: "createSavingsPool",
-          args: [result.groupAddress, formData.name.trim()],
-        });
+        // Switch to Citrea network using wagmi
+        // NOTE: DONT REMOVE YET FOR FURTHER TESTING (jhuds)
+        // console.log("[CreateCircle] Switching to Citrea Testnet using wagmi...");
+        // await switchChainAsync({ chainId: citreaTestnet.id });
+        // console.log("[CreateCircle] Chain switched to Citrea");
 
-        // Send transaction using wallet client
-        const txHash = await walletClient.sendTransaction({
-          to: factoryAddress,
-          data,
-          chain: walletClient.chain,
-          account: walletClient.account,
-        });
+        let txHash;
+
+        // Determine which contract function to call based on circle type
+        if (formData.circleType === "contribution") {
+          console.log("[CreateCircle] Creating Savings Pool...");
+          txHash = await writeContractAsync({
+            address: factoryAddress,
+            abi: xershaFactoryAbi,
+            functionName: "createSavingsPool",
+            args: [result.groupAddress, formData.name.trim()],
+            chain: citreaTestnet,
+            chainId: citreaTestnet.id,
+          });
+        }
+
+        else if (formData.circleType === "rotating") {
+          // Convert USD to wei (assuming mock USD token with 18 decimals)
+          const contributionInWei = parseEther(formData.contributionAmount);
+          console.log("[CreateCircle] Creating ROSCA Pool with contribution:", formData.contributionAmount, "USD");
+
+          txHash = await writeContractAsync({
+            address: factoryAddress,
+            abi: xershaFactoryAbi,
+            functionName: "createROSCA",
+            args: [result.groupAddress, formData.name.trim(), contributionInWei],
+            chain: citreaTestnet,
+            chainId: citreaTestnet.id,
+          });
+        }
+
+        else if (formData.circleType === "fundraising") {
+          // Convert USD to wei
+          const goalInWei = parseEther(formData.goalAmount);
+
+          // Convert endDate to unix timestamp (as bigint)
+          const deadline = BigInt(Math.floor(new Date(formData.endDate).getTime() / 1000));
+
+          console.log("[CreateCircle] Creating Donation Pool with goal:", formData.goalAmount, "USD, deadline:", formData.endDate);
+
+          // Beneficiary is the circle creator (primaryWallet.address)
+          txHash = await writeContractAsync({
+            address: factoryAddress,
+            abi: xershaFactoryAbi,
+            functionName: "createDonationPool",
+            args: [
+              result.groupAddress,
+              formData.name.trim(),
+              primaryWallet.address as `0x${string}`, // beneficiary
+              goalInWei,
+              deadline
+            ],
+            chain: citreaTestnet,
+            chainId: citreaTestnet.id,
+          });
+        }
 
         console.log("[CreateCircle] Transaction sent:", txHash);
-        console.log("[CreateCircle] Waiting for confirmation...");
+        console.log("[CreateCircle] Pool creation transaction submitted successfully");
 
-        // Wait for transaction receipt
-        const receipt = await walletClient.waitForTransactionReceipt({ hash: txHash });
+        // Store transaction hash to trigger receipt watching
+        setPoolDeploymentTxHash(txHash);
+        // Note: We'll wait for the receipt in the useEffect below
+        // Do NOT set isSuccess here - wait for pool address from receipt
 
-        console.log("[CreateCircle] Transaction confirmed!");
-        console.log("[CreateCircle] Block number:", receipt.blockNumber);
-        console.log("[CreateCircle] Gas used:", receipt.gasUsed);
-        console.log("[CreateCircle] Status:", receipt.status);
-
-        // Look for PoolCreated event in logs
-        if (receipt.logs && receipt.logs.length > 0) {
-          console.log("[CreateCircle] Event logs:", receipt.logs);
-          // The first topic is the event signature, second is circleId, third is poolAddress
-          const poolCreatedLog = receipt.logs[0];
-          if (poolCreatedLog && poolCreatedLog.topics && poolCreatedLog.topics.length >= 3) {
-            // Extract pool address from indexed parameter (topic[2])
-            const poolAddress = `0x${poolCreatedLog.topics[2]?.slice(-40)}`;
-            console.log("[CreateCircle] Pool created at address:", poolAddress);
-          }
-        }
       } catch (contractError) {
         console.error("[CreateCircle] XershaFactory call failed:", contractError);
         setErrors((prev) => ({
@@ -410,13 +489,9 @@ export default function CreateCircle() {
         return;
       }
 
-      // Show success state
-      setIsSuccess(true);
+      // Note: Success state will be set after receiving pool address from transaction receipt
+      // Navigation will happen in useEffect after pool address is retrieved
 
-      // Navigate to dashboard after 2 seconds
-      setTimeout(() => {
-        navigate("/dashboard");
-      }, 2000);
     } catch (error) {
       console.error("[CreateCircle] Group creation failed:", error);
       setErrors((prev) => ({
@@ -443,6 +518,54 @@ export default function CreateCircle() {
     twoYearsFromNow.setFullYear(twoYearsFromNow.getFullYear() + 2);
     return twoYearsFromNow.toISOString().split("T")[0];
   }, []);
+
+  // Handle transaction receipt and extract pool address
+  useEffect(() => {
+    if (txReceipt && poolDeploymentTxHash) {
+      console.log("[CreateCircle] Transaction confirmed! Receipt:", txReceipt);
+
+      // Extract pool address from PoolCreated event in logs
+      try {
+        const poolCreatedLog = txReceipt.logs.find((log) => {
+          try {
+            const decoded = decodeEventLog({
+              abi: xershaFactoryAbi,
+              data: log.data,
+              topics: log.topics,
+            });
+            return decoded.eventName === "PoolCreated";
+          } catch {
+            return false;
+          }
+        });
+
+        if (poolCreatedLog) {
+          const decoded = decodeEventLog({
+            abi: xershaFactoryAbi,
+            data: poolCreatedLog.data,
+            topics: poolCreatedLog.topics,
+          });
+
+          if (decoded.eventName === "PoolCreated") {
+            const poolAddress = decoded.args.poolAddress;
+            console.log("[CreateCircle] Pool deployed at:", poolAddress);
+
+            // Now we can set success and navigate
+            setIsSuccess(true);
+
+            // Navigate after 2 seconds
+            setTimeout(() => {
+              navigate("/dashboard");
+            }, 2000);
+          }
+        } else {
+          console.error("[CreateCircle] PoolCreated event not found in transaction logs");
+        }
+      } catch (error) {
+        console.error("[CreateCircle] Failed to decode pool address from receipt:", error);
+      }
+    }
+  }, [txReceipt, poolDeploymentTxHash, navigate]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary-50 via-white to-secondary-50 relative overflow-hidden">
@@ -533,90 +656,146 @@ export default function CreateCircle() {
                   }
                 />
 
-                {/* Saving Type */}
+                {/* Circle Type */}
                 <RadioGroupField
-                  label="Saving Type"
-                  name="savingType"
-                  value={formData.savingType}
-                  onChange={(value) => handleRadioChange("savingType", value)}
+                  label="Circle Type"
+                  name="circleType"
+                  value={formData.circleType}
+                  onChange={(value) => handleRadioChange("circleType", value)}
                   error={
-                    touchedFields.has("savingType")
-                      ? errors.savingType
+                    touchedFields.has("circleType")
+                      ? errors.circleType
                       : undefined
                   }
                   required
                   disabled={isSubmitting || isSuccess}
                   options={[
-                    {
-                      value: "rotating",
-                      label: "Rotating",
-                      description:
-                        "Members take turns receiving the pooled amount",
-                      icon: <RefreshCw className="size-5 text-primary-600" />,
-                    },
                     {
                       value: "contribution",
                       label: "Contribution",
-                      description: "Everyone contributes to a shared goal",
+                      description: "Everyone contributes to a shared savings goal",
                       icon: <PiggyBank className="size-5 text-primary-600" />,
+                      badge: { text: "Private", variant: "private" },
+                    },
+                    {
+                      value: "rotating",
+                      label: "Rotating",
+                      description: "Members take turns receiving the pooled amount (30-day cycles)",
+                      icon: <RefreshCw className="size-5 text-primary-600" />,
+                      badge: { text: "Private", variant: "private" },
+                    },
+                    {
+                      value: "fundraising",
+                      label: "Fundraising",
+                      description: "Public fundraiser with a goal and deadline",
+                      icon: <Target className="size-5 text-primary-600" />,
+                      badge: { text: "Public", variant: "public" },
                     },
                   ]}
                 />
 
-                {/* Contribution Schedule */}
-                <RadioGroupField
-                  label="Contribution Schedule"
-                  name="contributionSchedule"
-                  value={formData.contributionSchedule}
-                  onChange={(value) =>
-                    handleRadioChange("contributionSchedule", value)
-                  }
-                  error={
-                    touchedFields.has("contributionSchedule")
-                      ? errors.contributionSchedule
-                      : undefined
-                  }
-                  required
-                  disabled={isSubmitting || isSuccess}
-                  options={[
-                    {
-                      value: "weekly",
-                      label: "Weekly",
-                      description: "Contributions every week",
-                      icon: <Calendar className="size-5 text-primary-600" />,
-                    },
-                    {
-                      value: "bi-weekly",
-                      label: "Bi-weekly",
-                      description: "Contributions every 2 weeks",
-                      icon: <Calendar className="size-5 text-primary-600" />,
-                    },
-                    {
-                      value: "monthly",
-                      label: "Monthly",
-                      description: "Contributions every month",
-                      icon: <Calendar className="size-5 text-primary-600" />,
-                    },
-                  ]}
-                />
+                {/* Contribution Amount - Only for rotating circles */}
+                {formData.circleType === "rotating" && (
+                  <FormField
+                    label="Contribution Amount"
+                    name="contributionAmount"
+                    type="number"
+                    placeholder="e.g., 100"
+                    value={formData.contributionAmount}
+                    onChange={handleChange}
+                    onBlur={handleBlur}
+                    error={
+                      touchedFields.has("contributionAmount")
+                        ? errors.contributionAmount
+                        : undefined
+                    }
+                    icon={<PiggyBank className="size-5" />}
+                    required
+                    disabled={isSubmitting || isSuccess}
+                    helperText="Amount each member contributes per 30-day cycle (in USD)"
+                  />
+                )}
 
-                {/* End Date */}
-                <FormField
-                  label="End Date"
-                  name="endDate"
-                  type="date"
-                  placeholder=""
-                  value={formData.endDate}
-                  onChange={handleChange}
-                  onBlur={handleBlur}
-                  error={touchedFields.has("endDate") ? errors.endDate : undefined}
-                  icon={<CalendarDays className="size-5" />}
-                  required
-                  disabled={isSubmitting || isSuccess}
-                  min={minDate}
-                  max={maxDate}
-                  helperText="When should this circle end?"
-                />
+                {/* Goal Amount - Only for fundraising circles */}
+                {formData.circleType === "fundraising" && (
+                  <FormField
+                    label="Fundraising Goal"
+                    name="goalAmount"
+                    type="number"
+                    placeholder="e.g., 5000"
+                    value={formData.goalAmount}
+                    onChange={handleChange}
+                    onBlur={handleBlur}
+                    error={
+                      touchedFields.has("goalAmount")
+                        ? errors.goalAmount
+                        : undefined
+                    }
+                    icon={<Target className="size-5" />}
+                    required
+                    disabled={isSubmitting || isSuccess}
+                    helperText="Target amount to raise (in USD)"
+                  />
+                )}
+
+                {/* Contribution Schedule - Only for rotating circles */}
+                {formData.circleType === "rotating" && (
+                  <RadioGroupField
+                    label="Contribution Schedule"
+                    name="contributionSchedule"
+                    value={formData.contributionSchedule}
+                    onChange={(value) =>
+                      handleRadioChange("contributionSchedule", value)
+                    }
+                    error={
+                      touchedFields.has("contributionSchedule")
+                        ? errors.contributionSchedule
+                        : undefined
+                    }
+                    required
+                    disabled={true} // Disabled for now - contract uses fixed 30-day cycles
+                    options={[
+                      {
+                        value: "weekly",
+                        label: "Weekly",
+                        description: "Contribute every week (for future use)",
+                        icon: <Calendar className="size-5 text-neutral-400" />,
+                      },
+                      {
+                        value: "biweekly",
+                        label: "Bi-weekly",
+                        description: "Contribute every 2 weeks (for future use)",
+                        icon: <CalendarDays className="size-5 text-neutral-400" />,
+                      },
+                      {
+                        value: "monthly",
+                        label: "Monthly",
+                        description: "Currently fixed at 30-day cycles (default)",
+                        icon: <Calendar className="size-5 text-primary-600" />,
+                      },
+                    ]}
+                  />
+                )}
+
+                {/* Deadline - Only for fundraising circles */}
+                {formData.circleType === "fundraising" && (
+                  <FormField
+                    label="Deadline"
+                    name="endDate"
+                    type="date"
+                    placeholder=""
+                    value={formData.endDate}
+                    onChange={handleChange}
+                    onBlur={handleBlur}
+                    error={touchedFields.has("endDate") ? errors.endDate : undefined}
+                    icon={<CalendarDays className="size-5" />}
+                    required
+                    disabled={isSubmitting || isSuccess}
+                    min={minDate}
+                    max={maxDate}
+                    helperText="When should fundraising end?"
+                  />
+                )}
 
                 {/* Submit button */}
                 <Button
@@ -627,17 +806,17 @@ export default function CreateCircle() {
                     isSuccess &&
                       "bg-success-600 hover:bg-success-600 active:bg-success-600"
                   )}
-                  disabled={isSubmitting || isSuccess || !sessionClient}
+                  disabled={isSubmitting || isSuccess || isWaitingForTx || !sessionClient}
                 >
                   {isSubmitting ? (
                     <>
                       <Loader2 className="size-5 animate-spin" />
-                      Creating Group on Lens...
+                      {isWaitingForTx ? "Deploying pool contract..." : "Creating Group on Lens..."}
                     </>
                   ) : isSuccess ? (
                     <>
                       <CheckCircle2 className="size-5" />
-                      Group Created!
+                      Circle Created!
                     </>
                   ) : !sessionClient ? (
                     "Waiting for authentication..."
@@ -666,7 +845,7 @@ export default function CreateCircle() {
 interface FormFieldProps {
   label: string;
   name: string;
-  type: "text" | "textarea" | "date";
+  type: "text" | "textarea" | "date" | "number";
   placeholder: string;
   value: string;
   onChange: (
@@ -680,6 +859,7 @@ interface FormFieldProps {
   helperText?: ReactNode;
   min?: string;
   max?: string;
+  step?: string;
 }
 
 function FormField({
@@ -697,6 +877,7 @@ function FormField({
   helperText,
   min,
   max,
+  step,
 }: FormFieldProps) {
   const hasError = !!error;
 
@@ -754,6 +935,7 @@ function FormField({
             disabled={disabled}
             min={min}
             max={max}
+            step={step}
             className={cn(inputClasses, icon && "pl-12")}
             aria-invalid={hasError}
             aria-describedby={
@@ -797,6 +979,10 @@ interface RadioOption {
   label: string;
   description: string;
   icon?: ReactNode;
+  badge?: {
+    text: string;
+    variant: "private" | "public";
+  };
 }
 
 interface RadioGroupFieldProps {
@@ -862,7 +1048,21 @@ function RadioGroupField({
               </div>
             )}
             <div className="flex-1">
-              <div className="font-medium text-neutral-900">{option.label}</div>
+              <div className="flex items-center gap-2">
+                <div className="font-medium text-neutral-900">{option.label}</div>
+                {option.badge && (
+                  <span
+                    className={cn(
+                      "px-2 py-0.5 text-xs font-medium rounded-full",
+                      option.badge.variant === "public"
+                        ? "bg-success-100 text-success-700"
+                        : "bg-neutral-100 text-neutral-700"
+                    )}
+                  >
+                    {option.badge.text}
+                  </span>
+                )}
+              </div>
               <div className="text-sm text-neutral-600 mt-0.5">
                 {option.description}
               </div>
