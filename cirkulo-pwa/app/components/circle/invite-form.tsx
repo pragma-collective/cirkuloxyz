@@ -2,19 +2,24 @@ import { useState, useCallback } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { inviteSchema, type InviteFormData } from "~/schemas/invite-schema";
+import { useSendInvite } from "~/hooks/use-send-invite";
 import { Send } from "lucide-react";
 
 export interface InviteFormProps {
 	circleName: string;
-	onSubmit: (email: string) => Promise<void>;
+	circleId: string;
+	onSuccess?: (inviteCode: string) => void; // Optional callback after successful invite
 }
 
 /**
  * Form for inviting users to a private circle via email
- * Features: react-hook-form validation, accessibility, loading states
+ * Features: react-hook-form validation, accessibility, loading states, API integration
  */
-export function InviteForm({ circleName, onSubmit }: InviteFormProps) {
+export function InviteForm({ circleName, circleId, onSuccess }: InviteFormProps) {
 	const [success, setSuccess] = useState(false);
+
+	// Setup TanStack Query mutation for sending invites
+	const { mutateAsync: sendInviteMutation, isPending } = useSendInvite();
 
 	// Setup react-hook-form with Zod validation
 	const {
@@ -34,9 +39,19 @@ export function InviteForm({ circleName, onSubmit }: InviteFormProps) {
 	const onSubmitForm = useCallback(
 		async (data: InviteFormData) => {
 			try {
-				await onSubmit(data.email);
+				// Send invite via API
+				const response = await sendInviteMutation({
+					recipientEmail: data.email,
+					groupAddress: circleId,
+				});
+
 				setSuccess(true);
 				reset();
+
+				// Call optional success callback
+				if (onSuccess) {
+					onSuccess(response.inviteCode);
+				}
 
 				// Clear success message after 3 seconds
 				setTimeout(() => {
@@ -53,7 +68,7 @@ export function InviteForm({ circleName, onSubmit }: InviteFormProps) {
 				});
 			}
 		},
-		[onSubmit, reset, setError]
+		[sendInviteMutation, circleId, onSuccess, reset, setError]
 	);
 
 	return (
@@ -125,10 +140,10 @@ export function InviteForm({ circleName, onSubmit }: InviteFormProps) {
 				{/* Submit Button */}
 				<button
 					type="submit"
-					disabled={isSubmitting}
+					disabled={isSubmitting || isPending}
 					className="w-full px-6 py-3 bg-gradient-to-r from-primary-500 to-secondary-500 text-white font-semibold rounded-xl hover:shadow-lg active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-none touch-manipulation min-h-[44px]"
 				>
-					{isSubmitting ? (
+					{(isSubmitting || isPending) ? (
 						<span className="flex items-center justify-center gap-2">
 							<span
 								className="inline-block size-4 border-2 border-white/30 border-t-white rounded-full animate-spin"

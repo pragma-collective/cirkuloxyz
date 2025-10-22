@@ -106,16 +106,16 @@ export default function CircleInvites({ loaderData }: Route.ComponentProps) {
 		return invites.filter((invite) => invite.status === "pending");
 	}, [invites]);
 
-	// Handle new invite submission
-	const handleInviteSubmit = useCallback(async (email: string) => {
-		// TODO: Replace with actual API call
-		console.log("Sending invite to:", email, "for circle:", circleId);
+	// Handle successful invite submission
+	const handleInviteSuccess = useCallback((inviteCode: string) => {
+		console.log("Invite sent successfully, code:", inviteCode);
 		
-		// Mock: Add new invite to the list
+		// TODO: Fetch updated invites list from API
+		// For now, we can add a mock invite to the list
 		const newInvite: Invite = {
 			id: `${invites.length + 1}`,
-			code: crypto.randomUUID(),
-			recipientEmail: email,
+			code: inviteCode,
+			recipientEmail: "new-invite@example.com", // Will be replaced when we fetch from API
 			groupAddress: circleId || "0x123...",
 			senderAddress: "0xabc...",
 			status: "pending",
@@ -286,7 +286,8 @@ export default function CircleInvites({ loaderData }: Route.ComponentProps) {
 					<div className="card-enter bg-white rounded-xl sm:rounded-2xl border border-neutral-200 p-4 sm:p-6 shadow-sm">
 						<InviteForm
 							circleName={circle.name}
-							onSubmit={handleInviteSubmit}
+							circleId={circleId!}
+							onSuccess={handleInviteSuccess}
 						/>
 					</div>
 
