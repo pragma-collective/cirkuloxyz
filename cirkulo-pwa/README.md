@@ -25,7 +25,7 @@ A Bitcoin-powered social savings PWA where friends create "circles" to save mone
 ### Prerequisites
 
 - Node.js 18+
-- npm or pnpm
+- pnpm
 - A Dynamic.xyz account for wallet integration ([get one here](https://dynamic.xyz))
 
 ### Installation
@@ -38,7 +38,7 @@ cd cirkulo-pwa
 
 2. Install dependencies:
 ```bash
-npm install
+pnpm install
 ```
 
 3. Create a `.env` file:
@@ -52,7 +52,7 @@ VITE_LENS_APP_ADDRESS=your_lens_protocol_app_address
 Start the development server with HMR:
 
 ```bash
-npm run dev
+pnpm dev
 ```
 
 Your application will be available at `http://localhost:5173`.
@@ -62,7 +62,7 @@ Your application will be available at `http://localhost:5173`.
 Run TypeScript type checking:
 
 ```bash
-npm run typecheck
+pnpm typecheck
 ```
 
 ## Building for Production
@@ -70,7 +70,7 @@ npm run typecheck
 Create a production build:
 
 ```bash
-npm run build
+pnpm build
 ```
 
 ## Deployment
@@ -102,8 +102,8 @@ Deployment platforms:
 ### Production Build
 
 ```bash
-npm run build
-npm start  # Start production server locally
+pnpm build
+pnpm start  # Start production server locally
 ```
 
 ## Project Structure

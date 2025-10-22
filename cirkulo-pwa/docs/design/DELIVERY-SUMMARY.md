@@ -284,7 +284,7 @@ Changes made:
 
 ### View the Showcase
 ```bash
-npm run dev
+pnpm dev
 # Visit http://localhost:3000/logo-showcase
 # Scroll to concept #2: Spark Circle
 ```

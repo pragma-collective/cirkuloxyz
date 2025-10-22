@@ -39,7 +39,7 @@ A **COMPLETE, PRODUCTION-READY** logo system that replaces "Savings Bloom" with 
 ### 1. See It Live
 ```bash
 # Run your dev server
-npm run dev
+pnpm dev
 
 # Visit the showcase
 open http://localhost:3000/logo-showcase

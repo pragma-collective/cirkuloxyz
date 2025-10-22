@@ -303,7 +303,7 @@ Code files are in:
 
 ### View the showcase
 ```bash
-npm run dev
+pnpm dev
 # Visit: http://localhost:3000/logo-showcase
 ```
 

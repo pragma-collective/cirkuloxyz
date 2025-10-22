@@ -18,17 +18,17 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ```bash
 # Start development server (HMR enabled)
-npm run dev
+pnpm dev
 # Available at http://localhost:5173
 
 # Type checking
-npm run typecheck
+pnpm typecheck
 
 # Production build
-npm run build
+pnpm build
 
 # Start production server locally
-npm start
+pnpm start
 ```
 
 ## Docker Deployment
