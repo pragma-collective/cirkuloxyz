@@ -37,7 +37,7 @@ export interface CreateGroupParams {
 
 export interface CreateGroupResult {
   success: boolean;
-  groupAddress?: string;
+  groupAddress?: `0x${string}`;
   transactionHash?: string;
   error?: string;
 }
