@@ -1,6 +1,9 @@
 # Build stage
 FROM node:22-alpine AS builder
 
+# Install pnpm globally
+RUN npm install -g pnpm
+
 # Set working directory
 WORKDIR /app
 
@@ -10,17 +13,18 @@ ARG VITE_LENS_APP_ADDRESS
 ENV VITE_DYNAMIC_ENVIRONMENT_ID=$VITE_DYNAMIC_ENVIRONMENT_ID
 ENV VITE_LENS_APP_ADDRESS=$VITE_LENS_APP_ADDRESS
 
-# Copy package files
-COPY package.json package-lock.json* ./
 
-# Install dependencies
-RUN npm ci
+# Copy package files
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+
+# Install dependencies with build scripts enabled for trusted packages
+RUN pnpm install --frozen-lockfile --ignore-scripts=false
 
 # Copy source code
 COPY . .
 
 # Build the application
-RUN npm run build
+RUN pnpm run build
 
 # Production stage with Caddy
 FROM caddy:2-alpine
