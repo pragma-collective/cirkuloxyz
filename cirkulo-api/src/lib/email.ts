@@ -4,7 +4,7 @@ import { Resend } from "resend";
 const resend = new Resend(process.env.RESEND_API_KEY);
 
 // Email configuration
-const FROM_EMAIL = process.env.FROM_EMAIL || "noreply@yourdomain.com";
+const FROM_EMAIL = process.env.FROM_EMAIL || "noreply@xersha.xyz";
 const APP_URL = process.env.APP_URL || "http://localhost:8000";
 
 export interface SendInviteEmailParams {
@@ -27,6 +27,8 @@ export async function sendInviteEmail(params: SendInviteEmailParams) {
 		: `${APP_URL}/signup`;
 
 	const subjectLine = `${inviterName} invited you to join Xersha`;
+
+	console.log("SENDING EMAIL TO:", to, "INVITE LINK:", inviteLink);
 
 	try {
 		const data = await resend.emails.send({

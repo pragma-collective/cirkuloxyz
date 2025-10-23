@@ -34,6 +34,7 @@ export default [
 			route("circle/:id/contribute", "routes/circle.$id.contribute.tsx"),
 			route("circle/:id/members", "routes/circle-members.tsx"),
 			route("circle/:id/invites", "routes/circle-invites.tsx"),
+			route("invite", "routes/invite.tsx"),
 		]),
 	]),
 ] satisfies RouteConfig;

@@ -374,7 +374,7 @@ export default function CircleDetail({ loaderData }: Route.ComponentProps) {
 						<div className="pt-4 space-x-4">
 							<Button
 								onClick={() => window.location.reload()}
-								className="bg-gradient-to-r from-primary-500 to-secondary-500 text-white"
+								className="bg-linear-to-r from-primary-500 to-secondary-500 text-white"
 							>
 								Try Again
 							</Button>
@@ -413,7 +413,7 @@ export default function CircleDetail({ loaderData }: Route.ComponentProps) {
 						<div className="pt-4 space-x-4">
 							<button
 								onClick={() => window.location.reload()}
-								className="px-6 py-3 bg-gradient-to-r from-primary-500 to-secondary-500 text-white rounded-xl font-semibold hover:shadow-lg transition-all"
+								className="px-6 py-3 bg-linear-to-r from-primary-500 to-secondary-500 text-white rounded-xl font-semibold hover:shadow-lg transition-all"
 							>
 								Try Again
 							</button>
@@ -452,7 +452,7 @@ export default function CircleDetail({ loaderData }: Route.ComponentProps) {
 						<div className="pt-4">
 							<button
 								onClick={() => navigate("/dashboard")}
-								className="px-6 py-3 bg-gradient-to-r from-primary-500 to-secondary-500 text-white rounded-xl font-semibold hover:shadow-lg transition-all"
+								className="px-6 py-3 bg-linear-to-r from-primary-500 to-secondary-500 text-white rounded-xl font-semibold hover:shadow-lg transition-all"
 							>
 								Back to Dashboard
 							</button>

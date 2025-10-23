@@ -126,3 +126,112 @@ export async function apiRequest<T>(
 		throw new ApiError("Unknown error occurred", 0);
 	}
 }
+
+/**
+ * Validate an invite code and get circle details
+ * This endpoint is PUBLIC - does not require authentication
+ * 
+ * @param inviteCode - The UUID invite code to validate
+ * @returns Invite and circle details
+ */
+export async function validateInviteCode(inviteCode: string) {
+	const url = `/invites/validate?code=${encodeURIComponent(inviteCode)}`;
+
+	try {
+		const response = await fetch(`${API_BASE_URL}${url}`, {
+			method: "GET",
+			headers: {
+				"Content-Type": "application/json",
+			},
+		});
+
+		if (!response.ok) {
+			let errorMessage = `Request failed: ${response.status}`;
+			let errorDetails: string | undefined;
+
+			try {
+				const errorData = await response.json();
+				errorMessage = errorData.error || errorMessage;
+				errorDetails = errorData.details;
+			} catch {
+				errorMessage = response.statusText || errorMessage;
+			}
+
+			throw new ApiError(errorMessage, response.status, errorDetails);
+		}
+
+		return await response.json();
+	} catch (error) {
+		if (error instanceof ApiError) {
+			throw error;
+		}
+
+		if (error instanceof Error) {
+			throw new ApiError(
+				error.message,
+				0,
+				"Network error or server unavailable",
+			);
+		}
+
+		throw new ApiError("Unknown error occurred", 0);
+	}
+}
+
+/**
+ * Mark an invite as accepted after successful group join
+ * Requires authentication
+ * 
+ * @param params - Invite code and transaction hash
+ * @param sessionClient - Lens session client for authentication
+ * @returns Acceptance confirmation
+ */
+export async function markInviteAccepted(params: {
+	inviteCode: string;
+	txHash: string;
+	sessionClient: SessionClient;
+}) {
+	const { inviteCode, txHash, sessionClient } = params;
+
+	const headers = new Headers({
+		"Content-Type": "application/json",
+	});
+
+	// Add authentication token
+	const token = getAuthToken(sessionClient);
+	if (token) {
+		headers.set("Authorization", `Bearer ${token}`);
+	} else {
+		throw new ApiError(
+			"Authentication required",
+			401,
+			"No access token available"
+		);
+	}
+
+	const response = await fetch(`${API_BASE_URL}/invites/mark-accepted`, {
+		method: "POST",
+		headers,
+		body: JSON.stringify({
+			inviteCode,
+			txHash,
+		}),
+	});
+
+	if (!response.ok) {
+		let errorMessage = `Request failed: ${response.status}`;
+		let errorDetails: string | undefined;
+
+		try {
+			const errorData = await response.json();
+			errorMessage = errorData.error || errorMessage;
+			errorDetails = errorData.details;
+		} catch {
+			errorMessage = response.statusText || errorMessage;
+		}
+
+		throw new ApiError(errorMessage, response.status, errorDetails);
+	}
+
+	return await response.json();
+}
