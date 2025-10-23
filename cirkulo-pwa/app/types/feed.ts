@@ -16,8 +16,10 @@ export interface Circle {
   emoji?: string;
   description?: string;
   circleType: "rotating" | "contribution" | "fundraising";
+  currency?: "cusd" | "cbtc";
+  poolAddress?: string; // Smart contract address for the pool
   contributionSchedule: "weekly" | "bi-weekly" | "monthly";
-  endDate: string;
+  endDate?: string | null; // Optional for open-ended contribution circles
   goalName: string;
   goalAmount: number;
   currentAmount: number;

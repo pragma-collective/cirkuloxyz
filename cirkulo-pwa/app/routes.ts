@@ -24,6 +24,7 @@ export default [
 			route("create-circle", "routes/create-circle.tsx"),
 			route("profile", "routes/profile.tsx"),
 			route("circle/:id", "routes/circle-detail.tsx"),
+			route("circle/:id/contribute", "routes/circle.$id.contribute.tsx"),
 			route("circle/:id/members", "routes/circle-members.tsx"),
 			route("circle/:id/invites", "routes/circle-invites.tsx"),
 		]),

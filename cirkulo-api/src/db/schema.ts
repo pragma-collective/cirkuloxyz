@@ -46,6 +46,7 @@ export const circles = pgTable("circles", {
 	poolDeploymentTxHash: text("pool_deployment_tx_hash"), // Pool creation transaction hash
 	creatorAddress: text("creator_address").notNull(), // Circle creator from JWT act.sub
 	circleType: text("circle_type").notNull(), // "contribution" | "rotating" | "fundraising"
+	currency: text("currency").notNull().default("cusd"), // "cusd" | "cbtc" - currency type for pool
 	createdAt: timestamp("created_at").defaultNow().notNull(),
 	updatedAt: timestamp("updated_at")
 		.defaultNow()

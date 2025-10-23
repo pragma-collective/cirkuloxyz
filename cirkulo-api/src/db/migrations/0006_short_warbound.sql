@@ -1,0 +1,1 @@
+ALTER TABLE "circles" ADD COLUMN "currency" text DEFAULT 'cusd' NOT NULL;

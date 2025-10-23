@@ -1,27 +1,52 @@
 import { expect } from "chai";
 import { ethers, deployments } from "hardhat";
-import { XershaFactory, ROSCAPool, SavingsPool, DonationPool } from "../typechain-types";
+import { XershaFactory, ROSCAPool, SavingsPool, DonationPool, MockCUSD } from "../typechain-types";
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import { time } from "@nomicfoundation/hardhat-network-helpers";
 
 describe("XershaFactory", function () {
   let xershaFactory: XershaFactory;
+  let roscaImpl: ROSCAPool;
+  let savingsImpl: SavingsPool;
+  let donationImpl: DonationPool;
+  let mockToken: MockCUSD;
   let deployer: SignerWithAddress;
   let user1: SignerWithAddress;
   let user2: SignerWithAddress;
   let circleId: string;
+  let tokenAddress: string;
 
   before(async function () {
     [deployer, user1, user2] = await ethers.getSigners();
   });
 
   beforeEach(async function () {
-    // Deploy a fresh contract for each test
-    await deployments.fixture(["XershaFactory"]);
-    xershaFactory = await ethers.getContract<XershaFactory>("XershaFactory");
+    // Deploy Mock CUSD token
+    const MockCUSDFactory = await ethers.getContractFactory("MockCUSD");
+    mockToken = await MockCUSDFactory.deploy();
+    tokenAddress = await mockToken.getAddress();
+
+    // Deploy implementation contracts
+    const ROSCAPoolFactory = await ethers.getContractFactory("ROSCAPool");
+    roscaImpl = await ROSCAPoolFactory.deploy();
+
+    const SavingsPoolFactory = await ethers.getContractFactory("SavingsPool");
+    savingsImpl = await SavingsPoolFactory.deploy();
+
+    const DonationPoolFactory = await ethers.getContractFactory("DonationPool");
+    donationImpl = await DonationPoolFactory.deploy();
+
+    // Deploy XershaFactory with implementation addresses
+    const XershaFactoryFactory = await ethers.getContractFactory("XershaFactory");
+    xershaFactory = await XershaFactoryFactory.deploy(
+      deployer.address,
+      await roscaImpl.getAddress(),
+      await savingsImpl.getAddress(),
+      await donationImpl.getAddress(),
+    );
 
     // Use a simple address as circleId (can be any non-zero address for cross-chain reference)
-    circleId = user1.address;
+    circleId = user2.address; // Changed to user2 to avoid conflicts
   });
 
   describe("Deployment", function () {
@@ -39,7 +64,9 @@ describe("XershaFactory", function () {
       const contributionAmount = ethers.parseEther("0.1");
       const circleName = "Test Circle";
 
-      const tx = await xershaFactory.connect(user1).createROSCA(circleId, circleName, contributionAmount);
+      const tx = await xershaFactory
+        .connect(user1)
+        .createROSCA(circleId, circleName, contributionAmount, tokenAddress, false);
 
       const receipt = await tx.wait();
       const poolAddress = await xershaFactory.circleToPool(circleId);
@@ -53,7 +80,9 @@ describe("XershaFactory", function () {
       const contributionAmount = ethers.parseEther("0.1");
       const circleName = "Test Circle";
 
-      const tx = await xershaFactory.connect(user1).createROSCA(circleId, circleName, contributionAmount);
+      const tx = await xershaFactory
+        .connect(user1)
+        .createROSCA(circleId, circleName, contributionAmount, tokenAddress, false);
       const receipt = await tx.wait();
       const poolAddress = await xershaFactory.circleToPool(circleId);
 
@@ -66,28 +95,30 @@ describe("XershaFactory", function () {
     it("Should fail if circle already has a pool", async function () {
       const contributionAmount = ethers.parseEther("0.1");
 
-      await xershaFactory.connect(user1).createROSCA(circleId, "Test Circle", contributionAmount);
+      await xershaFactory.connect(user1).createROSCA(circleId, "Test Circle", contributionAmount, tokenAddress, false);
 
       await expect(
-        xershaFactory.connect(user1).createROSCA(circleId, "Test Circle 2", contributionAmount),
+        xershaFactory.connect(user1).createROSCA(circleId, "Test Circle 2", contributionAmount, tokenAddress, false),
       ).to.be.revertedWith("Circle already has pool");
     });
 
     it("Should fail with zero contribution amount", async function () {
-      await expect(xershaFactory.connect(user1).createROSCA(circleId, "Test Circle", 0)).to.be.revertedWith(
-        "Invalid contribution amount",
-      );
+      await expect(
+        xershaFactory.connect(user1).createROSCA(circleId, "Test Circle", 0, tokenAddress, false),
+      ).to.be.revertedWith("Invalid contribution amount");
     });
 
     it("Should fail with zero address as circle ID", async function () {
       await expect(
-        xershaFactory.connect(user1).createROSCA(ethers.ZeroAddress, "Test Circle", ethers.parseEther("0.1")),
+        xershaFactory
+          .connect(user1)
+          .createROSCA(ethers.ZeroAddress, "Test Circle", ethers.parseEther("0.1"), tokenAddress, false),
       ).to.be.revertedWith("Zero address not allowed");
     });
 
     it("Should set correct pool type", async function () {
       const contributionAmount = ethers.parseEther("0.1");
-      await xershaFactory.connect(user1).createROSCA(circleId, "Test Circle", contributionAmount);
+      await xershaFactory.connect(user1).createROSCA(circleId, "Test Circle", contributionAmount, tokenAddress, false);
 
       const poolAddress = await xershaFactory.circleToPool(circleId);
       expect(await xershaFactory.poolTypes(poolAddress)).to.equal(0); // PoolType.ROSCA = 0
@@ -98,7 +129,7 @@ describe("XershaFactory", function () {
     it("Should create a Savings pool successfully", async function () {
       const circleName = "Savings Circle";
 
-      const tx = await xershaFactory.connect(user1).createSavingsPool(circleId, circleName);
+      const tx = await xershaFactory.connect(user1).createSavingsPool(circleId, circleName, tokenAddress, false);
 
       const poolAddress = await xershaFactory.circleToPool(circleId);
 
@@ -108,7 +139,7 @@ describe("XershaFactory", function () {
     });
 
     it("Should set correct pool type", async function () {
-      await xershaFactory.connect(user1).createSavingsPool(circleId, "Savings Circle");
+      await xershaFactory.connect(user1).createSavingsPool(circleId, "Savings Circle", tokenAddress, false);
 
       const poolAddress = await xershaFactory.circleToPool(circleId);
       expect(await xershaFactory.poolTypes(poolAddress)).to.equal(1); // PoolType.SAVINGS = 1
@@ -124,7 +155,7 @@ describe("XershaFactory", function () {
 
       const tx = await xershaFactory
         .connect(user1)
-        .createDonationPool(circleId, circleName, beneficiary, goalAmount, deadline);
+        .createDonationPool(circleId, circleName, beneficiary, goalAmount, deadline, tokenAddress, false);
 
       const poolAddress = await xershaFactory.circleToPool(circleId);
 
@@ -140,7 +171,7 @@ describe("XershaFactory", function () {
 
       await xershaFactory
         .connect(user1)
-        .createDonationPool(circleId, "Charity Circle", beneficiary, goalAmount, deadline);
+        .createDonationPool(circleId, "Charity Circle", beneficiary, goalAmount, deadline, tokenAddress, false);
 
       const poolAddress = await xershaFactory.circleToPool(circleId);
       expect(await xershaFactory.poolTypes(poolAddress)).to.equal(2); // PoolType.DONATION = 2
@@ -153,7 +184,7 @@ describe("XershaFactory", function () {
       await expect(
         xershaFactory
           .connect(user1)
-          .createDonationPool(circleId, "Charity Circle", ethers.ZeroAddress, goalAmount, deadline),
+          .createDonationPool(circleId, "Charity Circle", ethers.ZeroAddress, goalAmount, deadline, tokenAddress, false),
       ).to.be.revertedWith("Invalid beneficiary");
     });
 
@@ -161,7 +192,7 @@ describe("XershaFactory", function () {
       const deadline = (await time.latest()) + 86400;
 
       await expect(
-        xershaFactory.connect(user1).createDonationPool(circleId, "Charity Circle", user2.address, 0, deadline),
+        xershaFactory.connect(user1).createDonationPool(circleId, "Charity Circle", user2.address, 0, deadline, tokenAddress, false),
       ).to.be.revertedWith("Invalid goal");
     });
 
@@ -172,7 +203,7 @@ describe("XershaFactory", function () {
       await expect(
         xershaFactory
           .connect(user1)
-          .createDonationPool(circleId, "Charity Circle", user2.address, goalAmount, pastDeadline),
+          .createDonationPool(circleId, "Charity Circle", user2.address, goalAmount, pastDeadline, tokenAddress, false),
       ).to.be.revertedWith("Invalid deadline");
     });
   });
@@ -180,7 +211,7 @@ describe("XershaFactory", function () {
   describe("View Functions", function () {
     it("Should return correct circle pool mapping", async function () {
       const contributionAmount = ethers.parseEther("0.1");
-      await xershaFactory.connect(user1).createROSCA(circleId, "Test Circle", contributionAmount);
+      await xershaFactory.connect(user1).createROSCA(circleId, "Test Circle", contributionAmount, tokenAddress, false);
 
       const poolAddress = await xershaFactory.getCirclePool(circleId);
       expect(poolAddress).to.not.equal(ethers.ZeroAddress);
@@ -192,16 +223,16 @@ describe("XershaFactory", function () {
       const circle2 = user2.address;
       const circle3 = deployer.address;
 
-      await xershaFactory.connect(user1).createROSCA(circle1, "Circle 1", ethers.parseEther("0.1"));
+      await xershaFactory.connect(user1).createROSCA(circle1, "Circle 1", ethers.parseEther("0.1"), tokenAddress, false);
       expect(await xershaFactory.getTotalPools()).to.equal(1);
 
-      await xershaFactory.connect(user1).createSavingsPool(circle2, "Circle 2");
+      await xershaFactory.connect(user1).createSavingsPool(circle2, "Circle 2", tokenAddress, false);
       expect(await xershaFactory.getTotalPools()).to.equal(2);
 
       const deadline = (await time.latest()) + 86400;
       await xershaFactory
         .connect(user1)
-        .createDonationPool(circle3, "Circle 3", user2.address, ethers.parseEther("1"), deadline);
+        .createDonationPool(circle3, "Circle 3", user2.address, ethers.parseEther("1"), deadline, tokenAddress, false);
       expect(await xershaFactory.getTotalPools()).to.equal(3);
     });
 
@@ -209,18 +240,148 @@ describe("XershaFactory", function () {
       const circle1 = user1.address;
       const circle2 = user2.address;
 
-      await xershaFactory.connect(user1).createROSCA(circle1, "Circle 1", ethers.parseEther("0.1"));
-      await xershaFactory.connect(user1).createSavingsPool(circle2, "Circle 2");
+      await xershaFactory.connect(user1).createROSCA(circle1, "Circle 1", ethers.parseEther("0.1"), tokenAddress, false);
+      await xershaFactory.connect(user1).createSavingsPool(circle2, "Circle 2", tokenAddress, false);
 
       const allPools = await xershaFactory.getAllPools();
       expect(allPools.length).to.equal(2);
     });
 
     it("Should return pool type correctly", async function () {
-      await xershaFactory.connect(user1).createROSCA(circleId, "Test", ethers.parseEther("0.1"));
+      await xershaFactory.connect(user1).createROSCA(circleId, "Test", ethers.parseEther("0.1"), tokenAddress, false);
 
       const poolAddress = await xershaFactory.circleToPool(circleId);
       expect(await xershaFactory.getPoolType(poolAddress)).to.equal(0); // ROSCA
+    });
+  });
+
+  describe("Clone Pattern", function () {
+    it("Should create pools as clones", async function () {
+      await xershaFactory.connect(user1).createROSCA(circleId, "Test Circle", ethers.parseEther("0.1"), tokenAddress, false);
+
+      const poolAddress = await xershaFactory.circleToPool(circleId);
+      const pool = await ethers.getContractAt("ROSCAPool", poolAddress);
+
+      // Verify pool was initialized correctly
+      expect(await pool.creator()).to.equal(user1.address);
+      expect(await pool.circleName()).to.equal("Test Circle");
+    });
+
+    it("Should prevent double initialization of clones", async function () {
+      await xershaFactory.connect(user1).createROSCA(circleId, "Test Circle", ethers.parseEther("0.1"), tokenAddress, false);
+
+      const poolAddress = await xershaFactory.circleToPool(circleId);
+      const pool = await ethers.getContractAt("ROSCAPool", poolAddress);
+
+      // Attempt to initialize again should fail
+      await expect(
+        pool.initialize(deployer.address, circleId, "New Name", ethers.parseEther("0.2"), tokenAddress, false),
+      ).to.be.revertedWith("Already initialized");
+    });
+
+    it("Should prevent initialization of implementation contracts", async function () {
+      // Attempt to initialize the implementation directly should fail
+      await expect(
+        roscaImpl.initialize(deployer.address, circleId, "Test", ethers.parseEther("0.1"), tokenAddress, false),
+      ).to.be.revertedWith("Already initialized");
+    });
+
+    it("Should deploy factory under 24KB limit", async function () {
+      const code = await ethers.provider.getCode(await xershaFactory.getAddress());
+      const sizeInBytes = (code.length - 2) / 2; // Remove 0x and convert hex to bytes
+
+      console.log(`      XershaFactory size: ${sizeInBytes} bytes (limit: 24576 bytes)`);
+      expect(sizeInBytes).to.be.lessThan(24576);
+    });
+  });
+
+  describe("Implementation Upgrades", function () {
+    it("Should return correct implementation addresses", async function () {
+      expect(await xershaFactory.roscaImplementation()).to.equal(await roscaImpl.getAddress());
+      expect(await xershaFactory.savingsImplementation()).to.equal(await savingsImpl.getAddress());
+      expect(await xershaFactory.donationImplementation()).to.equal(await donationImpl.getAddress());
+    });
+
+    it("Should allow owner to update ROSCA implementation", async function () {
+      const NewROSCAFactory = await ethers.getContractFactory("ROSCAPool");
+      const newImpl = await NewROSCAFactory.deploy();
+
+      await expect(xershaFactory.connect(deployer).setROSCAImplementation(await newImpl.getAddress()))
+        .to.emit(xershaFactory, "ImplementationUpdated")
+        .withArgs("ROSCA", await newImpl.getAddress());
+
+      expect(await xershaFactory.roscaImplementation()).to.equal(await newImpl.getAddress());
+    });
+
+    it("Should allow owner to update Savings implementation", async function () {
+      const NewSavingsFactory = await ethers.getContractFactory("SavingsPool");
+      const newImpl = await NewSavingsFactory.deploy();
+
+      await expect(xershaFactory.connect(deployer).setSavingsImplementation(await newImpl.getAddress()))
+        .to.emit(xershaFactory, "ImplementationUpdated")
+        .withArgs("SAVINGS", await newImpl.getAddress());
+
+      expect(await xershaFactory.savingsImplementation()).to.equal(await newImpl.getAddress());
+    });
+
+    it("Should allow owner to update Donation implementation", async function () {
+      const NewDonationFactory = await ethers.getContractFactory("DonationPool");
+      const newImpl = await NewDonationFactory.deploy();
+
+      await expect(xershaFactory.connect(deployer).setDonationImplementation(await newImpl.getAddress()))
+        .to.emit(xershaFactory, "ImplementationUpdated")
+        .withArgs("DONATION", await newImpl.getAddress());
+
+      expect(await xershaFactory.donationImplementation()).to.equal(await newImpl.getAddress());
+    });
+
+    it("Should allow owner to update all implementations at once", async function () {
+      const NewROSCAFactory = await ethers.getContractFactory("ROSCAPool");
+      const newROSCA = await NewROSCAFactory.deploy();
+
+      const NewSavingsFactory = await ethers.getContractFactory("SavingsPool");
+      const newSavings = await NewSavingsFactory.deploy();
+
+      await xershaFactory
+        .connect(deployer)
+        .setImplementations(await newROSCA.getAddress(), await newSavings.getAddress(), ethers.ZeroAddress);
+
+      expect(await xershaFactory.roscaImplementation()).to.equal(await newROSCA.getAddress());
+      expect(await xershaFactory.savingsImplementation()).to.equal(await newSavings.getAddress());
+      expect(await xershaFactory.donationImplementation()).to.equal(await donationImpl.getAddress()); // Unchanged
+    });
+
+    it("Should prevent non-owner from updating implementations", async function () {
+      const NewROSCAFactory = await ethers.getContractFactory("ROSCAPool");
+      const newImpl = await NewROSCAFactory.deploy();
+
+      await expect(xershaFactory.connect(user1).setROSCAImplementation(await newImpl.getAddress())).to.be.reverted;
+    });
+
+    it("Should prevent setting zero address as implementation", async function () {
+      await expect(xershaFactory.connect(deployer).setROSCAImplementation(ethers.ZeroAddress)).to.be.revertedWith(
+        "Invalid implementation",
+      );
+    });
+
+    it("Should create new pools with updated implementation", async function () {
+      // Deploy new implementation
+      const NewROSCAFactory = await ethers.getContractFactory("ROSCAPool");
+      const newImpl = await NewROSCAFactory.deploy();
+
+      // Update implementation
+      await xershaFactory.connect(deployer).setROSCAImplementation(await newImpl.getAddress());
+
+      // Create new pool - should use new implementation
+      const circle2 = deployer.address;
+      await xershaFactory.connect(user1).createROSCA(circle2, "Test Circle 2", ethers.parseEther("0.1"), tokenAddress, false);
+
+      const poolAddress = await xershaFactory.circleToPool(circle2);
+      expect(poolAddress).to.not.equal(ethers.ZeroAddress);
+
+      // Verify pool works correctly
+      const pool = await ethers.getContractAt("ROSCAPool", poolAddress);
+      expect(await pool.creator()).to.equal(user1.address);
     });
   });
 });

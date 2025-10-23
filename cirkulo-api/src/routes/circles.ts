@@ -19,7 +19,7 @@ circles.openapi(createCircleRoute, async (c) => {
 	try {
 		// Get validated request body
 		const body = c.req.valid("json");
-		const { circleName, poolAddress, lensGroupAddress, poolDeploymentTxHash, circleType } = body;
+		const { circleName, poolAddress, lensGroupAddress, poolDeploymentTxHash, circleType, currency } = body;
 
 		// Get authenticated user info from JWT token
 		const jwtPayload = c.get("jwtPayload");
@@ -87,6 +87,7 @@ circles.openapi(createCircleRoute, async (c) => {
 				poolDeploymentTxHash: poolDeploymentTxHash || null,
 				creatorAddress,
 				circleType,
+				currency: currency || "cusd", // Default to cusd if not provided
 			})
 			.returning();
 
@@ -103,6 +104,7 @@ circles.openapi(createCircleRoute, async (c) => {
 					poolAddress: newCircle.poolAddress,
 					lensGroupAddress: newCircle.lensGroupAddress,
 					circleType: newCircle.circleType,
+					currency: newCircle.currency,
 					creatorAddress: newCircle.creatorAddress,
 					createdAt: newCircle.createdAt.toISOString(),
 				},
@@ -166,6 +168,7 @@ circles.openapi(getCircleRoute, async (c) => {
 					lensGroupAddress: circle.lensGroupAddress,
 					poolDeploymentTxHash: circle.poolDeploymentTxHash,
 					circleType: circle.circleType,
+					currency: circle.currency,
 					creatorAddress: circle.creatorAddress,
 					createdAt: circle.createdAt.toISOString(),
 					updatedAt: circle.updatedAt.toISOString(),

@@ -4,6 +4,9 @@ import { z } from "zod";
 // Circle type enum
 const circleTypeEnum = z.enum(["contribution", "rotating", "fundraising"]);
 
+// Currency enum
+const currencyEnum = z.enum(["cusd", "cbtc"]);
+
 // Create Circle Request Schema
 export const CreateCircleSchema = z.object({
 	circleName: z
@@ -32,6 +35,7 @@ export const CreateCircleSchema = z.object({
 				"0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef",
 		}),
 	circleType: circleTypeEnum.describe("Type of circle/pool"),
+	currency: currencyEnum.default("cusd").describe("Currency type for the pool (cusd or cbtc)").openapi({ example: "cusd" }),
 });
 
 // Create Circle Response Schema
@@ -44,6 +48,7 @@ export const CreateCircleResponseSchema = z.object({
 		poolAddress: z.string().describe("Pool contract address"),
 		lensGroupAddress: z.string().describe("Lens group address"),
 		circleType: circleTypeEnum.describe("Circle type"),
+		currency: currencyEnum.describe("Currency type"),
 		creatorAddress: z.string().describe("Creator's address"),
 		createdAt: z.string().describe("Creation timestamp"),
 	}),
@@ -63,6 +68,7 @@ export const GetCircleResponseSchema = z.object({
 				.nullable()
 				.describe("Pool deployment transaction hash"),
 			circleType: circleTypeEnum.describe("Circle type"),
+			currency: currencyEnum.describe("Currency type"),
 			creatorAddress: z.string().describe("Creator's address"),
 			createdAt: z.string().describe("Creation timestamp"),
 			updatedAt: z.string().describe("Last update timestamp"),

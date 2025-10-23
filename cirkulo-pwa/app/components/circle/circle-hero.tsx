@@ -32,18 +32,26 @@ export function CircleHero({
   onJoin,
   isMember = true,
 }: CircleHeroProps) {
-  // Format currency
-  const formatCurrency = (amount: number): string => {
+  // Format currency based on token type
+  const formatCurrency = (amount: number, currency?: "cusd" | "cbtc"): string => {
+    if (currency === "cbtc") {
+      // cBTC: Show up to 8 decimals, but remove trailing zeros
+      const formatted = amount.toFixed(8).replace(/\.?0+$/, '');
+      return `${formatted} cBTC`;
+    }
+
+    // CUSD/USD: Show as dollars with 2 decimal places
     return new Intl.NumberFormat("en-US", {
       style: "currency",
       currency: "USD",
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
     }).format(amount);
   };
 
-  // Calculate days left
+  // Calculate days left (only if endDate exists)
   const daysLeft = useMemo(() => {
+    if (!circle.endDate) return 0; // No deadline for open-ended circles
     const now = new Date();
     const end = new Date(circle.endDate);
     const diffTime = end.getTime() - now.getTime();
@@ -167,7 +175,7 @@ export function CircleHero({
                     <div className="flex-1 min-w-0">
                       <p className="text-xs text-neutral-600 mb-1">Per Round</p>
                       <p className="text-lg sm:text-xl font-bold text-neutral-900">
-                        {formatCurrency(circle.goalAmount / (circle.memberCount || 12))}
+                        {formatCurrency(circle.goalAmount / (circle.memberCount || 12), circle.currency)}
                       </p>
                     </div>
                   </div>
@@ -212,7 +220,7 @@ export function CircleHero({
                     <div className="flex-1 min-w-0">
                       <p className="text-xs text-neutral-600 mb-1">Raised</p>
                       <p className="text-lg sm:text-xl font-bold text-neutral-900">
-                        {formatCurrency(circle.currentAmount)}
+                        {formatCurrency(circle.currentAmount, circle.currency)}
                       </p>
                     </div>
                   </div>
@@ -226,7 +234,7 @@ export function CircleHero({
                     <div className="flex-1 min-w-0">
                       <p className="text-xs text-neutral-600 mb-1">Goal</p>
                       <p className="text-lg sm:text-xl font-bold text-neutral-900">
-                        {formatCurrency(circle.goalAmount)}
+                        {formatCurrency(circle.goalAmount, circle.currency)}
                       </p>
                     </div>
                   </div>
@@ -262,30 +270,16 @@ export function CircleHero({
               </>
             ) : (
               <>
-                {/* Contribution Circle Stats (default) */}
-                <Card className="p-4 bg-white/90 backdrop-blur-sm border-0 shadow-lg">
-                  <div className="flex items-start gap-3">
-                    <div className="p-2 bg-gradient-to-br from-primary-400 to-primary-600 rounded-lg">
-                      <TrendingUp className="size-4 sm:size-5 text-white" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs text-neutral-600 mb-1">Progress</p>
-                      <p className="text-lg sm:text-xl font-bold text-neutral-900">
-                        {circle.progress}%
-                      </p>
-                    </div>
-                  </div>
-                </Card>
-
+                {/* Contribution Circle Stats - Simple and clean */}
                 <Card className="p-4 bg-white/90 backdrop-blur-sm border-0 shadow-lg">
                   <div className="flex items-start gap-3">
                     <div className="p-2 bg-gradient-to-br from-success-400 to-success-600 rounded-lg">
                       <DollarSign className="size-4 sm:size-5 text-white" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-xs text-neutral-600 mb-1">Saved</p>
+                      <p className="text-xs text-neutral-600 mb-1">Total Saved</p>
                       <p className="text-lg sm:text-xl font-bold text-neutral-900">
-                        {formatCurrency(circle.currentAmount)}
+                        {formatCurrency(circle.currentAmount, circle.currency)}
                       </p>
                     </div>
                   </div>
@@ -293,27 +287,13 @@ export function CircleHero({
 
                 <Card className="p-4 bg-white/90 backdrop-blur-sm border-0 shadow-lg">
                   <div className="flex items-start gap-3">
-                    <div className="p-2 bg-gradient-to-br from-secondary-400 to-secondary-600 rounded-lg">
-                      <Target className="size-4 sm:size-5 text-white" />
+                    <div className="p-2 bg-gradient-to-br from-primary-400 to-primary-600 rounded-lg">
+                      <Users className="size-4 sm:size-5 text-white" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-xs text-neutral-600 mb-1">Goal</p>
+                      <p className="text-xs text-neutral-600 mb-1">Members</p>
                       <p className="text-lg sm:text-xl font-bold text-neutral-900">
-                        {formatCurrency(circle.goalAmount)}
-                      </p>
-                    </div>
-                  </div>
-                </Card>
-
-                <Card className="p-4 bg-white/90 backdrop-blur-sm border-0 shadow-lg">
-                  <div className="flex items-start gap-3">
-                    <div className="p-2 bg-gradient-to-br from-warning-400 to-warning-600 rounded-lg">
-                      <Calendar className="size-4 sm:size-5 text-white" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs text-neutral-600 mb-1">Days Left</p>
-                      <p className="text-lg sm:text-xl font-bold text-neutral-900">
-                        {daysLeft}
+                        {circle.memberCount}
                       </p>
                     </div>
                   </div>
