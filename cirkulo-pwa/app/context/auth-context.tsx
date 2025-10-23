@@ -234,9 +234,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 					reject(new Error("Authentication cancelled"));
 				}
 			};
-
-			// Note: Auth success is handled by the useEffect that watches for user
-			// This ensures we wait for both Dynamic auth AND Lens account check
 		});
 	}, [setShowAuthFlow]);
 
