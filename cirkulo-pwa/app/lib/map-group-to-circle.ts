@@ -45,6 +45,8 @@ export function mapGroupToCircle(
     category: "other",
     createdAt: apiCircleData?.createdAt || (group.timestamp ? new Date(group.timestamp).toISOString() : new Date().toISOString()),
     isActive: true,
+    poolAddress: apiCircleData?.poolAddress, // Pool contract address from API
+    currency: apiCircleData?.currency || "cusd", // Currency from API
   };
 
   return circle;

@@ -1,0 +1,991 @@
+{
+  "address": "0x05E6C6eb7A257A15b37b6cC3787121014B71E299",
+  "abi": [
+    {
+      "inputs": [],
+      "stateMutability": "nonpayable",
+      "type": "constructor"
+    },
+    {
+      "inputs": [],
+      "name": "EnforcedPause",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "ExpectedPause",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "ReentrancyGuardReentrantCall",
+      "type": "error"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "member",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "amount",
+          "type": "uint256"
+        }
+      ],
+      "name": "Deposited",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "member",
+          "type": "address"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "invitedBy",
+          "type": "address"
+        }
+      ],
+      "name": "MemberInvited",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "member",
+          "type": "address"
+        }
+      ],
+      "name": "MemberJoined",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "internalType": "address",
+          "name": "account",
+          "type": "address"
+        }
+      ],
+      "name": "Paused",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "timestamp",
+          "type": "uint256"
+        }
+      ],
+      "name": "PoolClosed",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "circleId",
+          "type": "address"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "creator",
+          "type": "address"
+        }
+      ],
+      "name": "PoolCreated",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "amount",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "date",
+          "type": "uint256"
+        }
+      ],
+      "name": "TargetSet",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "internalType": "address",
+          "name": "account",
+          "type": "address"
+        }
+      ],
+      "name": "Unpaused",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "member",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "amount",
+          "type": "uint256"
+        }
+      ],
+      "name": "Withdrawn",
+      "type": "event"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "name": "balances",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "circleId",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "circleName",
+      "outputs": [
+        {
+          "internalType": "string",
+          "name": "",
+          "type": "string"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "closePool",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "creator",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "amount",
+          "type": "uint256"
+        }
+      ],
+      "name": "deposit",
+      "outputs": [],
+      "stateMutability": "payable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "member",
+          "type": "address"
+        }
+      ],
+      "name": "getBalance",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "getContractBalance",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "getMemberCount",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "getMembers",
+      "outputs": [
+        {
+          "internalType": "address[]",
+          "name": "",
+          "type": "address[]"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "getProgress",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "current",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "target",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "_creator",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "_circleId",
+          "type": "address"
+        },
+        {
+          "internalType": "string",
+          "name": "_circleName",
+          "type": "string"
+        },
+        {
+          "internalType": "address",
+          "name": "_tokenAddress",
+          "type": "address"
+        },
+        {
+          "internalType": "bool",
+          "name": "_isNativeToken",
+          "type": "bool"
+        }
+      ],
+      "name": "initialize",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "member",
+          "type": "address"
+        }
+      ],
+      "name": "inviteMember",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "isActive",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "isGoalReached",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "name": "isInvited",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "name": "isMember",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "isNativeToken",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "joinPool",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "name": "members",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "pause",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "paused",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "_amount",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "_date",
+          "type": "uint256"
+        }
+      ],
+      "name": "setTarget",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "targetAmount",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "targetDate",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "tokenAddress",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "totalSaved",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "unpause",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "amount",
+          "type": "uint256"
+        }
+      ],
+      "name": "withdraw",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    }
+  ],
+  "transactionHash": "0x0b4161af324efad1a68e0c66977e3d296f1b086f7667befbc07e98bb743da80c",
+  "receipt": {
+    "to": null,
+    "from": "0x8244c1645C1a7890Ef1F0E79AcCf817905Dbcba2",
+    "contractAddress": "0x05E6C6eb7A257A15b37b6cC3787121014B71E299",
+    "transactionIndex": 0,
+    "gasUsed": "1447848",
+    "logsBloom": "0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+    "blockHash": "0xde64c3b73ebb52e079e8b30c81f5d155f0a7659fe09776b42d9559aca2cc7ff9",
+    "transactionHash": "0x0b4161af324efad1a68e0c66977e3d296f1b086f7667befbc07e98bb743da80c",
+    "logs": [],
+    "blockNumber": 17211646,
+    "cumulativeGasUsed": "1447848",
+    "status": 1,
+    "byzantium": true
+  },
+  "args": [],
+  "numDeployments": 1,
+  "solcInputHash": "5826f86a7677600ec4f6d996ce30862e",
+  "metadata": "{\"compiler\":{\"version\":\"0.8.20+commit.a1b79de6\"},\"language\":\"Solidity\",\"output\":{\"abi\":[{\"inputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"constructor\"},{\"inputs\":[],\"name\":\"EnforcedPause\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"ExpectedPause\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"ReentrancyGuardReentrantCall\",\"type\":\"error\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"member\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"Deposited\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"member\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"invitedBy\",\"type\":\"address\"}],\"name\":\"MemberInvited\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"member\",\"type\":\"address\"}],\"name\":\"MemberJoined\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"address\",\"name\":\"account\",\"type\":\"address\"}],\"name\":\"Paused\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"timestamp\",\"type\":\"uint256\"}],\"name\":\"PoolClosed\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"circleId\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"creator\",\"type\":\"address\"}],\"name\":\"PoolCreated\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"date\",\"type\":\"uint256\"}],\"name\":\"TargetSet\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"address\",\"name\":\"account\",\"type\":\"address\"}],\"name\":\"Unpaused\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"member\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"Withdrawn\",\"type\":\"event\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"name\":\"balances\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"circleId\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"circleName\",\"outputs\":[{\"internalType\":\"string\",\"name\":\"\",\"type\":\"string\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"closePool\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"creator\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"deposit\",\"outputs\":[],\"stateMutability\":\"payable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"member\",\"type\":\"address\"}],\"name\":\"getBalance\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"getContractBalance\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"getMemberCount\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"getMembers\",\"outputs\":[{\"internalType\":\"address[]\",\"name\":\"\",\"type\":\"address[]\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"getProgress\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"current\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"target\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_creator\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"_circleId\",\"type\":\"address\"},{\"internalType\":\"string\",\"name\":\"_circleName\",\"type\":\"string\"},{\"internalType\":\"address\",\"name\":\"_tokenAddress\",\"type\":\"address\"},{\"internalType\":\"bool\",\"name\":\"_isNativeToken\",\"type\":\"bool\"}],\"name\":\"initialize\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"member\",\"type\":\"address\"}],\"name\":\"inviteMember\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"isActive\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"isGoalReached\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"name\":\"isInvited\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"name\":\"isMember\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"isNativeToken\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"joinPool\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"name\":\"members\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"pause\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"paused\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_amount\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"_date\",\"type\":\"uint256\"}],\"name\":\"setTarget\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"targetAmount\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"targetDate\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"tokenAddress\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"totalSaved\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"unpause\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"withdraw\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"}],\"devdoc\":{\"details\":\"Members maintain individual balances and can set collective savings goals\",\"errors\":{\"EnforcedPause()\":[{\"details\":\"The operation failed because the contract is paused.\"}],\"ExpectedPause()\":[{\"details\":\"The operation failed because the contract is not paused.\"}],\"ReentrancyGuardReentrantCall()\":[{\"details\":\"Unauthorized reentrant call.\"}]},\"events\":{\"Paused(address)\":{\"details\":\"Emitted when the pause is triggered by `account`.\"},\"Unpaused(address)\":{\"details\":\"Emitted when the pause is lifted by `account`.\"}},\"kind\":\"dev\",\"methods\":{\"closePool()\":{\"details\":\"Only creator can close. Members can still withdraw their balances.\"},\"constructor\":{\"details\":\"Prevents the implementation contract from being initialized\"},\"deposit(uint256)\":{\"details\":\"For ERC20: Member must have approved the contract to spend tokens before calling      For native token: amount parameter is ignored, msg.value is used\",\"params\":{\"amount\":\"Amount of ERC20 tokens to deposit (ignored for native token pools)\"}},\"getBalance(address)\":{\"params\":{\"member\":\"Address of the member\"},\"returns\":{\"_0\":\"Balance in wei\"}},\"getContractBalance()\":{\"returns\":{\"_0\":\"Balance in wei\"}},\"getMemberCount()\":{\"returns\":{\"_0\":\"Member count\"}},\"getMembers()\":{\"returns\":{\"_0\":\"Array of member addresses\"}},\"getProgress()\":{\"returns\":{\"current\":\"Current total savings\",\"target\":\"Target savings amount\"}},\"initialize(address,address,string,address,bool)\":{\"details\":\"This replaces the constructor for cloned instances\",\"params\":{\"_circleId\":\"Address of the Lens.xyz circle contract\",\"_circleName\":\"Name of the circle\",\"_creator\":\"Address of the user creating the pool\",\"_isNativeToken\":\"Whether this pool uses native token (cBTC) or ERC20 token\",\"_tokenAddress\":\"Address of the ERC20 token to use for savings (zero address if native)\"}},\"inviteMember(address)\":{\"details\":\"Only creator can invite members\",\"params\":{\"member\":\"Address of the member to invite\"}},\"isGoalReached()\":{\"returns\":{\"_0\":\"True if target is set and reached, false otherwise\"}},\"pause()\":{\"details\":\"Only creator can pause\"},\"paused()\":{\"details\":\"Returns true if the contract is paused, and false otherwise.\"},\"setTarget(uint256,uint256)\":{\"details\":\"Only creator can set goals\",\"params\":{\"_amount\":\"Target savings amount in wei\",\"_date\":\"Target date as Unix timestamp\"}},\"unpause()\":{\"details\":\"Only creator can unpause\"},\"withdraw(uint256)\":{\"params\":{\"amount\":\"Amount of tokens to withdraw\"}}},\"title\":\"SavingsPool\",\"version\":1},\"userdoc\":{\"kind\":\"user\",\"methods\":{\"balances(address)\":{\"notice\":\"Individual balances for each member\"},\"circleId()\":{\"notice\":\"Address of the Lens.xyz circle contract\"},\"circleName()\":{\"notice\":\"Human-readable name of the circle\"},\"closePool()\":{\"notice\":\"Closes the pool, preventing further deposits\"},\"constructor\":{\"notice\":\"Constructor for implementation contract\"},\"creator()\":{\"notice\":\"Address of the user who created this pool\"},\"deposit(uint256)\":{\"notice\":\"Allows a member to deposit funds into their savings\"},\"getBalance(address)\":{\"notice\":\"Gets a member's savings balance\"},\"getContractBalance()\":{\"notice\":\"Gets the contract's current balance\"},\"getMemberCount()\":{\"notice\":\"Gets the total number of members\"},\"getMembers()\":{\"notice\":\"Gets all members\"},\"getProgress()\":{\"notice\":\"Gets the current progress toward the savings goal\"},\"initialize(address,address,string,address,bool)\":{\"notice\":\"Initializes a new Savings pool clone\"},\"inviteMember(address)\":{\"notice\":\"Invites a new member to the pool\"},\"isActive()\":{\"notice\":\"Whether the pool is currently active\"},\"isGoalReached()\":{\"notice\":\"Checks if the savings goal has been reached\"},\"isInvited(address)\":{\"notice\":\"Mapping to check if an address has been invited\"},\"isMember(address)\":{\"notice\":\"Mapping to check if an address is a member\"},\"isNativeToken()\":{\"notice\":\"Whether this pool uses native token (cBTC) or ERC20 token\"},\"joinPool()\":{\"notice\":\"Allows an invited member to join the pool\"},\"members(uint256)\":{\"notice\":\"Array of all members in the pool\"},\"pause()\":{\"notice\":\"Pauses the contract in case of emergency\"},\"setTarget(uint256,uint256)\":{\"notice\":\"Sets or updates the savings goal for the pool\"},\"targetAmount()\":{\"notice\":\"Optional target savings amount set by creator\"},\"targetDate()\":{\"notice\":\"Optional target date for reaching the goal\"},\"tokenAddress()\":{\"notice\":\"Address of the ERC20 token used for savings (zero address if native token)\"},\"totalSaved()\":{\"notice\":\"Total amount saved across all members\"},\"unpause()\":{\"notice\":\"Unpauses the contract\"},\"withdraw(uint256)\":{\"notice\":\"Allows a member to withdraw from their savings balance\"}},\"notice\":\"Collective savings pool where members can deposit and withdraw freely\",\"version\":1}},\"settings\":{\"compilationTarget\":{\"contracts/pools/SavingsPool.sol\":\"SavingsPool\"},\"evmVersion\":\"paris\",\"libraries\":{},\"metadata\":{\"bytecodeHash\":\"ipfs\",\"useLiteralContent\":true},\"optimizer\":{\"enabled\":true,\"runs\":200},\"remappings\":[]},\"sources\":{\"@openzeppelin/contracts/token/ERC20/IERC20.sol\":{\"content\":\"// SPDX-License-Identifier: MIT\\n// OpenZeppelin Contracts (last updated v5.0.0) (token/ERC20/IERC20.sol)\\n\\npragma solidity ^0.8.20;\\n\\n/**\\n * @dev Interface of the ERC20 standard as defined in the EIP.\\n */\\ninterface IERC20 {\\n    /**\\n     * @dev Emitted when `value` tokens are moved from one account (`from`) to\\n     * another (`to`).\\n     *\\n     * Note that `value` may be zero.\\n     */\\n    event Transfer(address indexed from, address indexed to, uint256 value);\\n\\n    /**\\n     * @dev Emitted when the allowance of a `spender` for an `owner` is set by\\n     * a call to {approve}. `value` is the new allowance.\\n     */\\n    event Approval(address indexed owner, address indexed spender, uint256 value);\\n\\n    /**\\n     * @dev Returns the value of tokens in existence.\\n     */\\n    function totalSupply() external view returns (uint256);\\n\\n    /**\\n     * @dev Returns the value of tokens owned by `account`.\\n     */\\n    function balanceOf(address account) external view returns (uint256);\\n\\n    /**\\n     * @dev Moves a `value` amount of tokens from the caller's account to `to`.\\n     *\\n     * Returns a boolean value indicating whether the operation succeeded.\\n     *\\n     * Emits a {Transfer} event.\\n     */\\n    function transfer(address to, uint256 value) external returns (bool);\\n\\n    /**\\n     * @dev Returns the remaining number of tokens that `spender` will be\\n     * allowed to spend on behalf of `owner` through {transferFrom}. This is\\n     * zero by default.\\n     *\\n     * This value changes when {approve} or {transferFrom} are called.\\n     */\\n    function allowance(address owner, address spender) external view returns (uint256);\\n\\n    /**\\n     * @dev Sets a `value` amount of tokens as the allowance of `spender` over the\\n     * caller's tokens.\\n     *\\n     * Returns a boolean value indicating whether the operation succeeded.\\n     *\\n     * IMPORTANT: Beware that changing an allowance with this method brings the risk\\n     * that someone may use both the old and the new allowance by unfortunate\\n     * transaction ordering. One possible solution to mitigate this race\\n     * condition is to first reduce the spender's allowance to 0 and set the\\n     * desired value afterwards:\\n     * https://github.com/ethereum/EIPs/issues/20#issuecomment-263524729\\n     *\\n     * Emits an {Approval} event.\\n     */\\n    function approve(address spender, uint256 value) external returns (bool);\\n\\n    /**\\n     * @dev Moves a `value` amount of tokens from `from` to `to` using the\\n     * allowance mechanism. `value` is then deducted from the caller's\\n     * allowance.\\n     *\\n     * Returns a boolean value indicating whether the operation succeeded.\\n     *\\n     * Emits a {Transfer} event.\\n     */\\n    function transferFrom(address from, address to, uint256 value) external returns (bool);\\n}\\n\",\"keccak256\":\"0xc6a8ff0ea489379b61faa647490411b80102578440ab9d84e9a957cc12164e70\",\"license\":\"MIT\"},\"@openzeppelin/contracts/utils/Context.sol\":{\"content\":\"// SPDX-License-Identifier: MIT\\n// OpenZeppelin Contracts (last updated v5.0.1) (utils/Context.sol)\\n\\npragma solidity ^0.8.20;\\n\\n/**\\n * @dev Provides information about the current execution context, including the\\n * sender of the transaction and its data. While these are generally available\\n * via msg.sender and msg.data, they should not be accessed in such a direct\\n * manner, since when dealing with meta-transactions the account sending and\\n * paying for execution may not be the actual sender (as far as an application\\n * is concerned).\\n *\\n * This contract is only required for intermediate, library-like contracts.\\n */\\nabstract contract Context {\\n    function _msgSender() internal view virtual returns (address) {\\n        return msg.sender;\\n    }\\n\\n    function _msgData() internal view virtual returns (bytes calldata) {\\n        return msg.data;\\n    }\\n\\n    function _contextSuffixLength() internal view virtual returns (uint256) {\\n        return 0;\\n    }\\n}\\n\",\"keccak256\":\"0x493033a8d1b176a037b2cc6a04dad01a5c157722049bbecf632ca876224dd4b2\",\"license\":\"MIT\"},\"@openzeppelin/contracts/utils/Pausable.sol\":{\"content\":\"// SPDX-License-Identifier: MIT\\n// OpenZeppelin Contracts (last updated v5.0.0) (utils/Pausable.sol)\\n\\npragma solidity ^0.8.20;\\n\\nimport {Context} from \\\"../utils/Context.sol\\\";\\n\\n/**\\n * @dev Contract module which allows children to implement an emergency stop\\n * mechanism that can be triggered by an authorized account.\\n *\\n * This module is used through inheritance. It will make available the\\n * modifiers `whenNotPaused` and `whenPaused`, which can be applied to\\n * the functions of your contract. Note that they will not be pausable by\\n * simply including this module, only once the modifiers are put in place.\\n */\\nabstract contract Pausable is Context {\\n    bool private _paused;\\n\\n    /**\\n     * @dev Emitted when the pause is triggered by `account`.\\n     */\\n    event Paused(address account);\\n\\n    /**\\n     * @dev Emitted when the pause is lifted by `account`.\\n     */\\n    event Unpaused(address account);\\n\\n    /**\\n     * @dev The operation failed because the contract is paused.\\n     */\\n    error EnforcedPause();\\n\\n    /**\\n     * @dev The operation failed because the contract is not paused.\\n     */\\n    error ExpectedPause();\\n\\n    /**\\n     * @dev Initializes the contract in unpaused state.\\n     */\\n    constructor() {\\n        _paused = false;\\n    }\\n\\n    /**\\n     * @dev Modifier to make a function callable only when the contract is not paused.\\n     *\\n     * Requirements:\\n     *\\n     * - The contract must not be paused.\\n     */\\n    modifier whenNotPaused() {\\n        _requireNotPaused();\\n        _;\\n    }\\n\\n    /**\\n     * @dev Modifier to make a function callable only when the contract is paused.\\n     *\\n     * Requirements:\\n     *\\n     * - The contract must be paused.\\n     */\\n    modifier whenPaused() {\\n        _requirePaused();\\n        _;\\n    }\\n\\n    /**\\n     * @dev Returns true if the contract is paused, and false otherwise.\\n     */\\n    function paused() public view virtual returns (bool) {\\n        return _paused;\\n    }\\n\\n    /**\\n     * @dev Throws if the contract is paused.\\n     */\\n    function _requireNotPaused() internal view virtual {\\n        if (paused()) {\\n            revert EnforcedPause();\\n        }\\n    }\\n\\n    /**\\n     * @dev Throws if the contract is not paused.\\n     */\\n    function _requirePaused() internal view virtual {\\n        if (!paused()) {\\n            revert ExpectedPause();\\n        }\\n    }\\n\\n    /**\\n     * @dev Triggers stopped state.\\n     *\\n     * Requirements:\\n     *\\n     * - The contract must not be paused.\\n     */\\n    function _pause() internal virtual whenNotPaused {\\n        _paused = true;\\n        emit Paused(_msgSender());\\n    }\\n\\n    /**\\n     * @dev Returns to normal state.\\n     *\\n     * Requirements:\\n     *\\n     * - The contract must be paused.\\n     */\\n    function _unpause() internal virtual whenPaused {\\n        _paused = false;\\n        emit Unpaused(_msgSender());\\n    }\\n}\\n\",\"keccak256\":\"0xb2e5f50762c27fb4b123e3619c3c02bdcba5e515309382e5bfb6f7d6486510bd\",\"license\":\"MIT\"},\"@openzeppelin/contracts/utils/ReentrancyGuard.sol\":{\"content\":\"// SPDX-License-Identifier: MIT\\n// OpenZeppelin Contracts (last updated v5.0.0) (utils/ReentrancyGuard.sol)\\n\\npragma solidity ^0.8.20;\\n\\n/**\\n * @dev Contract module that helps prevent reentrant calls to a function.\\n *\\n * Inheriting from `ReentrancyGuard` will make the {nonReentrant} modifier\\n * available, which can be applied to functions to make sure there are no nested\\n * (reentrant) calls to them.\\n *\\n * Note that because there is a single `nonReentrant` guard, functions marked as\\n * `nonReentrant` may not call one another. This can be worked around by making\\n * those functions `private`, and then adding `external` `nonReentrant` entry\\n * points to them.\\n *\\n * TIP: If you would like to learn more about reentrancy and alternative ways\\n * to protect against it, check out our blog post\\n * https://blog.openzeppelin.com/reentrancy-after-istanbul/[Reentrancy After Istanbul].\\n */\\nabstract contract ReentrancyGuard {\\n    // Booleans are more expensive than uint256 or any type that takes up a full\\n    // word because each write operation emits an extra SLOAD to first read the\\n    // slot's contents, replace the bits taken up by the boolean, and then write\\n    // back. This is the compiler's defense against contract upgrades and\\n    // pointer aliasing, and it cannot be disabled.\\n\\n    // The values being non-zero value makes deployment a bit more expensive,\\n    // but in exchange the refund on every call to nonReentrant will be lower in\\n    // amount. Since refunds are capped to a percentage of the total\\n    // transaction's gas, it is best to keep them low in cases like this one, to\\n    // increase the likelihood of the full refund coming into effect.\\n    uint256 private constant NOT_ENTERED = 1;\\n    uint256 private constant ENTERED = 2;\\n\\n    uint256 private _status;\\n\\n    /**\\n     * @dev Unauthorized reentrant call.\\n     */\\n    error ReentrancyGuardReentrantCall();\\n\\n    constructor() {\\n        _status = NOT_ENTERED;\\n    }\\n\\n    /**\\n     * @dev Prevents a contract from calling itself, directly or indirectly.\\n     * Calling a `nonReentrant` function from another `nonReentrant`\\n     * function is not supported. It is possible to prevent this from happening\\n     * by making the `nonReentrant` function external, and making it call a\\n     * `private` function that does the actual work.\\n     */\\n    modifier nonReentrant() {\\n        _nonReentrantBefore();\\n        _;\\n        _nonReentrantAfter();\\n    }\\n\\n    function _nonReentrantBefore() private {\\n        // On the first call to nonReentrant, _status will be NOT_ENTERED\\n        if (_status == ENTERED) {\\n            revert ReentrancyGuardReentrantCall();\\n        }\\n\\n        // Any calls to nonReentrant after this point will fail\\n        _status = ENTERED;\\n    }\\n\\n    function _nonReentrantAfter() private {\\n        // By storing the original value once again, a refund is triggered (see\\n        // https://eips.ethereum.org/EIPS/eip-2200)\\n        _status = NOT_ENTERED;\\n    }\\n\\n    /**\\n     * @dev Returns true if the reentrancy guard is currently set to \\\"entered\\\", which indicates there is a\\n     * `nonReentrant` function in the call stack.\\n     */\\n    function _reentrancyGuardEntered() internal view returns (bool) {\\n        return _status == ENTERED;\\n    }\\n}\\n\",\"keccak256\":\"0xf980daa263b661ab8ddee7d4fd833c7da7e7995e2c359ff1f17e67e4112f2236\",\"license\":\"MIT\"},\"contracts/interfaces/IXershaPool.sol\":{\"content\":\"// SPDX-License-Identifier: MIT\\npragma solidity ^0.8.20;\\n\\n/**\\n * @title IXershaPool\\n * @notice Base interface for all Xersha pool types\\n * @dev Common interface elements shared across ROSCA, Savings, and Donation pools\\n */\\ninterface IXershaPool {\\n    /**\\n     * @notice Returns the address of the circle (Lens.xyz contract) this pool belongs to\\n     * @return The circle contract address\\n     */\\n    function circleId() external view returns (address);\\n\\n    /**\\n     * @notice Returns the address of the user who created this pool\\n     * @return The creator's address\\n     */\\n    function creator() external view returns (address);\\n\\n    /**\\n     * @notice Returns the human-readable name of the circle\\n     * @return The circle name\\n     */\\n    function circleName() external view returns (string memory);\\n\\n    /**\\n     * @notice Returns whether the pool is currently active\\n     * @return True if pool is active, false otherwise\\n     */\\n    function isActive() external view returns (bool);\\n\\n    /**\\n     * @notice Returns the list of all members in the pool\\n     * @return Array of member addresses\\n     */\\n    function getMembers() external view returns (address[] memory);\\n\\n    /**\\n     * @notice Returns the total number of members in the pool\\n     * @return Member count\\n     */\\n    function getMemberCount() external view returns (uint256);\\n}\\n\",\"keccak256\":\"0xd2c7c0badc538eded859db0878717a051e963062f67e0130fa55168c5d898c9f\",\"license\":\"MIT\"},\"contracts/libraries/TokenTransfer.sol\":{\"content\":\"// SPDX-License-Identifier: MIT\\npragma solidity ^0.8.20;\\n\\nimport \\\"@openzeppelin/contracts/token/ERC20/IERC20.sol\\\";\\n\\n/**\\n * @title TokenTransfer\\n * @notice Library for handling both native token and ERC20 token transfers\\n * @dev Reduces code duplication across pool contracts\\n */\\nlibrary TokenTransfer {\\n    /**\\n     * @notice Receives tokens from sender (either native or ERC20)\\n     * @param tokenAddress Address of the ERC20 token (zero address if native)\\n     * @param isNativeToken Whether this is a native token transfer\\n     * @param amount Amount of tokens to receive (for ERC20) or 0 (for native)\\n     * @return The actual amount received\\n     */\\n    function receiveTokens(\\n        address tokenAddress,\\n        bool isNativeToken,\\n        uint256 amount\\n    ) internal returns (uint256) {\\n        if (isNativeToken) {\\n            require(msg.value > 0, \\\"Must send native token\\\");\\n            return msg.value;\\n        } else {\\n            require(msg.value == 0, \\\"No native token\\\");\\n            IERC20(tokenAddress).transferFrom(msg.sender, address(this), amount);\\n            return amount;\\n        }\\n    }\\n\\n    /**\\n     * @notice Sends tokens to recipient (either native or ERC20)\\n     * @param tokenAddress Address of the ERC20 token (zero address if native)\\n     * @param isNativeToken Whether this is a native token transfer\\n     * @param recipient Address to send tokens to\\n     * @param amount Amount of tokens to send\\n     */\\n    function sendTokens(\\n        address tokenAddress,\\n        bool isNativeToken,\\n        address recipient,\\n        uint256 amount\\n    ) internal {\\n        if (isNativeToken) {\\n            (bool success, ) = payable(recipient).call{value: amount}(\\\"\\\");\\n            require(success, \\\"Transfer failed\\\");\\n        } else {\\n            IERC20(tokenAddress).transfer(recipient, amount);\\n        }\\n    }\\n}\\n\",\"keccak256\":\"0x8c116fcbb351414ae623d0b922a11014c69284a82783f7b97ddfbbc41c755094\",\"license\":\"MIT\"},\"contracts/pools/SavingsPool.sol\":{\"content\":\"// SPDX-License-Identifier: MIT\\npragma solidity ^0.8.20;\\n\\nimport \\\"@openzeppelin/contracts/token/ERC20/IERC20.sol\\\";\\nimport \\\"@openzeppelin/contracts/utils/ReentrancyGuard.sol\\\";\\nimport \\\"@openzeppelin/contracts/utils/Pausable.sol\\\";\\nimport \\\"../interfaces/IXershaPool.sol\\\";\\nimport \\\"../libraries/TokenTransfer.sol\\\";\\n\\n/**\\n * @title SavingsPool\\n * @notice Collective savings pool where members can deposit and withdraw freely\\n * @dev Members maintain individual balances and can set collective savings goals\\n */\\ncontract SavingsPool is IXershaPool, ReentrancyGuard, Pausable {\\n    using TokenTransfer for address;\\n\\n    // ========== State Variables ==========\\n\\n    /// @notice Address of the user who created this pool\\n    address public creator;\\n\\n    /// @notice Address of the Lens.xyz circle contract\\n    address public circleId;\\n\\n    /// @notice Human-readable name of the circle\\n    string public circleName;\\n\\n    /// @notice Address of the ERC20 token used for savings (zero address if native token)\\n    address public tokenAddress;\\n\\n    /// @notice Whether this pool uses native token (cBTC) or ERC20 token\\n    bool public isNativeToken;\\n\\n    /// @notice Individual balances for each member\\n    mapping(address => uint256) public balances;\\n\\n    /// @notice Total amount saved across all members\\n    uint256 public totalSaved;\\n\\n    /// @notice Array of all members in the pool\\n    address[] public members;\\n\\n    /// @notice Mapping to check if an address is a member\\n    mapping(address => bool) public isMember;\\n\\n    /// @notice Mapping to check if an address has been invited\\n    mapping(address => bool) public isInvited;\\n\\n    /// @notice Optional target savings amount set by creator\\n    uint256 public targetAmount;\\n\\n    /// @notice Optional target date for reaching the goal\\n    uint256 public targetDate;\\n\\n    /// @notice Whether the pool is currently active\\n    bool public isActive;\\n\\n    /// @notice Whether this contract has been initialized (for clone pattern)\\n    bool private initialized;\\n\\n    // ========== Events ==========\\n\\n    event PoolCreated(address indexed circleId, address indexed creator);\\n    event MemberInvited(address indexed member, address indexed invitedBy);\\n    event MemberJoined(address indexed member);\\n    event Deposited(address indexed member, uint256 amount);\\n    event Withdrawn(address indexed member, uint256 amount);\\n    event TargetSet(uint256 amount, uint256 date);\\n    event PoolClosed(uint256 timestamp);\\n\\n    // ========== Modifiers ==========\\n\\n    modifier onlyCreator() {\\n        require(msg.sender == creator, \\\"Only creator can call this\\\");\\n        _;\\n    }\\n\\n    modifier onlyMember() {\\n        require(isMember[msg.sender], \\\"Not a member\\\");\\n        _;\\n    }\\n\\n    modifier onlyInvited() {\\n        require(isInvited[msg.sender], \\\"Not invited\\\");\\n        _;\\n    }\\n\\n    modifier poolIsActive() {\\n        require(isActive, \\\"Pool not active\\\");\\n        _;\\n    }\\n\\n    // ========== Constructor ==========\\n\\n    /**\\n     * @notice Constructor for implementation contract\\n     * @dev Prevents the implementation contract from being initialized\\n     */\\n    constructor() {\\n        initialized = true;\\n    }\\n\\n    /**\\n     * @notice Initializes a new Savings pool clone\\n     * @dev This replaces the constructor for cloned instances\\n     * @param _creator Address of the user creating the pool\\n     * @param _circleId Address of the Lens.xyz circle contract\\n     * @param _circleName Name of the circle\\n     * @param _tokenAddress Address of the ERC20 token to use for savings (zero address if native)\\n     * @param _isNativeToken Whether this pool uses native token (cBTC) or ERC20 token\\n     */\\n    function initialize(\\n        address _creator,\\n        address _circleId,\\n        string memory _circleName,\\n        address _tokenAddress,\\n        bool _isNativeToken\\n    ) external {\\n        require(!initialized, \\\"Already initialized\\\");\\n        initialized = true;\\n\\n        // Validate token address based on token type\\n        if (_isNativeToken) {\\n            require(_tokenAddress == address(0), \\\"Token address must be zero for native token\\\");\\n        } else {\\n            require(_tokenAddress != address(0), \\\"Invalid token address for ERC20\\\");\\n        }\\n\\n        creator = _creator;\\n        circleId = _circleId;\\n        circleName = _circleName;\\n        tokenAddress = _tokenAddress;\\n        isNativeToken = _isNativeToken;\\n        isActive = true;\\n\\n        // Creator automatically becomes a member\\n        members.push(_creator);\\n        isMember[_creator] = true;\\n        isInvited[_creator] = true;\\n\\n        emit PoolCreated(_circleId, _creator);\\n        emit MemberJoined(_creator);\\n    }\\n\\n    // ========== Member Management ==========\\n\\n    /**\\n     * @notice Invites a new member to the pool\\n     * @dev Only creator can invite members\\n     * @param member Address of the member to invite\\n     */\\n    function inviteMember(address member) external onlyCreator whenNotPaused {\\n        require(!isInvited[member], \\\"Already invited\\\");\\n        require(member != address(0), \\\"Invalid address\\\");\\n\\n        isInvited[member] = true;\\n        emit MemberInvited(member, creator);\\n    }\\n\\n    /**\\n     * @notice Allows an invited member to join the pool\\n     */\\n    function joinPool() external onlyInvited whenNotPaused {\\n        require(!isMember[msg.sender], \\\"Already a member\\\");\\n\\n        members.push(msg.sender);\\n        isMember[msg.sender] = true;\\n\\n        emit MemberJoined(msg.sender);\\n    }\\n\\n    // ========== Deposits & Withdrawals ==========\\n\\n    /**\\n     * @notice Allows a member to deposit funds into their savings\\n     * @dev For ERC20: Member must have approved the contract to spend tokens before calling\\n     *      For native token: amount parameter is ignored, msg.value is used\\n     * @param amount Amount of ERC20 tokens to deposit (ignored for native token pools)\\n     */\\n    function deposit(uint256 amount) external payable onlyMember poolIsActive whenNotPaused nonReentrant {\\n        require(isNativeToken || amount > 0, \\\"Must deposit something\\\");\\n\\n        uint256 depositAmount = TokenTransfer.receiveTokens(tokenAddress, isNativeToken, amount);\\n\\n        balances[msg.sender] += depositAmount;\\n        totalSaved += depositAmount;\\n\\n        emit Deposited(msg.sender, depositAmount);\\n    }\\n\\n    /**\\n     * @notice Allows a member to withdraw from their savings balance\\n     * @param amount Amount of tokens to withdraw\\n     */\\n    function withdraw(uint256 amount) external onlyMember whenNotPaused nonReentrant {\\n        require(amount > 0, \\\"Must withdraw something\\\");\\n        require(balances[msg.sender] >= amount, \\\"Insufficient balance\\\");\\n\\n        balances[msg.sender] -= amount;\\n        totalSaved -= amount;\\n\\n        TokenTransfer.sendTokens(tokenAddress, isNativeToken, msg.sender, amount);\\n\\n        emit Withdrawn(msg.sender, amount);\\n    }\\n\\n    // ========== Goal Management ==========\\n\\n    /**\\n     * @notice Sets or updates the savings goal for the pool\\n     * @dev Only creator can set goals\\n     * @param _amount Target savings amount in wei\\n     * @param _date Target date as Unix timestamp\\n     */\\n    function setTarget(uint256 _amount, uint256 _date) external onlyCreator whenNotPaused {\\n        require(_amount > 0, \\\"Target amount must be positive\\\");\\n        require(_date > block.timestamp, \\\"Target date must be in future\\\");\\n\\n        targetAmount = _amount;\\n        targetDate = _date;\\n\\n        emit TargetSet(_amount, _date);\\n    }\\n\\n    // ========== Pool Management ==========\\n\\n    /**\\n     * @notice Closes the pool, preventing further deposits\\n     * @dev Only creator can close. Members can still withdraw their balances.\\n     */\\n    function closePool() external onlyCreator whenNotPaused {\\n        isActive = false;\\n        emit PoolClosed(block.timestamp);\\n    }\\n\\n    /**\\n     * @notice Pauses the contract in case of emergency\\n     * @dev Only creator can pause\\n     */\\n    function pause() external onlyCreator {\\n        _pause();\\n    }\\n\\n    /**\\n     * @notice Unpauses the contract\\n     * @dev Only creator can unpause\\n     */\\n    function unpause() external onlyCreator {\\n        _unpause();\\n    }\\n\\n    // ========== View Functions ==========\\n\\n    /**\\n     * @notice Gets a member's savings balance\\n     * @param member Address of the member\\n     * @return Balance in wei\\n     */\\n    function getBalance(address member) external view returns (uint256) {\\n        return balances[member];\\n    }\\n\\n    /**\\n     * @notice Gets the total number of members\\n     * @return Member count\\n     */\\n    function getMemberCount() external view returns (uint256) {\\n        return members.length;\\n    }\\n\\n    /**\\n     * @notice Gets all members\\n     * @return Array of member addresses\\n     */\\n    function getMembers() external view returns (address[] memory) {\\n        return members;\\n    }\\n\\n    /**\\n     * @notice Gets the current progress toward the savings goal\\n     * @return current Current total savings\\n     * @return target Target savings amount\\n     */\\n    function getProgress() external view returns (uint256 current, uint256 target) {\\n        return (totalSaved, targetAmount);\\n    }\\n\\n    /**\\n     * @notice Checks if the savings goal has been reached\\n     * @return True if target is set and reached, false otherwise\\n     */\\n    function isGoalReached() external view returns (bool) {\\n        if (targetAmount == 0) return false;\\n        return totalSaved >= targetAmount;\\n    }\\n\\n    /**\\n     * @notice Gets the contract's current balance\\n     * @return Balance in wei\\n     */\\n    function getContractBalance() external view returns (uint256) {\\n        return address(this).balance;\\n    }\\n}\\n\",\"keccak256\":\"0xf198ed14ef66138b4511f791e655dda4485ad383d6105eb52ca271bb9d717de7\",\"license\":\"MIT\"}},\"version\":1}",
+  "bytecode": "0x608060405234801561001057600080fd5b5060016000819055805460ff19169055600c805461ff0019166101001790556118608061003e6000396000f3fe6080604052600436106101c25760003560e01c80638371e6b4116100f75780639eab525311610095578063c30db74611610064578063c30db746146104e4578063cccf256014610504578063d3eb6f6114610526578063f8b2cb4f1461053b57600080fd5b80639eab525314610469578063a230c5241461048b578063b514ff3e146104bb578063b6b55f25146104d157600080fd5b8063953b8fb8116100d1578063953b8fb8146103fd578063997072f7146104135780639af4ee7e146104285780639d76ea581461044957600080fd5b80638371e6b4146103ab5780638456cb59146103c0578063939c4456146103d557600080fd5b80633f4ba83a116101645780635c975abb1161013e5780635c975abb1461034b5780635daf08ca1461036357806366805de5146103835780636f9fb98a1461039857600080fd5b80633f4ba83a14610300578063488c2ad2146103155780634c2956b01461032b57600080fd5b806322f3e2d4116101a057806322f3e2d41461026b57806327e235e3146102855780632e1a7d4d146102c05780632f890b93146102e057600080fd5b806302d05d3f146101c75780631d0f2c99146102095780631dcbe5001461022b575b600080fd5b3480156101d357600080fd5b506001546101ec9061010090046001600160a01b031681565b6040516001600160a01b0390911681526020015b60405180910390f35b34801561021557600080fd5b5061022961022436600461141b565b610571565b005b34801561023757600080fd5b5061025b610246366004611459565b60096020526000908152604090205460ff1681565b6040519015158152602001610200565b34801561027757600080fd5b50600c5461025b9060ff1681565b34801561029157600080fd5b506102b26102a0366004611459565b60056020526000908152604090205481565b604051908152602001610200565b3480156102cc57600080fd5b506102296102db366004611474565b610697565b3480156102ec57600080fd5b506102296102fb366004611459565b61083d565b34801561030c57600080fd5b50610229610973565b34801561032157600080fd5b506102b2600b5481565b34801561033757600080fd5b506102296103463660046114bc565b6109ac565b34801561035757600080fd5b5060015460ff1661025b565b34801561036f57600080fd5b506101ec61037e366004611474565b610c32565b34801561038f57600080fd5b50610229610c5c565b3480156103a457600080fd5b50476102b2565b3480156103b757600080fd5b50610229610cd3565b3480156103cc57600080fd5b50610229610e00565b3480156103e157600080fd5b50600654600a5460408051928352602083019190915201610200565b34801561040957600080fd5b506102b2600a5481565b34801561041f57600080fd5b506007546102b2565b34801561043457600080fd5b5060045461025b90600160a01b900460ff1681565b34801561045557600080fd5b506004546101ec906001600160a01b031681565b34801561047557600080fd5b5061047e610e37565b60405161020091906115b0565b34801561049757600080fd5b5061025b6104a6366004611459565b60086020526000908152604090205460ff1681565b3480156104c757600080fd5b506102b260065481565b6102296104df366004611474565b610e99565b3480156104f057600080fd5b506002546101ec906001600160a01b031681565b34801561051057600080fd5b5061051961103f565b60405161020091906115fd565b34801561053257600080fd5b5061025b6110cd565b34801561054757600080fd5b506102b2610556366004611459565b6001600160a01b031660009081526005602052604090205490565b60015461010090046001600160a01b031633146105a95760405162461bcd60e51b81526004016105a09061164b565b60405180910390fd5b6105b16110eb565b600082116106015760405162461bcd60e51b815260206004820152601e60248201527f54617267657420616d6f756e74206d75737420626520706f736974697665000060448201526064016105a0565b4281116106505760405162461bcd60e51b815260206004820152601d60248201527f5461726765742064617465206d75737420626520696e2066757475726500000060448201526064016105a0565b600a829055600b81905560408051838152602081018390527f36cbb4d8bcb4cdd7abe6491bf62932ce6bf0715ddff61fa0f3b5f3ad2a55b765910160405180910390a15050565b3360009081526008602052604090205460ff166106e55760405162461bcd60e51b815260206004820152600c60248201526b2737ba10309036b2b6b132b960a11b60448201526064016105a0565b6106ed6110eb565b6106f561110f565b600081116107455760405162461bcd60e51b815260206004820152601760248201527f4d75737420776974686472617720736f6d657468696e6700000000000000000060448201526064016105a0565b3360009081526005602052604090205481111561079b5760405162461bcd60e51b8152602060048201526014602482015273496e73756666696369656e742062616c616e636560601b60448201526064016105a0565b33600090815260056020526040812080548392906107ba908490611698565b9250508190555080600660008282546107d39190611698565b90915550506004546107fb906001600160a01b03811690600160a01b900460ff163384611139565b60405181815233907f7084f5476618d8e60b11ef0d7d3f06914655adb8793e28ff7f018d4c76d505d59060200160405180910390a261083a6001600055565b50565b60015461010090046001600160a01b0316331461086c5760405162461bcd60e51b81526004016105a09061164b565b6108746110eb565b6001600160a01b03811660009081526009602052604090205460ff16156108cf5760405162461bcd60e51b815260206004820152600f60248201526e105b1c9958591e481a5b9d9a5d1959608a1b60448201526064016105a0565b6001600160a01b0381166109175760405162461bcd60e51b815260206004820152600f60248201526e496e76616c6964206164647265737360881b60448201526064016105a0565b6001600160a01b03808216600081815260096020526040808220805460ff19166001908117909155549051610100909104909316927f6c246c8894ac239253d22cd508dbe8eb7e027e0589cdd4ff16dbb4238ccd98349190a350565b60015461010090046001600160a01b031633146109a25760405162461bcd60e51b81526004016105a09061164b565b6109aa611255565b565b600c54610100900460ff16156109fa5760405162461bcd60e51b8152602060048201526013602482015272105b1c9958591e481a5b9a5d1a585b1a5e9959606a1b60448201526064016105a0565b600c805461ff0019166101001790558015610a7f576001600160a01b03821615610a7a5760405162461bcd60e51b815260206004820152602b60248201527f546f6b656e2061646472657373206d757374206265207a65726f20666f72206e60448201526a30ba34bb32903a37b5b2b760a91b60648201526084016105a0565b610ad5565b6001600160a01b038216610ad55760405162461bcd60e51b815260206004820152601f60248201527f496e76616c696420746f6b656e206164647265737320666f722045524332300060448201526064016105a0565b60018054610100600160a81b0319166101006001600160a01b038881169190910291909117909155600280546001600160a01b0319169186169190911790556003610b20848261173a565b50600480546001600160a01b038481166001600160a81b031990921691909117600160a01b8415150217909155600c805460ff199081166001908117909255600780548084019091557fa66cc928b5edb82af9bd49922954155ab7b0942694bea4ce44661d9a8736c6880180546001600160a01b0319168985169081179091556000818152600860209081526040808320805486168717905560099091528082208054909416909417909255915191928716917f4f2ce4e40f623ca765fc0167a25cb7842ceaafb8d82d3dec26ca0d0e0d2d48969190a36040516001600160a01b038616907f0abf3b3f643594d958297062a019458e27d7766629590ac621aa1000fa1298ab90600090a25050505050565b60078181548110610c4257600080fd5b6000918252602090912001546001600160a01b0316905081565b60015461010090046001600160a01b03163314610c8b5760405162461bcd60e51b81526004016105a09061164b565b610c936110eb565b600c805460ff191690556040514281527f925a19753e677c9dc36a80e0fc824ca0c5b1afde494872b43daccab9ffeaffd4906020015b60405180910390a1565b3360009081526009602052604090205460ff16610d205760405162461bcd60e51b815260206004820152600b60248201526a139bdd081a5b9d9a5d195960aa1b60448201526064016105a0565b610d286110eb565b3360009081526008602052604090205460ff1615610d7b5760405162461bcd60e51b815260206004820152601060248201526f20b63932b0b23c90309036b2b6b132b960811b60448201526064016105a0565b6007805460018181019092557fa66cc928b5edb82af9bd49922954155ab7b0942694bea4ce44661d9a8736c6880180546001600160a01b03191633908117909155600081815260086020526040808220805460ff1916909417909355915190917f0abf3b3f643594d958297062a019458e27d7766629590ac621aa1000fa1298ab91a2565b60015461010090046001600160a01b03163314610e2f5760405162461bcd60e51b81526004016105a09061164b565b6109aa6112a2565b60606007805480602002602001604051908101604052809291908181526020018280548015610e8f57602002820191906000526020600020905b81546001600160a01b03168152600190910190602001808311610e71575b5050505050905090565b3360009081526008602052604090205460ff16610ee75760405162461bcd60e51b815260206004820152600c60248201526b2737ba10309036b2b6b132b960a11b60448201526064016105a0565b600c5460ff16610f2b5760405162461bcd60e51b815260206004820152600f60248201526e506f6f6c206e6f742061637469766560881b60448201526064016105a0565b610f336110eb565b610f3b61110f565b600454600160a01b900460ff1680610f535750600081115b610f985760405162461bcd60e51b81526020600482015260166024820152754d757374206465706f73697420736f6d657468696e6760501b60448201526064016105a0565b600454600090610fbd906001600160a01b03811690600160a01b900460ff16846112dd565b33600090815260056020526040812080549293508392909190610fe19084906117fa565b925050819055508060066000828254610ffa91906117fa565b909155505060405181815233907f2da466a7b24304f47e87fa2e1e5a81b9831ce54fec19055ce277ca2f39ba42c49060200160405180910390a25061083a6001600055565b6003805461104c906116b1565b80601f0160208091040260200160405190810160405280929190818152602001828054611078906116b1565b80156110c55780601f1061109a576101008083540402835291602001916110c5565b820191906000526020600020905b8154815290600101906020018083116110a857829003601f168201915b505050505081565b6000600a546000036110df5750600090565b50600a54600654101590565b60015460ff16156109aa5760405163d93c066560e01b815260040160405180910390fd5b60026000540361113257604051633ee5aeb560e01b815260040160405180910390fd5b6002600055565b82156111da576000826001600160a01b03168260405160006040518083038185875af1925050503d806000811461118c576040519150601f19603f3d011682016040523d82523d6000602084013e611191565b606091505b50509050806111d45760405162461bcd60e51b815260206004820152600f60248201526e151c985b9cd9995c8819985a5b1959608a1b60448201526064016105a0565b5061124f565b60405163a9059cbb60e01b81526001600160a01b0383811660048301526024820183905285169063a9059cbb906044016020604051808303816000875af1158015611229573d6000803e3d6000fd5b505050506040513d601f19601f8201168201806040525081019061124d919061180d565b505b50505050565b61125d6113f8565b6001805460ff191690557f5db9ee0a495bf2e6ff9c91a7834c1ba4fdd244a5e8aa4e537bd38aeae4b073aa335b6040516001600160a01b039091168152602001610cc9565b6112aa6110eb565b6001805460ff1916811790557f62e78cea01bee320cd4e420270b5ea74000d11b0c9f74754ebdbfc544b05a2583361128a565b60008215611335576000341161132e5760405162461bcd60e51b815260206004820152601660248201527526bab9ba1039b2b732103730ba34bb32903a37b5b2b760511b60448201526064016105a0565b50346113f1565b34156113755760405162461bcd60e51b815260206004820152600f60248201526e2737903730ba34bb32903a37b5b2b760891b60448201526064016105a0565b6040516323b872dd60e01b8152336004820152306024820152604481018390526001600160a01b038516906323b872dd906064016020604051808303816000875af11580156113c8573d6000803e3d6000fd5b505050506040513d601f19601f820116820180604052508101906113ec919061180d565b508190505b9392505050565b60015460ff166109aa57604051638dfc202b60e01b815260040160405180910390fd5b6000806040838503121561142e57600080fd5b50508035926020909101359150565b80356001600160a01b038116811461145457600080fd5b919050565b60006020828403121561146b57600080fd5b6113f18261143d565b60006020828403121561148657600080fd5b5035919050565b634e487b7160e01b600052604160045260246000fd5b801515811461083a57600080fd5b8035611454816114a3565b600080600080600060a086880312156114d457600080fd5b6114dd8661143d565b94506114eb6020870161143d565b9350604086013567ffffffffffffffff8082111561150857600080fd5b818801915088601f83011261151c57600080fd5b81358181111561152e5761152e61148d565b604051601f8201601f19908116603f011681019083821181831017156115565761155661148d565b816040528281528b602084870101111561156f57600080fd5b8260208601602083013760006020848301015280975050505050506115966060870161143d565b91506115a4608087016114b1565b90509295509295909350565b6020808252825182820181905260009190848201906040850190845b818110156115f15783516001600160a01b0316835292840192918401916001016115cc565b50909695505050505050565b600060208083528351808285015260005b8181101561162a5785810183015185820160400152820161160e565b506000604082860101526040601f19601f8301168501019250505092915050565b6020808252601a908201527f4f6e6c792063726561746f722063616e2063616c6c2074686973000000000000604082015260600190565b634e487b7160e01b600052601160045260246000fd5b818103818111156116ab576116ab611682565b92915050565b600181811c908216806116c557607f821691505b6020821081036116e557634e487b7160e01b600052602260045260246000fd5b50919050565b601f82111561173557600081815260208120601f850160051c810160208610156117125750805b601f850160051c820191505b818110156117315782815560010161171e565b5050505b505050565b815167ffffffffffffffff8111156117545761175461148d565b6117688161176284546116b1565b846116eb565b602080601f83116001811461179d57600084156117855750858301515b600019600386901b1c1916600185901b178555611731565b600085815260208120601f198616915b828110156117cc578886015182559484019460019091019084016117ad565b50858210156117ea5787850151600019600388901b60f8161c191681555b5050505050600190811b01905550565b808201808211156116ab576116ab611682565b60006020828403121561181f57600080fd5b81516113f1816114a356fea2646970667358221220f742df5866bcda814593582d42a661dc707ee8a409951baa09a544aa41983e1264736f6c63430008140033",
+  "deployedBytecode": "0x6080604052600436106101c25760003560e01c80638371e6b4116100f75780639eab525311610095578063c30db74611610064578063c30db746146104e4578063cccf256014610504578063d3eb6f6114610526578063f8b2cb4f1461053b57600080fd5b80639eab525314610469578063a230c5241461048b578063b514ff3e146104bb578063b6b55f25146104d157600080fd5b8063953b8fb8116100d1578063953b8fb8146103fd578063997072f7146104135780639af4ee7e146104285780639d76ea581461044957600080fd5b80638371e6b4146103ab5780638456cb59146103c0578063939c4456146103d557600080fd5b80633f4ba83a116101645780635c975abb1161013e5780635c975abb1461034b5780635daf08ca1461036357806366805de5146103835780636f9fb98a1461039857600080fd5b80633f4ba83a14610300578063488c2ad2146103155780634c2956b01461032b57600080fd5b806322f3e2d4116101a057806322f3e2d41461026b57806327e235e3146102855780632e1a7d4d146102c05780632f890b93146102e057600080fd5b806302d05d3f146101c75780631d0f2c99146102095780631dcbe5001461022b575b600080fd5b3480156101d357600080fd5b506001546101ec9061010090046001600160a01b031681565b6040516001600160a01b0390911681526020015b60405180910390f35b34801561021557600080fd5b5061022961022436600461141b565b610571565b005b34801561023757600080fd5b5061025b610246366004611459565b60096020526000908152604090205460ff1681565b6040519015158152602001610200565b34801561027757600080fd5b50600c5461025b9060ff1681565b34801561029157600080fd5b506102b26102a0366004611459565b60056020526000908152604090205481565b604051908152602001610200565b3480156102cc57600080fd5b506102296102db366004611474565b610697565b3480156102ec57600080fd5b506102296102fb366004611459565b61083d565b34801561030c57600080fd5b50610229610973565b34801561032157600080fd5b506102b2600b5481565b34801561033757600080fd5b506102296103463660046114bc565b6109ac565b34801561035757600080fd5b5060015460ff1661025b565b34801561036f57600080fd5b506101ec61037e366004611474565b610c32565b34801561038f57600080fd5b50610229610c5c565b3480156103a457600080fd5b50476102b2565b3480156103b757600080fd5b50610229610cd3565b3480156103cc57600080fd5b50610229610e00565b3480156103e157600080fd5b50600654600a5460408051928352602083019190915201610200565b34801561040957600080fd5b506102b2600a5481565b34801561041f57600080fd5b506007546102b2565b34801561043457600080fd5b5060045461025b90600160a01b900460ff1681565b34801561045557600080fd5b506004546101ec906001600160a01b031681565b34801561047557600080fd5b5061047e610e37565b60405161020091906115b0565b34801561049757600080fd5b5061025b6104a6366004611459565b60086020526000908152604090205460ff1681565b3480156104c757600080fd5b506102b260065481565b6102296104df366004611474565b610e99565b3480156104f057600080fd5b506002546101ec906001600160a01b031681565b34801561051057600080fd5b5061051961103f565b60405161020091906115fd565b34801561053257600080fd5b5061025b6110cd565b34801561054757600080fd5b506102b2610556366004611459565b6001600160a01b031660009081526005602052604090205490565b60015461010090046001600160a01b031633146105a95760405162461bcd60e51b81526004016105a09061164b565b60405180910390fd5b6105b16110eb565b600082116106015760405162461bcd60e51b815260206004820152601e60248201527f54617267657420616d6f756e74206d75737420626520706f736974697665000060448201526064016105a0565b4281116106505760405162461bcd60e51b815260206004820152601d60248201527f5461726765742064617465206d75737420626520696e2066757475726500000060448201526064016105a0565b600a829055600b81905560408051838152602081018390527f36cbb4d8bcb4cdd7abe6491bf62932ce6bf0715ddff61fa0f3b5f3ad2a55b765910160405180910390a15050565b3360009081526008602052604090205460ff166106e55760405162461bcd60e51b815260206004820152600c60248201526b2737ba10309036b2b6b132b960a11b60448201526064016105a0565b6106ed6110eb565b6106f561110f565b600081116107455760405162461bcd60e51b815260206004820152601760248201527f4d75737420776974686472617720736f6d657468696e6700000000000000000060448201526064016105a0565b3360009081526005602052604090205481111561079b5760405162461bcd60e51b8152602060048201526014602482015273496e73756666696369656e742062616c616e636560601b60448201526064016105a0565b33600090815260056020526040812080548392906107ba908490611698565b9250508190555080600660008282546107d39190611698565b90915550506004546107fb906001600160a01b03811690600160a01b900460ff163384611139565b60405181815233907f7084f5476618d8e60b11ef0d7d3f06914655adb8793e28ff7f018d4c76d505d59060200160405180910390a261083a6001600055565b50565b60015461010090046001600160a01b0316331461086c5760405162461bcd60e51b81526004016105a09061164b565b6108746110eb565b6001600160a01b03811660009081526009602052604090205460ff16156108cf5760405162461bcd60e51b815260206004820152600f60248201526e105b1c9958591e481a5b9d9a5d1959608a1b60448201526064016105a0565b6001600160a01b0381166109175760405162461bcd60e51b815260206004820152600f60248201526e496e76616c6964206164647265737360881b60448201526064016105a0565b6001600160a01b03808216600081815260096020526040808220805460ff19166001908117909155549051610100909104909316927f6c246c8894ac239253d22cd508dbe8eb7e027e0589cdd4ff16dbb4238ccd98349190a350565b60015461010090046001600160a01b031633146109a25760405162461bcd60e51b81526004016105a09061164b565b6109aa611255565b565b600c54610100900460ff16156109fa5760405162461bcd60e51b8152602060048201526013602482015272105b1c9958591e481a5b9a5d1a585b1a5e9959606a1b60448201526064016105a0565b600c805461ff0019166101001790558015610a7f576001600160a01b03821615610a7a5760405162461bcd60e51b815260206004820152602b60248201527f546f6b656e2061646472657373206d757374206265207a65726f20666f72206e60448201526a30ba34bb32903a37b5b2b760a91b60648201526084016105a0565b610ad5565b6001600160a01b038216610ad55760405162461bcd60e51b815260206004820152601f60248201527f496e76616c696420746f6b656e206164647265737320666f722045524332300060448201526064016105a0565b60018054610100600160a81b0319166101006001600160a01b038881169190910291909117909155600280546001600160a01b0319169186169190911790556003610b20848261173a565b50600480546001600160a01b038481166001600160a81b031990921691909117600160a01b8415150217909155600c805460ff199081166001908117909255600780548084019091557fa66cc928b5edb82af9bd49922954155ab7b0942694bea4ce44661d9a8736c6880180546001600160a01b0319168985169081179091556000818152600860209081526040808320805486168717905560099091528082208054909416909417909255915191928716917f4f2ce4e40f623ca765fc0167a25cb7842ceaafb8d82d3dec26ca0d0e0d2d48969190a36040516001600160a01b038616907f0abf3b3f643594d958297062a019458e27d7766629590ac621aa1000fa1298ab90600090a25050505050565b60078181548110610c4257600080fd5b6000918252602090912001546001600160a01b0316905081565b60015461010090046001600160a01b03163314610c8b5760405162461bcd60e51b81526004016105a09061164b565b610c936110eb565b600c805460ff191690556040514281527f925a19753e677c9dc36a80e0fc824ca0c5b1afde494872b43daccab9ffeaffd4906020015b60405180910390a1565b3360009081526009602052604090205460ff16610d205760405162461bcd60e51b815260206004820152600b60248201526a139bdd081a5b9d9a5d195960aa1b60448201526064016105a0565b610d286110eb565b3360009081526008602052604090205460ff1615610d7b5760405162461bcd60e51b815260206004820152601060248201526f20b63932b0b23c90309036b2b6b132b960811b60448201526064016105a0565b6007805460018181019092557fa66cc928b5edb82af9bd49922954155ab7b0942694bea4ce44661d9a8736c6880180546001600160a01b03191633908117909155600081815260086020526040808220805460ff1916909417909355915190917f0abf3b3f643594d958297062a019458e27d7766629590ac621aa1000fa1298ab91a2565b60015461010090046001600160a01b03163314610e2f5760405162461bcd60e51b81526004016105a09061164b565b6109aa6112a2565b60606007805480602002602001604051908101604052809291908181526020018280548015610e8f57602002820191906000526020600020905b81546001600160a01b03168152600190910190602001808311610e71575b5050505050905090565b3360009081526008602052604090205460ff16610ee75760405162461bcd60e51b815260206004820152600c60248201526b2737ba10309036b2b6b132b960a11b60448201526064016105a0565b600c5460ff16610f2b5760405162461bcd60e51b815260206004820152600f60248201526e506f6f6c206e6f742061637469766560881b60448201526064016105a0565b610f336110eb565b610f3b61110f565b600454600160a01b900460ff1680610f535750600081115b610f985760405162461bcd60e51b81526020600482015260166024820152754d757374206465706f73697420736f6d657468696e6760501b60448201526064016105a0565b600454600090610fbd906001600160a01b03811690600160a01b900460ff16846112dd565b33600090815260056020526040812080549293508392909190610fe19084906117fa565b925050819055508060066000828254610ffa91906117fa565b909155505060405181815233907f2da466a7b24304f47e87fa2e1e5a81b9831ce54fec19055ce277ca2f39ba42c49060200160405180910390a25061083a6001600055565b6003805461104c906116b1565b80601f0160208091040260200160405190810160405280929190818152602001828054611078906116b1565b80156110c55780601f1061109a576101008083540402835291602001916110c5565b820191906000526020600020905b8154815290600101906020018083116110a857829003601f168201915b505050505081565b6000600a546000036110df5750600090565b50600a54600654101590565b60015460ff16156109aa5760405163d93c066560e01b815260040160405180910390fd5b60026000540361113257604051633ee5aeb560e01b815260040160405180910390fd5b6002600055565b82156111da576000826001600160a01b03168260405160006040518083038185875af1925050503d806000811461118c576040519150601f19603f3d011682016040523d82523d6000602084013e611191565b606091505b50509050806111d45760405162461bcd60e51b815260206004820152600f60248201526e151c985b9cd9995c8819985a5b1959608a1b60448201526064016105a0565b5061124f565b60405163a9059cbb60e01b81526001600160a01b0383811660048301526024820183905285169063a9059cbb906044016020604051808303816000875af1158015611229573d6000803e3d6000fd5b505050506040513d601f19601f8201168201806040525081019061124d919061180d565b505b50505050565b61125d6113f8565b6001805460ff191690557f5db9ee0a495bf2e6ff9c91a7834c1ba4fdd244a5e8aa4e537bd38aeae4b073aa335b6040516001600160a01b039091168152602001610cc9565b6112aa6110eb565b6001805460ff1916811790557f62e78cea01bee320cd4e420270b5ea74000d11b0c9f74754ebdbfc544b05a2583361128a565b60008215611335576000341161132e5760405162461bcd60e51b815260206004820152601660248201527526bab9ba1039b2b732103730ba34bb32903a37b5b2b760511b60448201526064016105a0565b50346113f1565b34156113755760405162461bcd60e51b815260206004820152600f60248201526e2737903730ba34bb32903a37b5b2b760891b60448201526064016105a0565b6040516323b872dd60e01b8152336004820152306024820152604481018390526001600160a01b038516906323b872dd906064016020604051808303816000875af11580156113c8573d6000803e3d6000fd5b505050506040513d601f19601f820116820180604052508101906113ec919061180d565b508190505b9392505050565b60015460ff166109aa57604051638dfc202b60e01b815260040160405180910390fd5b6000806040838503121561142e57600080fd5b50508035926020909101359150565b80356001600160a01b038116811461145457600080fd5b919050565b60006020828403121561146b57600080fd5b6113f18261143d565b60006020828403121561148657600080fd5b5035919050565b634e487b7160e01b600052604160045260246000fd5b801515811461083a57600080fd5b8035611454816114a3565b600080600080600060a086880312156114d457600080fd5b6114dd8661143d565b94506114eb6020870161143d565b9350604086013567ffffffffffffffff8082111561150857600080fd5b818801915088601f83011261151c57600080fd5b81358181111561152e5761152e61148d565b604051601f8201601f19908116603f011681019083821181831017156115565761155661148d565b816040528281528b602084870101111561156f57600080fd5b8260208601602083013760006020848301015280975050505050506115966060870161143d565b91506115a4608087016114b1565b90509295509295909350565b6020808252825182820181905260009190848201906040850190845b818110156115f15783516001600160a01b0316835292840192918401916001016115cc565b50909695505050505050565b600060208083528351808285015260005b8181101561162a5785810183015185820160400152820161160e565b506000604082860101526040601f19601f8301168501019250505092915050565b6020808252601a908201527f4f6e6c792063726561746f722063616e2063616c6c2074686973000000000000604082015260600190565b634e487b7160e01b600052601160045260246000fd5b818103818111156116ab576116ab611682565b92915050565b600181811c908216806116c557607f821691505b6020821081036116e557634e487b7160e01b600052602260045260246000fd5b50919050565b601f82111561173557600081815260208120601f850160051c810160208610156117125750805b601f850160051c820191505b818110156117315782815560010161171e565b5050505b505050565b815167ffffffffffffffff8111156117545761175461148d565b6117688161176284546116b1565b846116eb565b602080601f83116001811461179d57600084156117855750858301515b600019600386901b1c1916600185901b178555611731565b600085815260208120601f198616915b828110156117cc578886015182559484019460019091019084016117ad565b50858210156117ea5787850151600019600388901b60f8161c191681555b5050505050600190811b01905550565b808201808211156116ab576116ab611682565b60006020828403121561181f57600080fd5b81516113f1816114a356fea2646970667358221220f742df5866bcda814593582d42a661dc707ee8a409951baa09a544aa41983e1264736f6c63430008140033",
+  "devdoc": {
+    "details": "Members maintain individual balances and can set collective savings goals",
+    "errors": {
+      "EnforcedPause()": [
+        {
+          "details": "The operation failed because the contract is paused."
+        }
+      ],
+      "ExpectedPause()": [
+        {
+          "details": "The operation failed because the contract is not paused."
+        }
+      ],
+      "ReentrancyGuardReentrantCall()": [
+        {
+          "details": "Unauthorized reentrant call."
+        }
+      ]
+    },
+    "events": {
+      "Paused(address)": {
+        "details": "Emitted when the pause is triggered by `account`."
+      },
+      "Unpaused(address)": {
+        "details": "Emitted when the pause is lifted by `account`."
+      }
+    },
+    "kind": "dev",
+    "methods": {
+      "closePool()": {
+        "details": "Only creator can close. Members can still withdraw their balances."
+      },
+      "constructor": {
+        "details": "Prevents the implementation contract from being initialized"
+      },
+      "deposit(uint256)": {
+        "details": "For ERC20: Member must have approved the contract to spend tokens before calling      For native token: amount parameter is ignored, msg.value is used",
+        "params": {
+          "amount": "Amount of ERC20 tokens to deposit (ignored for native token pools)"
+        }
+      },
+      "getBalance(address)": {
+        "params": {
+          "member": "Address of the member"
+        },
+        "returns": {
+          "_0": "Balance in wei"
+        }
+      },
+      "getContractBalance()": {
+        "returns": {
+          "_0": "Balance in wei"
+        }
+      },
+      "getMemberCount()": {
+        "returns": {
+          "_0": "Member count"
+        }
+      },
+      "getMembers()": {
+        "returns": {
+          "_0": "Array of member addresses"
+        }
+      },
+      "getProgress()": {
+        "returns": {
+          "current": "Current total savings",
+          "target": "Target savings amount"
+        }
+      },
+      "initialize(address,address,string,address,bool)": {
+        "details": "This replaces the constructor for cloned instances",
+        "params": {
+          "_circleId": "Address of the Lens.xyz circle contract",
+          "_circleName": "Name of the circle",
+          "_creator": "Address of the user creating the pool",
+          "_isNativeToken": "Whether this pool uses native token (cBTC) or ERC20 token",
+          "_tokenAddress": "Address of the ERC20 token to use for savings (zero address if native)"
+        }
+      },
+      "inviteMember(address)": {
+        "details": "Only creator can invite members",
+        "params": {
+          "member": "Address of the member to invite"
+        }
+      },
+      "isGoalReached()": {
+        "returns": {
+          "_0": "True if target is set and reached, false otherwise"
+        }
+      },
+      "pause()": {
+        "details": "Only creator can pause"
+      },
+      "paused()": {
+        "details": "Returns true if the contract is paused, and false otherwise."
+      },
+      "setTarget(uint256,uint256)": {
+        "details": "Only creator can set goals",
+        "params": {
+          "_amount": "Target savings amount in wei",
+          "_date": "Target date as Unix timestamp"
+        }
+      },
+      "unpause()": {
+        "details": "Only creator can unpause"
+      },
+      "withdraw(uint256)": {
+        "params": {
+          "amount": "Amount of tokens to withdraw"
+        }
+      }
+    },
+    "title": "SavingsPool",
+    "version": 1
+  },
+  "userdoc": {
+    "kind": "user",
+    "methods": {
+      "balances(address)": {
+        "notice": "Individual balances for each member"
+      },
+      "circleId()": {
+        "notice": "Address of the Lens.xyz circle contract"
+      },
+      "circleName()": {
+        "notice": "Human-readable name of the circle"
+      },
+      "closePool()": {
+        "notice": "Closes the pool, preventing further deposits"
+      },
+      "constructor": {
+        "notice": "Constructor for implementation contract"
+      },
+      "creator()": {
+        "notice": "Address of the user who created this pool"
+      },
+      "deposit(uint256)": {
+        "notice": "Allows a member to deposit funds into their savings"
+      },
+      "getBalance(address)": {
+        "notice": "Gets a member's savings balance"
+      },
+      "getContractBalance()": {
+        "notice": "Gets the contract's current balance"
+      },
+      "getMemberCount()": {
+        "notice": "Gets the total number of members"
+      },
+      "getMembers()": {
+        "notice": "Gets all members"
+      },
+      "getProgress()": {
+        "notice": "Gets the current progress toward the savings goal"
+      },
+      "initialize(address,address,string,address,bool)": {
+        "notice": "Initializes a new Savings pool clone"
+      },
+      "inviteMember(address)": {
+        "notice": "Invites a new member to the pool"
+      },
+      "isActive()": {
+        "notice": "Whether the pool is currently active"
+      },
+      "isGoalReached()": {
+        "notice": "Checks if the savings goal has been reached"
+      },
+      "isInvited(address)": {
+        "notice": "Mapping to check if an address has been invited"
+      },
+      "isMember(address)": {
+        "notice": "Mapping to check if an address is a member"
+      },
+      "isNativeToken()": {
+        "notice": "Whether this pool uses native token (cBTC) or ERC20 token"
+      },
+      "joinPool()": {
+        "notice": "Allows an invited member to join the pool"
+      },
+      "members(uint256)": {
+        "notice": "Array of all members in the pool"
+      },
+      "pause()": {
+        "notice": "Pauses the contract in case of emergency"
+      },
+      "setTarget(uint256,uint256)": {
+        "notice": "Sets or updates the savings goal for the pool"
+      },
+      "targetAmount()": {
+        "notice": "Optional target savings amount set by creator"
+      },
+      "targetDate()": {
+        "notice": "Optional target date for reaching the goal"
+      },
+      "tokenAddress()": {
+        "notice": "Address of the ERC20 token used for savings (zero address if native token)"
+      },
+      "totalSaved()": {
+        "notice": "Total amount saved across all members"
+      },
+      "unpause()": {
+        "notice": "Unpauses the contract"
+      },
+      "withdraw(uint256)": {
+        "notice": "Allows a member to withdraw from their savings balance"
+      }
+    },
+    "notice": "Collective savings pool where members can deposit and withdraw freely",
+    "version": 1
+  },
+  "storageLayout": {
+    "storage": [
+      {
+        "astId": 1146,
+        "contract": "contracts/pools/SavingsPool.sol:SavingsPool",
+        "label": "_status",
+        "offset": 0,
+        "slot": "0",
+        "type": "t_uint256"
+      },
+      {
+        "astId": 1027,
+        "contract": "contracts/pools/SavingsPool.sol:SavingsPool",
+        "label": "_paused",
+        "offset": 0,
+        "slot": "1",
+        "type": "t_bool"
+      },
+      {
+        "astId": 4689,
+        "contract": "contracts/pools/SavingsPool.sol:SavingsPool",
+        "label": "creator",
+        "offset": 1,
+        "slot": "1",
+        "type": "t_address"
+      },
+      {
+        "astId": 4692,
+        "contract": "contracts/pools/SavingsPool.sol:SavingsPool",
+        "label": "circleId",
+        "offset": 0,
+        "slot": "2",
+        "type": "t_address"
+      },
+      {
+        "astId": 4695,
+        "contract": "contracts/pools/SavingsPool.sol:SavingsPool",
+        "label": "circleName",
+        "offset": 0,
+        "slot": "3",
+        "type": "t_string_storage"
+      },
+      {
+        "astId": 4698,
+        "contract": "contracts/pools/SavingsPool.sol:SavingsPool",
+        "label": "tokenAddress",
+        "offset": 0,
+        "slot": "4",
+        "type": "t_address"
+      },
+      {
+        "astId": 4701,
+        "contract": "contracts/pools/SavingsPool.sol:SavingsPool",
+        "label": "isNativeToken",
+        "offset": 20,
+        "slot": "4",
+        "type": "t_bool"
+      },
+      {
+        "astId": 4706,
+        "contract": "contracts/pools/SavingsPool.sol:SavingsPool",
+        "label": "balances",
+        "offset": 0,
+        "slot": "5",
+        "type": "t_mapping(t_address,t_uint256)"
+      },
+      {
+        "astId": 4709,
+        "contract": "contracts/pools/SavingsPool.sol:SavingsPool",
+        "label": "totalSaved",
+        "offset": 0,
+        "slot": "6",
+        "type": "t_uint256"
+      },
+      {
+        "astId": 4713,
+        "contract": "contracts/pools/SavingsPool.sol:SavingsPool",
+        "label": "members",
+        "offset": 0,
+        "slot": "7",
+        "type": "t_array(t_address)dyn_storage"
+      },
+      {
+        "astId": 4718,
+        "contract": "contracts/pools/SavingsPool.sol:SavingsPool",
+        "label": "isMember",
+        "offset": 0,
+        "slot": "8",
+        "type": "t_mapping(t_address,t_bool)"
+      },
+      {
+        "astId": 4723,
+        "contract": "contracts/pools/SavingsPool.sol:SavingsPool",
+        "label": "isInvited",
+        "offset": 0,
+        "slot": "9",
+        "type": "t_mapping(t_address,t_bool)"
+      },
+      {
+        "astId": 4726,
+        "contract": "contracts/pools/SavingsPool.sol:SavingsPool",
+        "label": "targetAmount",
+        "offset": 0,
+        "slot": "10",
+        "type": "t_uint256"
+      },
+      {
+        "astId": 4729,
+        "contract": "contracts/pools/SavingsPool.sol:SavingsPool",
+        "label": "targetDate",
+        "offset": 0,
+        "slot": "11",
+        "type": "t_uint256"
+      },
+      {
+        "astId": 4732,
+        "contract": "contracts/pools/SavingsPool.sol:SavingsPool",
+        "label": "isActive",
+        "offset": 0,
+        "slot": "12",
+        "type": "t_bool"
+      },
+      {
+        "astId": 4735,
+        "contract": "contracts/pools/SavingsPool.sol:SavingsPool",
+        "label": "initialized",
+        "offset": 1,
+        "slot": "12",
+        "type": "t_bool"
+      }
+    ],
+    "types": {
+      "t_address": {
+        "encoding": "inplace",
+        "label": "address",
+        "numberOfBytes": "20"
+      },
+      "t_array(t_address)dyn_storage": {
+        "base": "t_address",
+        "encoding": "dynamic_array",
+        "label": "address[]",
+        "numberOfBytes": "32"
+      },
+      "t_bool": {
+        "encoding": "inplace",
+        "label": "bool",
+        "numberOfBytes": "1"
+      },
+      "t_mapping(t_address,t_bool)": {
+        "encoding": "mapping",
+        "key": "t_address",
+        "label": "mapping(address => bool)",
+        "numberOfBytes": "32",
+        "value": "t_bool"
+      },
+      "t_mapping(t_address,t_uint256)": {
+        "encoding": "mapping",
+        "key": "t_address",
+        "label": "mapping(address => uint256)",
+        "numberOfBytes": "32",
+        "value": "t_uint256"
+      },
+      "t_string_storage": {
+        "encoding": "bytes",
+        "label": "string",
+        "numberOfBytes": "32"
+      },
+      "t_uint256": {
+        "encoding": "inplace",
+        "label": "uint256",
+        "numberOfBytes": "32"
+      }
+    }
+  }
+}

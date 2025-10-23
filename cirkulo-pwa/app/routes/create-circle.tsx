@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, type ChangeEvent, type FocusEvent, type FormEvent, type ReactNode } from "react";
+import { useState, useEffect, useRef, useMemo, type ChangeEvent, type FocusEvent, type FormEvent, type ReactNode } from "react";
 import type { Route } from "./+types/create-circle";
 import { useNavigate } from "react-router";
 import { XershaLogo } from "app/components/xersha-logo";
@@ -27,7 +27,7 @@ import { useDynamicContext } from "@dynamic-labs/sdk-react-core";
 import { useAuth } from "app/context/auth-context";
 import { useCreateLensGroup } from "app/hooks/create-lens-group";
 import { useSaveCircle } from "~/hooks/use-save-circle";
-import { xershaFactoryAbi, getXershaFactoryAddress } from "app/lib/abi";
+import { xershaFactoryAbi, getXershaFactoryAddress, getMockCUSDAddress } from "app/lib/abi";
 import { parseEther, decodeEventLog } from "viem";
 import { citreaTestnet } from "app/lib/wagmi";
 import { useWriteContract, useWaitForTransactionReceipt, useSwitchChain } from "wagmi";
@@ -58,6 +58,7 @@ interface FormData {
   name: string;
   description: string;
   circleType: "contribution" | "rotating" | "fundraising" | "";
+  currency: "cusd" | "cbtc" | "";
   contributionSchedule: "weekly" | "biweekly" | "monthly" | "";
   contributionAmount: string;
   goalAmount: string;
@@ -87,6 +88,7 @@ export default function CreateCircle() {
     name: "",
     description: "",
     circleType: "",
+    currency: "cusd", // Default to CUSD
     contributionSchedule: "monthly", // Default to monthly
     contributionAmount: "",
     goalAmount: "",
@@ -99,6 +101,41 @@ export default function CreateCircle() {
   );
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
+
+  // Track previous currency to detect switches
+  const prevCurrencyRef = useRef(formData.currency);
+
+  // Set default amount values when currency changes
+  useEffect(() => {
+    const prevCurrency = prevCurrencyRef.current;
+    const currentCurrency = formData.currency;
+
+    // Get default values for both currencies
+    const cusdDefault = "50";
+    const cbtcDefault = "0.001";
+    const prevDefault = prevCurrency === "cbtc" ? cbtcDefault : cusdDefault;
+    const newDefault = currentCurrency === "cbtc" ? cbtcDefault : cusdDefault;
+
+    // Update amounts if they match the previous currency's default or are empty
+    setFormData((prev) => {
+      const updates: Partial<FormData> = {};
+
+      // Update contribution amount if it matches old default or is empty
+      if (prev.contributionAmount === "" || prev.contributionAmount === prevDefault) {
+        updates.contributionAmount = newDefault;
+      }
+
+      // Update goal amount if it matches old default or is empty
+      if (prev.goalAmount === "" || prev.goalAmount === prevDefault) {
+        updates.goalAmount = newDefault;
+      }
+
+      return { ...prev, ...updates };
+    });
+
+    // Update ref for next comparison
+    prevCurrencyRef.current = currentCurrency;
+  }, [formData.currency]);
 
   // Validation functions
   const validateName = (value: string): string | undefined => {
@@ -425,42 +462,48 @@ export default function CreateCircle() {
 
         let txHash;
 
+        // Determine token address and isNativeToken based on currency selection
+        const isNativeToken = formData.currency === "cbtc";
+        const tokenAddress = isNativeToken
+          ? "0x0000000000000000000000000000000000000000" // Zero address for native token
+          : getMockCUSDAddress(); // MockCUSD ERC20 token address from environment
+
         // Determine which contract function to call based on circle type
         if (formData.circleType === "contribution") {
-          console.log("[CreateCircle] Creating Savings Pool...");
+          console.log("[CreateCircle] Creating Savings Pool with currency:", formData.currency);
           txHash = await writeContractAsync({
             address: factoryAddress,
             abi: xershaFactoryAbi,
             functionName: "createSavingsPool",
-            args: [result.groupAddress, formData.name.trim()],
+            args: [result.groupAddress, formData.name.trim(), tokenAddress, isNativeToken],
             chain: citreaTestnet,
             chainId: citreaTestnet.id,
           });
         }
 
         else if (formData.circleType === "rotating") {
-          // Convert USD to wei (assuming mock USD token with 18 decimals)
+          // Convert amount to wei (18 decimals for both native token and ERC20)
           const contributionInWei = parseEther(formData.contributionAmount);
-          console.log("[CreateCircle] Creating ROSCA Pool with contribution:", formData.contributionAmount, "USD");
+          console.log("[CreateCircle] Creating ROSCA Pool with contribution:", formData.contributionAmount, "currency:", formData.currency);
 
           txHash = await writeContractAsync({
             address: factoryAddress,
             abi: xershaFactoryAbi,
             functionName: "createROSCA",
-            args: [result.groupAddress, formData.name.trim(), contributionInWei],
+            args: [result.groupAddress, formData.name.trim(), contributionInWei, tokenAddress, isNativeToken],
             chain: citreaTestnet,
             chainId: citreaTestnet.id,
           });
         }
 
         else if (formData.circleType === "fundraising") {
-          // Convert USD to wei
+          // Convert amount to wei (18 decimals for both native token and ERC20)
           const goalInWei = parseEther(formData.goalAmount);
 
           // Convert endDate to unix timestamp (as bigint)
           const deadline = BigInt(Math.floor(new Date(formData.endDate).getTime() / 1000));
 
-          console.log("[CreateCircle] Creating Donation Pool with goal:", formData.goalAmount, "USD, deadline:", formData.endDate);
+          console.log("[CreateCircle] Creating Donation Pool with goal:", formData.goalAmount, "currency:", formData.currency, "deadline:", formData.endDate);
 
           // Beneficiary is the circle creator (primaryWallet.address)
           txHash = await writeContractAsync({
@@ -472,7 +515,9 @@ export default function CreateCircle() {
               formData.name.trim(),
               primaryWallet.address as `0x${string}`, // beneficiary
               goalInWei,
-              deadline
+              deadline,
+              tokenAddress,
+              isNativeToken
             ],
             chain: citreaTestnet,
             chainId: citreaTestnet.id,
@@ -569,6 +614,7 @@ export default function CreateCircle() {
                   lensGroupAddress,
                   poolDeploymentTxHash,
                   circleType: formData.circleType as "contribution" | "rotating" | "fundraising",
+                  currency: formData.currency as "cusd" | "cbtc",
                 });
 
                 console.log("[CreateCircle] Circle saved to database successfully");
@@ -741,13 +787,37 @@ export default function CreateCircle() {
                   ]}
                 />
 
+                {/* Currency Selection */}
+                <RadioGroupField
+                  label="Currency"
+                  name="currency"
+                  value={formData.currency}
+                  onChange={(value) => handleRadioChange("currency", value)}
+                  required
+                  disabled={isSubmitting || isSuccess}
+                  options={[
+                    {
+                      value: "cusd",
+                      label: "USD Stablecoin",
+                      description: "Mock CUSD for testing (ERC20 token)",
+                      icon: <Target className="size-5 text-success-600" />,
+                    },
+                    {
+                      value: "cbtc",
+                      label: "cBTC",
+                      description: "Native Bitcoin on Citrea network",
+                      icon: <Target className="size-5 text-warning-600" />,
+                    },
+                  ]}
+                />
+
                 {/* Contribution Amount - Only for rotating circles */}
                 {formData.circleType === "rotating" && (
                   <FormField
                     label="Contribution Amount"
                     name="contributionAmount"
                     type="number"
-                    placeholder="e.g., 100"
+                    placeholder={formData.currency === "cbtc" ? "e.g., 0.001" : "e.g., 50"}
                     value={formData.contributionAmount}
                     onChange={handleChange}
                     onBlur={handleBlur}
@@ -759,7 +829,8 @@ export default function CreateCircle() {
                     icon={<PiggyBank className="size-5" />}
                     required
                     disabled={isSubmitting || isSuccess}
-                    helperText="Amount each member contributes per 30-day cycle (in USD)"
+                    step="any"
+                    helperText={`Amount each member contributes per 30-day cycle (in ${formData.currency === "cbtc" ? "cBTC" : "USD"})`}
                   />
                 )}
 
@@ -769,7 +840,7 @@ export default function CreateCircle() {
                     label="Fundraising Goal"
                     name="goalAmount"
                     type="number"
-                    placeholder="e.g., 5000"
+                    placeholder={formData.currency === "cbtc" ? "e.g., 0.001" : "e.g., 50"}
                     value={formData.goalAmount}
                     onChange={handleChange}
                     onBlur={handleBlur}
@@ -781,7 +852,8 @@ export default function CreateCircle() {
                     icon={<Target className="size-5" />}
                     required
                     disabled={isSubmitting || isSuccess}
-                    helperText="Target amount to raise (in USD)"
+                    step="any"
+                    helperText={`Target amount to raise (in ${formData.currency === "cbtc" ? "cBTC" : "USD"})`}
                   />
                 )}
 

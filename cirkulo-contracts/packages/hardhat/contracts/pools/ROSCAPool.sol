@@ -1,9 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/utils/Pausable.sol";
 import "../interfaces/IXershaPool.sol";
+import "../libraries/TokenTransfer.sol";
 
 /**
  * @title ROSCAPool
@@ -12,6 +14,8 @@ import "../interfaces/IXershaPool.sol";
  * Payout order is provided off-chain by the creator for fairness and transparency
  */
 contract ROSCAPool is IXershaPool, ReentrancyGuard, Pausable {
+    using TokenTransfer for address;
+
     // ========== Constants ==========
 
     /// @notice Duration of each cycle/round in seconds (30 days)
@@ -33,6 +37,12 @@ contract ROSCAPool is IXershaPool, ReentrancyGuard, Pausable {
 
     /// @notice Human-readable name of the circle
     string public circleName;
+
+    /// @notice Address of the ERC20 token used for contributions (zero address if native token)
+    address public tokenAddress;
+
+    /// @notice Whether this pool uses native token (cBTC) or ERC20 token
+    bool public isNativeToken;
 
     /// @notice Fixed contribution amount per round in wei
     uint256 public contributionAmount;
@@ -76,6 +86,9 @@ contract ROSCAPool is IXershaPool, ReentrancyGuard, Pausable {
     /// @notice Whether the ROSCA has completed all rounds
     bool public isComplete;
 
+    /// @notice Whether this contract has been initialized (for clone pattern)
+    bool private initialized;
+
     // ========== Events ==========
 
     event ROSCACreated(address indexed circleId, address indexed creator, uint256 contributionAmount);
@@ -113,24 +126,49 @@ contract ROSCAPool is IXershaPool, ReentrancyGuard, Pausable {
     // ========== Constructor ==========
 
     /**
-     * @notice Creates a new ROSCA pool
+     * @notice Constructor for implementation contract
+     * @dev Prevents the implementation contract from being initialized
+     */
+    constructor() {
+        initialized = true;
+    }
+
+    /**
+     * @notice Initializes a new ROSCA pool clone
+     * @dev This replaces the constructor for cloned instances
      * @param _creator Address of the user creating the pool
      * @param _circleId Address of the Lens.xyz circle contract
      * @param _circleName Name of the circle
      * @param _contributionAmount Fixed contribution amount per round
+     * @param _tokenAddress Address of the ERC20 token to use for contributions (zero address if native)
+     * @param _isNativeToken Whether this pool uses native token (cBTC) or ERC20 token
      */
-    constructor(
+    function initialize(
         address _creator,
         address _circleId,
         string memory _circleName,
-        uint256 _contributionAmount
-    ) {
+        uint256 _contributionAmount,
+        address _tokenAddress,
+        bool _isNativeToken
+    ) external {
+        require(!initialized, "Already initialized");
+        initialized = true;
+
         require(_contributionAmount > 0, "Invalid contribution amount");
+
+        // Validate token address based on token type
+        if (_isNativeToken) {
+            require(_tokenAddress == address(0), "Token address must be zero for native token");
+        } else {
+            require(_tokenAddress != address(0), "Invalid token address for ERC20");
+        }
 
         creator = _creator;
         circleId = _circleId;
         circleName = _circleName;
         contributionAmount = _contributionAmount;
+        tokenAddress = _tokenAddress;
+        isNativeToken = _isNativeToken;
 
         // Creator automatically becomes a member
         members.push(_creator);
@@ -215,17 +253,19 @@ contract ROSCAPool is IXershaPool, ReentrancyGuard, Pausable {
 
     /**
      * @notice Allows a member to contribute for the current round
-     * @dev Must send exact contribution amount, can only contribute once per round
+     * @dev For ERC20: Member must have approved the contract to spend tokens before calling
+     *      For native token: Must send exact amount of native currency
      */
     function contribute() external payable onlyMember poolActive whenNotPaused nonReentrant {
-        require(msg.value == contributionAmount, "Incorrect amount");
         require(!hasPaid[msg.sender][currentRound], "Already contributed");
         require(currentRound <= members.length, "All rounds complete");
 
         hasPaid[msg.sender][currentRound] = true;
-        totalContributed[msg.sender] += msg.value;
+        totalContributed[msg.sender] += contributionAmount;
 
-        emit ContributionMade(msg.sender, currentRound, msg.value);
+        TokenTransfer.receiveTokens(tokenAddress, isNativeToken, contributionAmount);
+
+        emit ContributionMade(msg.sender, currentRound, contributionAmount);
 
         if (_everyonePaid()) {
             emit AllMembersContributed(currentRound);
@@ -249,9 +289,7 @@ contract ROSCAPool is IXershaPool, ReentrancyGuard, Pausable {
 
         uint256 payoutAmount = contributionAmount * members.length;
 
-        // Use call instead of transfer for better compatibility
-        (bool success, ) = payable(recipient).call{value: payoutAmount}("");
-        require(success, "Transfer failed");
+        TokenTransfer.sendTokens(tokenAddress, isNativeToken, recipient, payoutAmount);
 
         emit PayoutTriggered(recipient, payoutAmount, currentRound);
 

@@ -1,0 +1,1273 @@
+{
+  "address": "0xB86F87384442d9fAE87769c46126fAe912dB5632",
+  "abi": [
+    {
+      "inputs": [],
+      "stateMutability": "nonpayable",
+      "type": "constructor"
+    },
+    {
+      "inputs": [],
+      "name": "EnforcedPause",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "ExpectedPause",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "ReentrancyGuardReentrantCall",
+      "type": "error"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "internalType": "uint8",
+          "name": "round",
+          "type": "uint8"
+        }
+      ],
+      "name": "AllMembersContributed",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "member",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint8",
+          "name": "round",
+          "type": "uint8"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "amount",
+          "type": "uint256"
+        }
+      ],
+      "name": "ContributionMade",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "member",
+          "type": "address"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "invitedBy",
+          "type": "address"
+        }
+      ],
+      "name": "MemberInvited",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "member",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "timestamp",
+          "type": "uint256"
+        }
+      ],
+      "name": "MemberJoined",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "internalType": "address",
+          "name": "account",
+          "type": "address"
+        }
+      ],
+      "name": "Paused",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "recipient",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "amount",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint8",
+          "name": "round",
+          "type": "uint8"
+        }
+      ],
+      "name": "PayoutTriggered",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "completionTime",
+          "type": "uint256"
+        }
+      ],
+      "name": "ROSCACompleted",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "circleId",
+          "type": "address"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "creator",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "contributionAmount",
+          "type": "uint256"
+        }
+      ],
+      "name": "ROSCACreated",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "internalType": "address[]",
+          "name": "payoutOrder",
+          "type": "address[]"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "startTime",
+          "type": "uint256"
+        }
+      ],
+      "name": "ROSCAStarted",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "internalType": "uint8",
+          "name": "round",
+          "type": "uint8"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "startTime",
+          "type": "uint256"
+        }
+      ],
+      "name": "RoundStarted",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "internalType": "address",
+          "name": "account",
+          "type": "address"
+        }
+      ],
+      "name": "Unpaused",
+      "type": "event"
+    },
+    {
+      "inputs": [],
+      "name": "CYCLE_DURATION",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "MAX_MEMBERS",
+      "outputs": [
+        {
+          "internalType": "uint8",
+          "name": "",
+          "type": "uint8"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "MIN_MEMBERS",
+      "outputs": [
+        {
+          "internalType": "uint8",
+          "name": "",
+          "type": "uint8"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "circleId",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "circleName",
+      "outputs": [
+        {
+          "internalType": "string",
+          "name": "",
+          "type": "string"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "contribute",
+      "outputs": [],
+      "stateMutability": "payable",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "contributionAmount",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "creator",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "currentRound",
+      "outputs": [
+        {
+          "internalType": "uint8",
+          "name": "",
+          "type": "uint8"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "currentRoundPaidOut",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "currentRoundStartTime",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "everyonePaid",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "getBalance",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "getCurrentRecipient",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "getMemberCount",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "getMembers",
+      "outputs": [
+        {
+          "internalType": "address[]",
+          "name": "",
+          "type": "address[]"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "getPayoutOrder",
+      "outputs": [
+        {
+          "internalType": "address[]",
+          "name": "",
+          "type": "address[]"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "getRoundContributors",
+      "outputs": [
+        {
+          "internalType": "address[]",
+          "name": "",
+          "type": "address[]"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        },
+        {
+          "internalType": "uint8",
+          "name": "",
+          "type": "uint8"
+        }
+      ],
+      "name": "hasPaid",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "name": "hasReceivedPayout",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "_creator",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "_circleId",
+          "type": "address"
+        },
+        {
+          "internalType": "string",
+          "name": "_circleName",
+          "type": "string"
+        },
+        {
+          "internalType": "uint256",
+          "name": "_contributionAmount",
+          "type": "uint256"
+        },
+        {
+          "internalType": "address",
+          "name": "_tokenAddress",
+          "type": "address"
+        },
+        {
+          "internalType": "bool",
+          "name": "_isNativeToken",
+          "type": "bool"
+        }
+      ],
+      "name": "initialize",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "member",
+          "type": "address"
+        }
+      ],
+      "name": "inviteMember",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "isActive",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "isComplete",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "name": "isInvited",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "name": "isMember",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "isNativeToken",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "joinPool",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "name": "members",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "pause",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "paused",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "name": "payoutOrder",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "roscaStartTime",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "startNextRound",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address[]",
+          "name": "_payoutOrder",
+          "type": "address[]"
+        }
+      ],
+      "name": "startROSCA",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "tokenAddress",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "name": "totalContributed",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "triggerPayout",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "unpause",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    }
+  ],
+  "transactionHash": "0x6b64c5b33d0db9ffa7c7daa61c8cd760f1c8333b9cf06d737bc1d3903a5bf789",
+  "receipt": {
+    "to": null,
+    "from": "0x8244c1645C1a7890Ef1F0E79AcCf817905Dbcba2",
+    "contractAddress": "0xB86F87384442d9fAE87769c46126fAe912dB5632",
+    "transactionIndex": 1,
+    "gasUsed": "2172565",
+    "logsBloom": "0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+    "blockHash": "0x51603e34b4a183c1feaf99c9fc9549fbcac8d63c11680a0ee1f938aa842a036c",
+    "transactionHash": "0x6b64c5b33d0db9ffa7c7daa61c8cd760f1c8333b9cf06d737bc1d3903a5bf789",
+    "logs": [],
+    "blockNumber": 17211639,
+    "cumulativeGasUsed": "2310957",
+    "status": 1,
+    "byzantium": true
+  },
+  "args": [],
+  "numDeployments": 1,
+  "solcInputHash": "5826f86a7677600ec4f6d996ce30862e",
+  "metadata": "{\"compiler\":{\"version\":\"0.8.20+commit.a1b79de6\"},\"language\":\"Solidity\",\"output\":{\"abi\":[{\"inputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"constructor\"},{\"inputs\":[],\"name\":\"EnforcedPause\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"ExpectedPause\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"ReentrancyGuardReentrantCall\",\"type\":\"error\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint8\",\"name\":\"round\",\"type\":\"uint8\"}],\"name\":\"AllMembersContributed\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"member\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint8\",\"name\":\"round\",\"type\":\"uint8\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"ContributionMade\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"member\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"invitedBy\",\"type\":\"address\"}],\"name\":\"MemberInvited\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"member\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"timestamp\",\"type\":\"uint256\"}],\"name\":\"MemberJoined\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"address\",\"name\":\"account\",\"type\":\"address\"}],\"name\":\"Paused\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"recipient\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"uint8\",\"name\":\"round\",\"type\":\"uint8\"}],\"name\":\"PayoutTriggered\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"completionTime\",\"type\":\"uint256\"}],\"name\":\"ROSCACompleted\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"circleId\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"creator\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"contributionAmount\",\"type\":\"uint256\"}],\"name\":\"ROSCACreated\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"address[]\",\"name\":\"payoutOrder\",\"type\":\"address[]\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"startTime\",\"type\":\"uint256\"}],\"name\":\"ROSCAStarted\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint8\",\"name\":\"round\",\"type\":\"uint8\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"startTime\",\"type\":\"uint256\"}],\"name\":\"RoundStarted\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"address\",\"name\":\"account\",\"type\":\"address\"}],\"name\":\"Unpaused\",\"type\":\"event\"},{\"inputs\":[],\"name\":\"CYCLE_DURATION\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"MAX_MEMBERS\",\"outputs\":[{\"internalType\":\"uint8\",\"name\":\"\",\"type\":\"uint8\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"MIN_MEMBERS\",\"outputs\":[{\"internalType\":\"uint8\",\"name\":\"\",\"type\":\"uint8\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"circleId\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"circleName\",\"outputs\":[{\"internalType\":\"string\",\"name\":\"\",\"type\":\"string\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"contribute\",\"outputs\":[],\"stateMutability\":\"payable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"contributionAmount\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"creator\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"currentRound\",\"outputs\":[{\"internalType\":\"uint8\",\"name\":\"\",\"type\":\"uint8\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"currentRoundPaidOut\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"currentRoundStartTime\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"everyonePaid\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"getBalance\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"getCurrentRecipient\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"getMemberCount\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"getMembers\",\"outputs\":[{\"internalType\":\"address[]\",\"name\":\"\",\"type\":\"address[]\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"getPayoutOrder\",\"outputs\":[{\"internalType\":\"address[]\",\"name\":\"\",\"type\":\"address[]\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"getRoundContributors\",\"outputs\":[{\"internalType\":\"address[]\",\"name\":\"\",\"type\":\"address[]\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"},{\"internalType\":\"uint8\",\"name\":\"\",\"type\":\"uint8\"}],\"name\":\"hasPaid\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"name\":\"hasReceivedPayout\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_creator\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"_circleId\",\"type\":\"address\"},{\"internalType\":\"string\",\"name\":\"_circleName\",\"type\":\"string\"},{\"internalType\":\"uint256\",\"name\":\"_contributionAmount\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"_tokenAddress\",\"type\":\"address\"},{\"internalType\":\"bool\",\"name\":\"_isNativeToken\",\"type\":\"bool\"}],\"name\":\"initialize\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"member\",\"type\":\"address\"}],\"name\":\"inviteMember\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"isActive\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"isComplete\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"name\":\"isInvited\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"name\":\"isMember\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"isNativeToken\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"joinPool\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"name\":\"members\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"pause\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"paused\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"name\":\"payoutOrder\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"roscaStartTime\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"startNextRound\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address[]\",\"name\":\"_payoutOrder\",\"type\":\"address[]\"}],\"name\":\"startROSCA\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"tokenAddress\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"name\":\"totalContributed\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"triggerPayout\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"unpause\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"}],\"devdoc\":{\"details\":\"Members contribute fixed amounts each round, one member receives the pot each round Payout order is provided off-chain by the creator for fairness and transparency\",\"errors\":{\"EnforcedPause()\":[{\"details\":\"The operation failed because the contract is paused.\"}],\"ExpectedPause()\":[{\"details\":\"The operation failed because the contract is not paused.\"}],\"ReentrancyGuardReentrantCall()\":[{\"details\":\"Unauthorized reentrant call.\"}]},\"events\":{\"Paused(address)\":{\"details\":\"Emitted when the pause is triggered by `account`.\"},\"Unpaused(address)\":{\"details\":\"Emitted when the pause is lifted by `account`.\"}},\"kind\":\"dev\",\"methods\":{\"constructor\":{\"details\":\"Prevents the implementation contract from being initialized\"},\"contribute()\":{\"details\":\"For ERC20: Member must have approved the contract to spend tokens before calling      For native token: Must send exact amount of native currency\"},\"everyonePaid()\":{\"returns\":{\"_0\":\"True if all members have contributed, false otherwise\"}},\"getBalance()\":{\"returns\":{\"_0\":\"Balance in wei\"}},\"getCurrentRecipient()\":{\"returns\":{\"_0\":\"Address of the member who should receive payout this round\"}},\"getMemberCount()\":{\"returns\":{\"_0\":\"Member count\"}},\"getMembers()\":{\"returns\":{\"_0\":\"Array of member addresses\"}},\"getPayoutOrder()\":{\"returns\":{\"_0\":\"Array of addresses in payout order\"}},\"getRoundContributors()\":{\"returns\":{\"_0\":\"Array of addresses who have paid\"}},\"initialize(address,address,string,uint256,address,bool)\":{\"details\":\"This replaces the constructor for cloned instances\",\"params\":{\"_circleId\":\"Address of the Lens.xyz circle contract\",\"_circleName\":\"Name of the circle\",\"_contributionAmount\":\"Fixed contribution amount per round\",\"_creator\":\"Address of the user creating the pool\",\"_isNativeToken\":\"Whether this pool uses native token (cBTC) or ERC20 token\",\"_tokenAddress\":\"Address of the ERC20 token to use for contributions (zero address if native)\"}},\"inviteMember(address)\":{\"details\":\"Only creator can invite, only before ROSCA starts\",\"params\":{\"member\":\"Address of the member to invite\"}},\"joinPool()\":{\"details\":\"Can only join before ROSCA starts\"},\"pause()\":{\"details\":\"Only creator can pause\"},\"paused()\":{\"details\":\"Returns true if the contract is paused, and false otherwise.\"},\"startNextRound()\":{\"details\":\"Any member can call this after the 30-day cycle is complete\"},\"startROSCA(address[])\":{\"details\":\"Only creator can start, requires min members, payout order generated off-chain\",\"params\":{\"_payoutOrder\":\"Array of addresses defining payout order (must include all members exactly once)\"}},\"triggerPayout()\":{\"details\":\"Only the designated recipient can trigger their own payout Requires all members to have contributed for the current round\"},\"unpause()\":{\"details\":\"Only creator can unpause\"}},\"title\":\"ROSCAPool\",\"version\":1},\"userdoc\":{\"kind\":\"user\",\"methods\":{\"CYCLE_DURATION()\":{\"notice\":\"Duration of each cycle/round in seconds (30 days)\"},\"MAX_MEMBERS()\":{\"notice\":\"Maximum number of members allowed in a ROSCA\"},\"MIN_MEMBERS()\":{\"notice\":\"Minimum number of members required to start a ROSCA\"},\"circleId()\":{\"notice\":\"Address of the Lens.xyz circle contract\"},\"circleName()\":{\"notice\":\"Human-readable name of the circle\"},\"constructor\":{\"notice\":\"Constructor for implementation contract\"},\"contribute()\":{\"notice\":\"Allows a member to contribute for the current round\"},\"contributionAmount()\":{\"notice\":\"Fixed contribution amount per round in wei\"},\"creator()\":{\"notice\":\"Address of the user who created this pool\"},\"currentRound()\":{\"notice\":\"Current round number (1-indexed)\"},\"currentRoundPaidOut()\":{\"notice\":\"Whether the current round's payout has been completed\"},\"currentRoundStartTime()\":{\"notice\":\"Timestamp when the current round started\"},\"everyonePaid()\":{\"notice\":\"Checks if everyone has paid for the current round\"},\"getBalance()\":{\"notice\":\"Gets the contract's current balance\"},\"getCurrentRecipient()\":{\"notice\":\"Gets the current round's recipient\"},\"getMemberCount()\":{\"notice\":\"Gets the total number of members\"},\"getMembers()\":{\"notice\":\"Gets all members\"},\"getPayoutOrder()\":{\"notice\":\"Gets the complete payout order\"},\"getRoundContributors()\":{\"notice\":\"Gets list of members who have contributed in the current round\"},\"hasPaid(address,uint8)\":{\"notice\":\"Tracks whether a member has paid for a specific round\"},\"hasReceivedPayout(address)\":{\"notice\":\"Mapping to track which members have received their payout\"},\"initialize(address,address,string,uint256,address,bool)\":{\"notice\":\"Initializes a new ROSCA pool clone\"},\"inviteMember(address)\":{\"notice\":\"Invites a new member to the ROSCA\"},\"isActive()\":{\"notice\":\"Whether the ROSCA is currently active\"},\"isComplete()\":{\"notice\":\"Whether the ROSCA has completed all rounds\"},\"isInvited(address)\":{\"notice\":\"Mapping to check if an address has been invited\"},\"isMember(address)\":{\"notice\":\"Mapping to check if an address is a member\"},\"isNativeToken()\":{\"notice\":\"Whether this pool uses native token (cBTC) or ERC20 token\"},\"joinPool()\":{\"notice\":\"Allows an invited member to join the pool\"},\"members(uint256)\":{\"notice\":\"Array of all members in the pool\"},\"pause()\":{\"notice\":\"Pauses the contract in case of emergency\"},\"payoutOrder(uint256)\":{\"notice\":\"Array defining the order in which members receive payouts\"},\"roscaStartTime()\":{\"notice\":\"Timestamp when the ROSCA was started\"},\"startNextRound()\":{\"notice\":\"Starts the next round after the cycle duration has passed\"},\"startROSCA(address[])\":{\"notice\":\"Starts the ROSCA with a provided payout order\"},\"tokenAddress()\":{\"notice\":\"Address of the ERC20 token used for contributions (zero address if native token)\"},\"totalContributed(address)\":{\"notice\":\"Total amount contributed by each member across all rounds\"},\"triggerPayout()\":{\"notice\":\"Triggers the payout for the current round\"},\"unpause()\":{\"notice\":\"Unpauses the contract\"}},\"notice\":\"Rotating Savings and Credit Association pool implementation\",\"version\":1}},\"settings\":{\"compilationTarget\":{\"contracts/pools/ROSCAPool.sol\":\"ROSCAPool\"},\"evmVersion\":\"paris\",\"libraries\":{},\"metadata\":{\"bytecodeHash\":\"ipfs\",\"useLiteralContent\":true},\"optimizer\":{\"enabled\":true,\"runs\":200},\"remappings\":[]},\"sources\":{\"@openzeppelin/contracts/token/ERC20/IERC20.sol\":{\"content\":\"// SPDX-License-Identifier: MIT\\n// OpenZeppelin Contracts (last updated v5.0.0) (token/ERC20/IERC20.sol)\\n\\npragma solidity ^0.8.20;\\n\\n/**\\n * @dev Interface of the ERC20 standard as defined in the EIP.\\n */\\ninterface IERC20 {\\n    /**\\n     * @dev Emitted when `value` tokens are moved from one account (`from`) to\\n     * another (`to`).\\n     *\\n     * Note that `value` may be zero.\\n     */\\n    event Transfer(address indexed from, address indexed to, uint256 value);\\n\\n    /**\\n     * @dev Emitted when the allowance of a `spender` for an `owner` is set by\\n     * a call to {approve}. `value` is the new allowance.\\n     */\\n    event Approval(address indexed owner, address indexed spender, uint256 value);\\n\\n    /**\\n     * @dev Returns the value of tokens in existence.\\n     */\\n    function totalSupply() external view returns (uint256);\\n\\n    /**\\n     * @dev Returns the value of tokens owned by `account`.\\n     */\\n    function balanceOf(address account) external view returns (uint256);\\n\\n    /**\\n     * @dev Moves a `value` amount of tokens from the caller's account to `to`.\\n     *\\n     * Returns a boolean value indicating whether the operation succeeded.\\n     *\\n     * Emits a {Transfer} event.\\n     */\\n    function transfer(address to, uint256 value) external returns (bool);\\n\\n    /**\\n     * @dev Returns the remaining number of tokens that `spender` will be\\n     * allowed to spend on behalf of `owner` through {transferFrom}. This is\\n     * zero by default.\\n     *\\n     * This value changes when {approve} or {transferFrom} are called.\\n     */\\n    function allowance(address owner, address spender) external view returns (uint256);\\n\\n    /**\\n     * @dev Sets a `value` amount of tokens as the allowance of `spender` over the\\n     * caller's tokens.\\n     *\\n     * Returns a boolean value indicating whether the operation succeeded.\\n     *\\n     * IMPORTANT: Beware that changing an allowance with this method brings the risk\\n     * that someone may use both the old and the new allowance by unfortunate\\n     * transaction ordering. One possible solution to mitigate this race\\n     * condition is to first reduce the spender's allowance to 0 and set the\\n     * desired value afterwards:\\n     * https://github.com/ethereum/EIPs/issues/20#issuecomment-263524729\\n     *\\n     * Emits an {Approval} event.\\n     */\\n    function approve(address spender, uint256 value) external returns (bool);\\n\\n    /**\\n     * @dev Moves a `value` amount of tokens from `from` to `to` using the\\n     * allowance mechanism. `value` is then deducted from the caller's\\n     * allowance.\\n     *\\n     * Returns a boolean value indicating whether the operation succeeded.\\n     *\\n     * Emits a {Transfer} event.\\n     */\\n    function transferFrom(address from, address to, uint256 value) external returns (bool);\\n}\\n\",\"keccak256\":\"0xc6a8ff0ea489379b61faa647490411b80102578440ab9d84e9a957cc12164e70\",\"license\":\"MIT\"},\"@openzeppelin/contracts/utils/Context.sol\":{\"content\":\"// SPDX-License-Identifier: MIT\\n// OpenZeppelin Contracts (last updated v5.0.1) (utils/Context.sol)\\n\\npragma solidity ^0.8.20;\\n\\n/**\\n * @dev Provides information about the current execution context, including the\\n * sender of the transaction and its data. While these are generally available\\n * via msg.sender and msg.data, they should not be accessed in such a direct\\n * manner, since when dealing with meta-transactions the account sending and\\n * paying for execution may not be the actual sender (as far as an application\\n * is concerned).\\n *\\n * This contract is only required for intermediate, library-like contracts.\\n */\\nabstract contract Context {\\n    function _msgSender() internal view virtual returns (address) {\\n        return msg.sender;\\n    }\\n\\n    function _msgData() internal view virtual returns (bytes calldata) {\\n        return msg.data;\\n    }\\n\\n    function _contextSuffixLength() internal view virtual returns (uint256) {\\n        return 0;\\n    }\\n}\\n\",\"keccak256\":\"0x493033a8d1b176a037b2cc6a04dad01a5c157722049bbecf632ca876224dd4b2\",\"license\":\"MIT\"},\"@openzeppelin/contracts/utils/Pausable.sol\":{\"content\":\"// SPDX-License-Identifier: MIT\\n// OpenZeppelin Contracts (last updated v5.0.0) (utils/Pausable.sol)\\n\\npragma solidity ^0.8.20;\\n\\nimport {Context} from \\\"../utils/Context.sol\\\";\\n\\n/**\\n * @dev Contract module which allows children to implement an emergency stop\\n * mechanism that can be triggered by an authorized account.\\n *\\n * This module is used through inheritance. It will make available the\\n * modifiers `whenNotPaused` and `whenPaused`, which can be applied to\\n * the functions of your contract. Note that they will not be pausable by\\n * simply including this module, only once the modifiers are put in place.\\n */\\nabstract contract Pausable is Context {\\n    bool private _paused;\\n\\n    /**\\n     * @dev Emitted when the pause is triggered by `account`.\\n     */\\n    event Paused(address account);\\n\\n    /**\\n     * @dev Emitted when the pause is lifted by `account`.\\n     */\\n    event Unpaused(address account);\\n\\n    /**\\n     * @dev The operation failed because the contract is paused.\\n     */\\n    error EnforcedPause();\\n\\n    /**\\n     * @dev The operation failed because the contract is not paused.\\n     */\\n    error ExpectedPause();\\n\\n    /**\\n     * @dev Initializes the contract in unpaused state.\\n     */\\n    constructor() {\\n        _paused = false;\\n    }\\n\\n    /**\\n     * @dev Modifier to make a function callable only when the contract is not paused.\\n     *\\n     * Requirements:\\n     *\\n     * - The contract must not be paused.\\n     */\\n    modifier whenNotPaused() {\\n        _requireNotPaused();\\n        _;\\n    }\\n\\n    /**\\n     * @dev Modifier to make a function callable only when the contract is paused.\\n     *\\n     * Requirements:\\n     *\\n     * - The contract must be paused.\\n     */\\n    modifier whenPaused() {\\n        _requirePaused();\\n        _;\\n    }\\n\\n    /**\\n     * @dev Returns true if the contract is paused, and false otherwise.\\n     */\\n    function paused() public view virtual returns (bool) {\\n        return _paused;\\n    }\\n\\n    /**\\n     * @dev Throws if the contract is paused.\\n     */\\n    function _requireNotPaused() internal view virtual {\\n        if (paused()) {\\n            revert EnforcedPause();\\n        }\\n    }\\n\\n    /**\\n     * @dev Throws if the contract is not paused.\\n     */\\n    function _requirePaused() internal view virtual {\\n        if (!paused()) {\\n            revert ExpectedPause();\\n        }\\n    }\\n\\n    /**\\n     * @dev Triggers stopped state.\\n     *\\n     * Requirements:\\n     *\\n     * - The contract must not be paused.\\n     */\\n    function _pause() internal virtual whenNotPaused {\\n        _paused = true;\\n        emit Paused(_msgSender());\\n    }\\n\\n    /**\\n     * @dev Returns to normal state.\\n     *\\n     * Requirements:\\n     *\\n     * - The contract must be paused.\\n     */\\n    function _unpause() internal virtual whenPaused {\\n        _paused = false;\\n        emit Unpaused(_msgSender());\\n    }\\n}\\n\",\"keccak256\":\"0xb2e5f50762c27fb4b123e3619c3c02bdcba5e515309382e5bfb6f7d6486510bd\",\"license\":\"MIT\"},\"@openzeppelin/contracts/utils/ReentrancyGuard.sol\":{\"content\":\"// SPDX-License-Identifier: MIT\\n// OpenZeppelin Contracts (last updated v5.0.0) (utils/ReentrancyGuard.sol)\\n\\npragma solidity ^0.8.20;\\n\\n/**\\n * @dev Contract module that helps prevent reentrant calls to a function.\\n *\\n * Inheriting from `ReentrancyGuard` will make the {nonReentrant} modifier\\n * available, which can be applied to functions to make sure there are no nested\\n * (reentrant) calls to them.\\n *\\n * Note that because there is a single `nonReentrant` guard, functions marked as\\n * `nonReentrant` may not call one another. This can be worked around by making\\n * those functions `private`, and then adding `external` `nonReentrant` entry\\n * points to them.\\n *\\n * TIP: If you would like to learn more about reentrancy and alternative ways\\n * to protect against it, check out our blog post\\n * https://blog.openzeppelin.com/reentrancy-after-istanbul/[Reentrancy After Istanbul].\\n */\\nabstract contract ReentrancyGuard {\\n    // Booleans are more expensive than uint256 or any type that takes up a full\\n    // word because each write operation emits an extra SLOAD to first read the\\n    // slot's contents, replace the bits taken up by the boolean, and then write\\n    // back. This is the compiler's defense against contract upgrades and\\n    // pointer aliasing, and it cannot be disabled.\\n\\n    // The values being non-zero value makes deployment a bit more expensive,\\n    // but in exchange the refund on every call to nonReentrant will be lower in\\n    // amount. Since refunds are capped to a percentage of the total\\n    // transaction's gas, it is best to keep them low in cases like this one, to\\n    // increase the likelihood of the full refund coming into effect.\\n    uint256 private constant NOT_ENTERED = 1;\\n    uint256 private constant ENTERED = 2;\\n\\n    uint256 private _status;\\n\\n    /**\\n     * @dev Unauthorized reentrant call.\\n     */\\n    error ReentrancyGuardReentrantCall();\\n\\n    constructor() {\\n        _status = NOT_ENTERED;\\n    }\\n\\n    /**\\n     * @dev Prevents a contract from calling itself, directly or indirectly.\\n     * Calling a `nonReentrant` function from another `nonReentrant`\\n     * function is not supported. It is possible to prevent this from happening\\n     * by making the `nonReentrant` function external, and making it call a\\n     * `private` function that does the actual work.\\n     */\\n    modifier nonReentrant() {\\n        _nonReentrantBefore();\\n        _;\\n        _nonReentrantAfter();\\n    }\\n\\n    function _nonReentrantBefore() private {\\n        // On the first call to nonReentrant, _status will be NOT_ENTERED\\n        if (_status == ENTERED) {\\n            revert ReentrancyGuardReentrantCall();\\n        }\\n\\n        // Any calls to nonReentrant after this point will fail\\n        _status = ENTERED;\\n    }\\n\\n    function _nonReentrantAfter() private {\\n        // By storing the original value once again, a refund is triggered (see\\n        // https://eips.ethereum.org/EIPS/eip-2200)\\n        _status = NOT_ENTERED;\\n    }\\n\\n    /**\\n     * @dev Returns true if the reentrancy guard is currently set to \\\"entered\\\", which indicates there is a\\n     * `nonReentrant` function in the call stack.\\n     */\\n    function _reentrancyGuardEntered() internal view returns (bool) {\\n        return _status == ENTERED;\\n    }\\n}\\n\",\"keccak256\":\"0xf980daa263b661ab8ddee7d4fd833c7da7e7995e2c359ff1f17e67e4112f2236\",\"license\":\"MIT\"},\"contracts/interfaces/IXershaPool.sol\":{\"content\":\"// SPDX-License-Identifier: MIT\\npragma solidity ^0.8.20;\\n\\n/**\\n * @title IXershaPool\\n * @notice Base interface for all Xersha pool types\\n * @dev Common interface elements shared across ROSCA, Savings, and Donation pools\\n */\\ninterface IXershaPool {\\n    /**\\n     * @notice Returns the address of the circle (Lens.xyz contract) this pool belongs to\\n     * @return The circle contract address\\n     */\\n    function circleId() external view returns (address);\\n\\n    /**\\n     * @notice Returns the address of the user who created this pool\\n     * @return The creator's address\\n     */\\n    function creator() external view returns (address);\\n\\n    /**\\n     * @notice Returns the human-readable name of the circle\\n     * @return The circle name\\n     */\\n    function circleName() external view returns (string memory);\\n\\n    /**\\n     * @notice Returns whether the pool is currently active\\n     * @return True if pool is active, false otherwise\\n     */\\n    function isActive() external view returns (bool);\\n\\n    /**\\n     * @notice Returns the list of all members in the pool\\n     * @return Array of member addresses\\n     */\\n    function getMembers() external view returns (address[] memory);\\n\\n    /**\\n     * @notice Returns the total number of members in the pool\\n     * @return Member count\\n     */\\n    function getMemberCount() external view returns (uint256);\\n}\\n\",\"keccak256\":\"0xd2c7c0badc538eded859db0878717a051e963062f67e0130fa55168c5d898c9f\",\"license\":\"MIT\"},\"contracts/libraries/TokenTransfer.sol\":{\"content\":\"// SPDX-License-Identifier: MIT\\npragma solidity ^0.8.20;\\n\\nimport \\\"@openzeppelin/contracts/token/ERC20/IERC20.sol\\\";\\n\\n/**\\n * @title TokenTransfer\\n * @notice Library for handling both native token and ERC20 token transfers\\n * @dev Reduces code duplication across pool contracts\\n */\\nlibrary TokenTransfer {\\n    /**\\n     * @notice Receives tokens from sender (either native or ERC20)\\n     * @param tokenAddress Address of the ERC20 token (zero address if native)\\n     * @param isNativeToken Whether this is a native token transfer\\n     * @param amount Amount of tokens to receive (for ERC20) or 0 (for native)\\n     * @return The actual amount received\\n     */\\n    function receiveTokens(\\n        address tokenAddress,\\n        bool isNativeToken,\\n        uint256 amount\\n    ) internal returns (uint256) {\\n        if (isNativeToken) {\\n            require(msg.value > 0, \\\"Must send native token\\\");\\n            return msg.value;\\n        } else {\\n            require(msg.value == 0, \\\"No native token\\\");\\n            IERC20(tokenAddress).transferFrom(msg.sender, address(this), amount);\\n            return amount;\\n        }\\n    }\\n\\n    /**\\n     * @notice Sends tokens to recipient (either native or ERC20)\\n     * @param tokenAddress Address of the ERC20 token (zero address if native)\\n     * @param isNativeToken Whether this is a native token transfer\\n     * @param recipient Address to send tokens to\\n     * @param amount Amount of tokens to send\\n     */\\n    function sendTokens(\\n        address tokenAddress,\\n        bool isNativeToken,\\n        address recipient,\\n        uint256 amount\\n    ) internal {\\n        if (isNativeToken) {\\n            (bool success, ) = payable(recipient).call{value: amount}(\\\"\\\");\\n            require(success, \\\"Transfer failed\\\");\\n        } else {\\n            IERC20(tokenAddress).transfer(recipient, amount);\\n        }\\n    }\\n}\\n\",\"keccak256\":\"0x8c116fcbb351414ae623d0b922a11014c69284a82783f7b97ddfbbc41c755094\",\"license\":\"MIT\"},\"contracts/pools/ROSCAPool.sol\":{\"content\":\"// SPDX-License-Identifier: MIT\\npragma solidity ^0.8.20;\\n\\nimport \\\"@openzeppelin/contracts/token/ERC20/IERC20.sol\\\";\\nimport \\\"@openzeppelin/contracts/utils/ReentrancyGuard.sol\\\";\\nimport \\\"@openzeppelin/contracts/utils/Pausable.sol\\\";\\nimport \\\"../interfaces/IXershaPool.sol\\\";\\nimport \\\"../libraries/TokenTransfer.sol\\\";\\n\\n/**\\n * @title ROSCAPool\\n * @notice Rotating Savings and Credit Association pool implementation\\n * @dev Members contribute fixed amounts each round, one member receives the pot each round\\n * Payout order is provided off-chain by the creator for fairness and transparency\\n */\\ncontract ROSCAPool is IXershaPool, ReentrancyGuard, Pausable {\\n    using TokenTransfer for address;\\n\\n    // ========== Constants ==========\\n\\n    /// @notice Duration of each cycle/round in seconds (30 days)\\n    uint256 public constant CYCLE_DURATION = 30 days;\\n\\n    /// @notice Minimum number of members required to start a ROSCA\\n    uint8 public constant MIN_MEMBERS = 5;\\n\\n    /// @notice Maximum number of members allowed in a ROSCA\\n    uint8 public constant MAX_MEMBERS = 12;\\n\\n    // ========== State Variables ==========\\n\\n    /// @notice Address of the user who created this pool\\n    address public creator;\\n\\n    /// @notice Address of the Lens.xyz circle contract\\n    address public circleId;\\n\\n    /// @notice Human-readable name of the circle\\n    string public circleName;\\n\\n    /// @notice Address of the ERC20 token used for contributions (zero address if native token)\\n    address public tokenAddress;\\n\\n    /// @notice Whether this pool uses native token (cBTC) or ERC20 token\\n    bool public isNativeToken;\\n\\n    /// @notice Fixed contribution amount per round in wei\\n    uint256 public contributionAmount;\\n\\n    /// @notice Array of all members in the pool\\n    address[] public members;\\n\\n    /// @notice Mapping to check if an address is a member\\n    mapping(address => bool) public isMember;\\n\\n    /// @notice Mapping to check if an address has been invited\\n    mapping(address => bool) public isInvited;\\n\\n    /// @notice Total amount contributed by each member across all rounds\\n    mapping(address => uint256) public totalContributed;\\n\\n    /// @notice Array defining the order in which members receive payouts\\n    address[] public payoutOrder;\\n\\n    /// @notice Current round number (1-indexed)\\n    uint8 public currentRound;\\n\\n    /// @notice Whether the current round's payout has been completed\\n    bool public currentRoundPaidOut;\\n\\n    /// @notice Mapping to track which members have received their payout\\n    mapping(address => bool) public hasReceivedPayout;\\n\\n    /// @notice Tracks whether a member has paid for a specific round\\n    mapping(address => mapping(uint8 => bool)) public hasPaid;\\n\\n    /// @notice Timestamp when the ROSCA was started\\n    uint256 public roscaStartTime;\\n\\n    /// @notice Timestamp when the current round started\\n    uint256 public currentRoundStartTime;\\n\\n    /// @notice Whether the ROSCA is currently active\\n    bool public isActive;\\n\\n    /// @notice Whether the ROSCA has completed all rounds\\n    bool public isComplete;\\n\\n    /// @notice Whether this contract has been initialized (for clone pattern)\\n    bool private initialized;\\n\\n    // ========== Events ==========\\n\\n    event ROSCACreated(address indexed circleId, address indexed creator, uint256 contributionAmount);\\n    event MemberInvited(address indexed member, address indexed invitedBy);\\n    event MemberJoined(address indexed member, uint256 timestamp);\\n    event ROSCAStarted(address[] payoutOrder, uint256 startTime);\\n    event ContributionMade(address indexed member, uint8 round, uint256 amount);\\n    event AllMembersContributed(uint8 round);\\n    event PayoutTriggered(address indexed recipient, uint256 amount, uint8 round);\\n    event RoundStarted(uint8 round, uint256 startTime);\\n    event ROSCACompleted(uint256 completionTime);\\n\\n    // ========== Modifiers ==========\\n\\n    modifier onlyCreator() {\\n        require(msg.sender == creator, \\\"Only creator can call this\\\");\\n        _;\\n    }\\n\\n    modifier onlyMember() {\\n        require(isMember[msg.sender], \\\"Not a member\\\");\\n        _;\\n    }\\n\\n    modifier onlyInvited() {\\n        require(isInvited[msg.sender], \\\"Not invited\\\");\\n        _;\\n    }\\n\\n    modifier poolActive() {\\n        require(isActive && !isComplete, \\\"Pool not active\\\");\\n        _;\\n    }\\n\\n    // ========== Constructor ==========\\n\\n    /**\\n     * @notice Constructor for implementation contract\\n     * @dev Prevents the implementation contract from being initialized\\n     */\\n    constructor() {\\n        initialized = true;\\n    }\\n\\n    /**\\n     * @notice Initializes a new ROSCA pool clone\\n     * @dev This replaces the constructor for cloned instances\\n     * @param _creator Address of the user creating the pool\\n     * @param _circleId Address of the Lens.xyz circle contract\\n     * @param _circleName Name of the circle\\n     * @param _contributionAmount Fixed contribution amount per round\\n     * @param _tokenAddress Address of the ERC20 token to use for contributions (zero address if native)\\n     * @param _isNativeToken Whether this pool uses native token (cBTC) or ERC20 token\\n     */\\n    function initialize(\\n        address _creator,\\n        address _circleId,\\n        string memory _circleName,\\n        uint256 _contributionAmount,\\n        address _tokenAddress,\\n        bool _isNativeToken\\n    ) external {\\n        require(!initialized, \\\"Already initialized\\\");\\n        initialized = true;\\n\\n        require(_contributionAmount > 0, \\\"Invalid contribution amount\\\");\\n\\n        // Validate token address based on token type\\n        if (_isNativeToken) {\\n            require(_tokenAddress == address(0), \\\"Token address must be zero for native token\\\");\\n        } else {\\n            require(_tokenAddress != address(0), \\\"Invalid token address for ERC20\\\");\\n        }\\n\\n        creator = _creator;\\n        circleId = _circleId;\\n        circleName = _circleName;\\n        contributionAmount = _contributionAmount;\\n        tokenAddress = _tokenAddress;\\n        isNativeToken = _isNativeToken;\\n\\n        // Creator automatically becomes a member\\n        members.push(_creator);\\n        isMember[_creator] = true;\\n        isInvited[_creator] = true;\\n\\n        emit ROSCACreated(_circleId, _creator, _contributionAmount);\\n        emit MemberJoined(_creator, block.timestamp);\\n    }\\n\\n    // ========== Member Management ==========\\n\\n    /**\\n     * @notice Invites a new member to the ROSCA\\n     * @dev Only creator can invite, only before ROSCA starts\\n     * @param member Address of the member to invite\\n     */\\n    function inviteMember(address member) external onlyCreator whenNotPaused {\\n        require(!isActive, \\\"Cannot invite after ROSCA starts\\\");\\n        require(!isInvited[member], \\\"Already invited\\\");\\n        require(members.length < MAX_MEMBERS, \\\"Max members reached\\\");\\n\\n        isInvited[member] = true;\\n        emit MemberInvited(member, creator);\\n    }\\n\\n    /**\\n     * @notice Allows an invited member to join the pool\\n     * @dev Can only join before ROSCA starts\\n     */\\n    function joinPool() external onlyInvited whenNotPaused {\\n        require(!isActive, \\\"Cannot join after ROSCA starts\\\");\\n        require(!isMember[msg.sender], \\\"Already a member\\\");\\n\\n        members.push(msg.sender);\\n        isMember[msg.sender] = true;\\n\\n        emit MemberJoined(msg.sender, block.timestamp);\\n    }\\n\\n    // ========== ROSCA Lifecycle ==========\\n\\n    /**\\n     * @notice Starts the ROSCA with a provided payout order\\n     * @dev Only creator can start, requires min members, payout order generated off-chain\\n     * @param _payoutOrder Array of addresses defining payout order (must include all members exactly once)\\n     */\\n    function startROSCA(address[] calldata _payoutOrder) external onlyCreator whenNotPaused {\\n        require(!isActive, \\\"Already started\\\");\\n        require(members.length >= MIN_MEMBERS, \\\"Not enough members\\\");\\n        require(_payoutOrder.length == members.length, \\\"Invalid payout order length\\\");\\n\\n        // Validate payout order contains all members exactly once\\n        _validatePayoutOrder(_payoutOrder);\\n\\n        payoutOrder = _payoutOrder;\\n        isActive = true;\\n        currentRound = 1;\\n        roscaStartTime = block.timestamp;\\n        currentRoundStartTime = block.timestamp;\\n\\n        emit ROSCAStarted(_payoutOrder, block.timestamp);\\n        emit RoundStarted(1, block.timestamp);\\n    }\\n\\n    /**\\n     * @notice Validates that payout order contains all members exactly once\\n     * @param _payoutOrder The payout order array to validate\\n     */\\n    function _validatePayoutOrder(address[] calldata _payoutOrder) private view {\\n        // Validate each member is in the payout order and check for duplicates\\n        for (uint256 i = 0; i < _payoutOrder.length; i++) {\\n            address recipient = _payoutOrder[i];\\n            require(isMember[recipient], \\\"Payout order contains non-member\\\");\\n\\n            // Check for duplicates by using a simple loop (gas-efficient for small arrays)\\n            for (uint256 j = i + 1; j < _payoutOrder.length; j++) {\\n                require(_payoutOrder[i] != _payoutOrder[j], \\\"Duplicate in payout order\\\");\\n            }\\n        }\\n    }\\n\\n    /**\\n     * @notice Allows a member to contribute for the current round\\n     * @dev For ERC20: Member must have approved the contract to spend tokens before calling\\n     *      For native token: Must send exact amount of native currency\\n     */\\n    function contribute() external payable onlyMember poolActive whenNotPaused nonReentrant {\\n        require(!hasPaid[msg.sender][currentRound], \\\"Already contributed\\\");\\n        require(currentRound <= members.length, \\\"All rounds complete\\\");\\n\\n        hasPaid[msg.sender][currentRound] = true;\\n        totalContributed[msg.sender] += contributionAmount;\\n\\n        TokenTransfer.receiveTokens(tokenAddress, isNativeToken, contributionAmount);\\n\\n        emit ContributionMade(msg.sender, currentRound, contributionAmount);\\n\\n        if (_everyonePaid()) {\\n            emit AllMembersContributed(currentRound);\\n        }\\n    }\\n\\n    /**\\n     * @notice Triggers the payout for the current round\\n     * @dev Only the designated recipient can trigger their own payout\\n     * Requires all members to have contributed for the current round\\n     */\\n    function triggerPayout() external poolActive whenNotPaused nonReentrant {\\n        require(_everyonePaid(), \\\"Not everyone has paid\\\");\\n        require(!currentRoundPaidOut, \\\"Round already paid out\\\");\\n\\n        address recipient = payoutOrder[currentRound - 1];\\n        require(msg.sender == recipient, \\\"Only recipient can claim payout\\\");\\n\\n        currentRoundPaidOut = true;\\n        hasReceivedPayout[recipient] = true;\\n\\n        uint256 payoutAmount = contributionAmount * members.length;\\n\\n        TokenTransfer.sendTokens(tokenAddress, isNativeToken, recipient, payoutAmount);\\n\\n        emit PayoutTriggered(recipient, payoutAmount, currentRound);\\n\\n        // Check if ROSCA is complete\\n        if (currentRound >= members.length) {\\n            isComplete = true;\\n            isActive = false;\\n            emit ROSCACompleted(block.timestamp);\\n        }\\n    }\\n\\n    /**\\n     * @notice Starts the next round after the cycle duration has passed\\n     * @dev Any member can call this after the 30-day cycle is complete\\n     */\\n    function startNextRound() external onlyMember whenNotPaused {\\n        require(isActive && !isComplete, \\\"ROSCA not active\\\");\\n        require(currentRoundPaidOut, \\\"Current round not paid out\\\");\\n        require(currentRound < members.length, \\\"All rounds complete\\\");\\n        require(\\n            block.timestamp >= currentRoundStartTime + CYCLE_DURATION,\\n            \\\"30-day cycle not complete\\\"\\n        );\\n\\n        currentRound++;\\n        currentRoundStartTime = block.timestamp;\\n        currentRoundPaidOut = false;\\n\\n        emit RoundStarted(currentRound, block.timestamp);\\n    }\\n\\n    // ========== Emergency Functions ==========\\n\\n    /**\\n     * @notice Pauses the contract in case of emergency\\n     * @dev Only creator can pause\\n     */\\n    function pause() external onlyCreator {\\n        _pause();\\n    }\\n\\n    /**\\n     * @notice Unpauses the contract\\n     * @dev Only creator can unpause\\n     */\\n    function unpause() external onlyCreator {\\n        _unpause();\\n    }\\n\\n    // ========== View Functions ==========\\n\\n    /**\\n     * @notice Checks if everyone has paid for the current round\\n     * @return True if all members have contributed, false otherwise\\n     */\\n    function everyonePaid() external view returns (bool) {\\n        return _everyonePaid();\\n    }\\n\\n    /**\\n     * @notice Internal function to check if everyone has paid\\n     * @return True if all members have contributed, false otherwise\\n     */\\n    function _everyonePaid() private view returns (bool) {\\n        for (uint256 i = 0; i < members.length; i++) {\\n            if (!hasPaid[members[i]][currentRound]) {\\n                return false;\\n            }\\n        }\\n        return true;\\n    }\\n\\n    /**\\n     * @notice Gets the current round's recipient\\n     * @return Address of the member who should receive payout this round\\n     */\\n    function getCurrentRecipient() external view returns (address) {\\n        if (currentRound == 0 || currentRound > payoutOrder.length) {\\n            return address(0);\\n        }\\n        return payoutOrder[currentRound - 1];\\n    }\\n\\n    /**\\n     * @notice Gets the total number of members\\n     * @return Member count\\n     */\\n    function getMemberCount() external view returns (uint256) {\\n        return members.length;\\n    }\\n\\n    /**\\n     * @notice Gets all members\\n     * @return Array of member addresses\\n     */\\n    function getMembers() external view returns (address[] memory) {\\n        return members;\\n    }\\n\\n    /**\\n     * @notice Gets the complete payout order\\n     * @return Array of addresses in payout order\\n     */\\n    function getPayoutOrder() external view returns (address[] memory) {\\n        return payoutOrder;\\n    }\\n\\n    /**\\n     * @notice Gets list of members who have contributed in the current round\\n     * @return Array of addresses who have paid\\n     */\\n    function getRoundContributors() external view returns (address[] memory) {\\n        uint256 contributorCount = 0;\\n\\n        // Count contributors\\n        for (uint256 i = 0; i < members.length; i++) {\\n            if (hasPaid[members[i]][currentRound]) {\\n                contributorCount++;\\n            }\\n        }\\n\\n        // Build contributor array\\n        address[] memory contributors = new address[](contributorCount);\\n        uint256 index = 0;\\n\\n        for (uint256 i = 0; i < members.length; i++) {\\n            if (hasPaid[members[i]][currentRound]) {\\n                contributors[index] = members[i];\\n                index++;\\n            }\\n        }\\n\\n        return contributors;\\n    }\\n\\n    /**\\n     * @notice Gets the contract's current balance\\n     * @return Balance in wei\\n     */\\n    function getBalance() external view returns (uint256) {\\n        return address(this).balance;\\n    }\\n}\\n\",\"keccak256\":\"0x176ad94e373a56387f4de87e157cba58234c3893a8d509387f07778e604a777b\",\"license\":\"MIT\"}},\"version\":1}",
+  "bytecode": "0x608060405234801561001057600080fd5b5060016000819055805460ff191690556010805462ff000019166201000017905561257b806100406000396000f3fe6080604052600436106102305760003560e01c80635fa0b65f1161012e578063a230c524116100ab578063cd421fbf1161006f578063cd421fbf14610673578063d7bb99ba1461068a578063d9a6722014610692578063ea0e35b1146106a7578063eca42fba146106bc57600080fd5b8063a230c524146105cc578063a9e6c7fb146105fc578063b2fa1c9e14610612578063c30db74614610631578063cccf25601461065157600080fd5b8063997072f7116100f2578063997072f7146105345780639af4ee7e146105495780639d76ea581461056a5780639eab52531461058a578063a0f243b81461059f57600080fd5b80635fa0b65f146104b357806362a4e0f1146104c95780638371e6b4146104de5780638456cb59146104f35780638a19c8bc1461050857600080fd5b80632f890b93116101bc5780633f4ba83a116101805780633f4ba83a1461042f57806343662f4e1461044457806359bbcb3d146104665780635c975abb1461047b5780635daf08ca1461049357600080fd5b80632f890b9314610379578063346477c714610399578063380dd901146103c95780633c3ccc44146103df5780633f08399c146103f457600080fd5b806312065fe01161020357806312065fe0146102dd57806316d3a990146102fa578063194e36f51461031a5780631dcbe5001461032f57806322f3e2d41461035f57600080fd5b806302d05d3f1461023557806305a95f0414610277578063063fcfcc1461028e5780630b529a17146102bd575b600080fd5b34801561024157600080fd5b5060015461025a9061010090046001600160a01b031681565b6040516001600160a01b0390911681526020015b60405180910390f35b34801561028357600080fd5b5061028c6106dc565b005b34801561029a57600080fd5b50600b546102ad90610100900460ff1681565b604051901515815260200161026e565b3480156102c957600080fd5b5061025a6102d8366004611fdd565b61098f565b3480156102e957600080fd5b50475b60405190815260200161026e565b34801561030657600080fd5b5061028c610315366004612044565b6109b9565b34801561032657600080fd5b5061025a610ca3565b34801561033b57600080fd5b506102ad61034a366004612140565b60086020526000908152604090205460ff1681565b34801561036b57600080fd5b506010546102ad9060ff1681565b34801561038557600080fd5b5061028c610394366004612140565b610d0b565b3480156103a557600080fd5b506102ad6103b4366004612140565b600c6020526000908152604090205460ff1681565b3480156103d557600080fd5b506102ec600f5481565b3480156103eb57600080fd5b5061028c610e94565b34801561040057600080fd5b506102ad61040f36600461215b565b600d60209081526000928352604080842090915290825290205460ff1681565b34801561043b57600080fd5b5061028c6110c7565b34801561045057600080fd5b506104596110fe565b60405161026e9190612198565b34801561047257600080fd5b506102ad611160565b34801561048757600080fd5b5060015460ff166102ad565b34801561049f57600080fd5b5061025a6104ae366004611fdd565b61116f565b3480156104bf57600080fd5b506102ec60055481565b3480156104d557600080fd5b5061045961117f565b3480156104ea57600080fd5b5061028c61132d565b3480156104ff57600080fd5b5061028c6114c0565b34801561051457600080fd5b50600b546105229060ff1681565b60405160ff909116815260200161026e565b34801561054057600080fd5b506006546102ec565b34801561055557600080fd5b506004546102ad90600160a01b900460ff1681565b34801561057657600080fd5b5060045461025a906001600160a01b031681565b34801561059657600080fd5b506104596114f7565b3480156105ab57600080fd5b506102ec6105ba366004612140565b60096020526000908152604090205481565b3480156105d857600080fd5b506102ad6105e7366004612140565b60076020526000908152604090205460ff1681565b34801561060857600080fd5b506102ec600e5481565b34801561061e57600080fd5b506010546102ad90610100900460ff1681565b34801561063d57600080fd5b5060025461025a906001600160a01b031681565b34801561065d57600080fd5b50610666611557565b60405161026e91906121e5565b34801561067f57600080fd5b506102ec62278d0081565b61028c6115e5565b34801561069e57600080fd5b50610522600581565b3480156106b357600080fd5b50610522600c81565b3480156106c857600080fd5b5061028c6106d7366004612233565b611859565b60105460ff1680156106f65750601054610100900460ff16155b6107395760405162461bcd60e51b815260206004820152600f60248201526e506f6f6c206e6f742061637469766560881b60448201526064015b60405180910390fd5b610741611a24565b610749611a48565b610751611a72565b6107955760405162461bcd60e51b8152602060048201526015602482015274139bdd08195d995c9e5bdb99481a185cc81c185a59605a1b6044820152606401610730565b600b54610100900460ff16156107e65760405162461bcd60e51b8152602060048201526016602482015275149bdd5b9908185b1c9958591e481c185a59081bdd5d60521b6044820152606401610730565b600b54600090600a906107fe9060019060ff166122be565b60ff1681548110610811576108116122dd565b6000918252602090912001546001600160a01b031690503381146108775760405162461bcd60e51b815260206004820152601f60248201527f4f6e6c7920726563697069656e742063616e20636c61696d207061796f7574006044820152606401610730565b600b805461ff0019166101001790556001600160a01b0381166000908152600c60205260408120805460ff191660011790556006546005546108b991906122f3565b6004549091506108df906001600160a01b03811690600160a01b900460ff168484611af3565b600b546040805183815260ff90921660208301526001600160a01b038416917f882acae0bded9e8351bc191c3a610fdfdfc5c20f670b69c7569ae0fbdeda81b8910160405180910390a2600654600b5460ff1610610981576010805461ffff19166101001790556040517fd57799724d5c069e66abd552aca9bc70e8f36d98f34d0d84841983bc469a4e4a906109789042815260200190565b60405180910390a15b505061098d6001600055565b565b600a818154811061099f57600080fd5b6000918252602090912001546001600160a01b0316905081565b60105462010000900460ff1615610a085760405162461bcd60e51b8152602060048201526013602482015272105b1c9958591e481a5b9a5d1a585b1a5e9959606a1b6044820152606401610730565b6010805462ff000019166201000017905582610a665760405162461bcd60e51b815260206004820152601b60248201527f496e76616c696420636f6e747269627574696f6e20616d6f756e7400000000006044820152606401610730565b8015610adc576001600160a01b03821615610ad75760405162461bcd60e51b815260206004820152602b60248201527f546f6b656e2061646472657373206d757374206265207a65726f20666f72206e60448201526a30ba34bb32903a37b5b2b760a91b6064820152608401610730565b610b32565b6001600160a01b038216610b325760405162461bcd60e51b815260206004820152601f60248201527f496e76616c696420746f6b656e206164647265737320666f72204552433230006044820152606401610730565b60018054610100600160a81b0319166101006001600160a01b038981169190910291909117909155600280546001600160a01b0319169187169190911790556003610b7d8582612392565b506005839055600480546001600160a01b038481166001600160a81b031990921691909117600160a01b84151502179091556006805460018181019092557ff652222313e28459528d920b65115c16c04f3efc82aaedc97be59f3f377c0d3f0180546001600160a01b0319168984169081179091556000818152600760209081526040808320805460ff19908116871790915560088352928190208054909316909417909155915186815290928816917f8e5acdd034f8bf8fded53cd37f8b0cb6a72b385988e92dc71f664f5dfcfcd8a7910160405180910390a3856001600160a01b03167f7f3b9effe05cfb4f31f854004de03199fd03fe56bf38a48b2aa9a9f4402d6e2342604051610c9391815260200190565b60405180910390a2505050505050565b600b5460009060ff161580610cbe5750600a54600b5460ff16115b15610cc95750600090565b600b54600a90610cde9060019060ff166122be565b60ff1681548110610cf157610cf16122dd565b6000918252602090912001546001600160a01b0316919050565b60015461010090046001600160a01b03163314610d3a5760405162461bcd60e51b815260040161073090612452565b610d42611a24565b60105460ff1615610d955760405162461bcd60e51b815260206004820181905260248201527f43616e6e6f7420696e7669746520616674657220524f534341207374617274736044820152606401610730565b6001600160a01b03811660009081526008602052604090205460ff1615610df05760405162461bcd60e51b815260206004820152600f60248201526e105b1c9958591e481a5b9d9a5d1959608a1b6044820152606401610730565b600654600c11610e385760405162461bcd60e51b815260206004820152601360248201527213585e081b595b58995c9cc81c995858da1959606a1b6044820152606401610730565b6001600160a01b03808216600081815260086020526040808220805460ff19166001908117909155549051610100909104909316927f6c246c8894ac239253d22cd508dbe8eb7e027e0589cdd4ff16dbb4238ccd98349190a350565b3360009081526007602052604090205460ff16610ee25760405162461bcd60e51b815260206004820152600c60248201526b2737ba10309036b2b6b132b960a11b6044820152606401610730565b610eea611a24565b60105460ff168015610f045750601054610100900460ff16155b610f435760405162461bcd60e51b815260206004820152601060248201526f524f534341206e6f742061637469766560801b6044820152606401610730565b600b54610100900460ff16610f9a5760405162461bcd60e51b815260206004820152601a60248201527f43757272656e7420726f756e64206e6f742070616964206f75740000000000006044820152606401610730565b600654600b5460ff1610610fe65760405162461bcd60e51b8152602060048201526013602482015272416c6c20726f756e647320636f6d706c65746560681b6044820152606401610730565b62278d00600f54610ff79190612489565b4210156110465760405162461bcd60e51b815260206004820152601960248201527f33302d646179206379636c65206e6f7420636f6d706c657465000000000000006044820152606401610730565b600b805460ff169060006110598361249c565b82546101009290920a60ff81810219909316918316021790915542600f819055600b805461ff001981169091556040805191909316815260208101919091527ff7104ec8d70cbee7bb54da17843aa32c11b77c11c6197f005ec8b2b4f5de69589250015b60405180910390a1565b60015461010090046001600160a01b031633146110f65760405162461bcd60e51b815260040161073090612452565b61098d611c0f565b6060600a80548060200260200160405190810160405280929190818152602001828054801561115657602002820191906000526020600020905b81546001600160a01b03168152600190910190602001808311611138575b5050505050905090565b600061116a611a72565b905090565b6006818154811061099f57600080fd5b60606000805b60065481101561120157600d6000600683815481106111a6576111a66122dd565b60009182526020808320909101546001600160a01b031683528281019390935260409182018120600b5460ff90811683529352205416156111ef57816111eb816124bb565b9250505b806111f9816124bb565b915050611185565b5060008167ffffffffffffffff81111561121d5761121d612012565b604051908082528060200260200182016040528015611246578160200160208202803683370190505b5090506000805b60065481101561132457600d60006006838154811061126e5761126e6122dd565b60009182526020808320909101546001600160a01b031683528281019390935260409182018120600b5460ff908116835293522054161561131257600681815481106112bc576112bc6122dd565b9060005260206000200160009054906101000a90046001600160a01b03168383815181106112ec576112ec6122dd565b6001600160a01b03909216602092830291909101909101528161130e816124bb565b9250505b8061131c816124bb565b91505061124d565b50909392505050565b3360009081526008602052604090205460ff1661137a5760405162461bcd60e51b815260206004820152600b60248201526a139bdd081a5b9d9a5d195960aa1b6044820152606401610730565b611382611a24565b60105460ff16156113d55760405162461bcd60e51b815260206004820152601e60248201527f43616e6e6f74206a6f696e20616674657220524f5343412073746172747300006044820152606401610730565b3360009081526007602052604090205460ff16156114285760405162461bcd60e51b815260206004820152601060248201526f20b63932b0b23c90309036b2b6b132b960811b6044820152606401610730565b6006805460018181019092557ff652222313e28459528d920b65115c16c04f3efc82aaedc97be59f3f377c0d3f0180546001600160a01b0319163390811790915560008181526007602052604090819020805460ff191690931790925590517f7f3b9effe05cfb4f31f854004de03199fd03fe56bf38a48b2aa9a9f4402d6e23906114b69042815260200190565b60405180910390a2565b60015461010090046001600160a01b031633146114ef5760405162461bcd60e51b815260040161073090612452565b61098d611c5c565b60606006805480602002602001604051908101604052809291908181526020018280548015611156576020028201919060005260206000209081546001600160a01b03168152600190910190602001808311611138575050505050905090565b600380546115649061230a565b80601f01602080910402602001604051908101604052809291908181526020018280546115909061230a565b80156115dd5780601f106115b2576101008083540402835291602001916115dd565b820191906000526020600020905b8154815290600101906020018083116115c057829003601f168201915b505050505081565b3360009081526007602052604090205460ff166116335760405162461bcd60e51b815260206004820152600c60248201526b2737ba10309036b2b6b132b960a11b6044820152606401610730565b60105460ff16801561164d5750601054610100900460ff16155b61168b5760405162461bcd60e51b815260206004820152600f60248201526e506f6f6c206e6f742061637469766560881b6044820152606401610730565b611693611a24565b61169b611a48565b336000908152600d60209081526040808320600b5460ff908116855292529091205416156117015760405162461bcd60e51b8152602060048201526013602482015272105b1c9958591e4818dbdb9d1c9a589d5d1959606a1b6044820152606401610730565b600654600b5460ff16111561174e5760405162461bcd60e51b8152602060048201526013602482015272416c6c20726f756e647320636f6d706c65746560681b6044820152606401610730565b336000818152600d60209081526040808320600b5460ff1684528252808320805460ff19166001179055600554938352600990915281208054909190611795908490612489565b90915550506004546005546117c0916001600160a01b03811691600160a01b90910460ff1690611c97565b50600b546005546040805160ff9093168352602083019190915233917fe18ade3c83eb782f6b575ec07c91d1dce24ca2893272cabc5d86e759110d3b65910160405180910390a261180f611a72565b1561184f57600b5460405160ff90911681527f78a0925e040149ea78c23d3aabf9577f31cb0afe2252a07da3322fb93f9c697d9060200160405180910390a15b61098d6001600055565b60015461010090046001600160a01b031633146118885760405162461bcd60e51b815260040161073090612452565b611890611a24565b60105460ff16156118d55760405162461bcd60e51b815260206004820152600f60248201526e105b1c9958591e481cdd185c9d1959608a1b6044820152606401610730565b6006546005111561191d5760405162461bcd60e51b81526020600482015260126024820152714e6f7420656e6f756768206d656d6265727360701b6044820152606401610730565b600654811461196e5760405162461bcd60e51b815260206004820152601b60248201527f496e76616c6964207061796f7574206f72646572206c656e67746800000000006044820152606401610730565b6119788282611db2565b611984600a8383611f65565b5060108054600160ff199182168117909255600b8054909116909117905542600e819055600f8190556040517f7e680909351c6b66c0ef9f13e0724b2785bb330a595466a2b2bf175f69df01e8916119df91859185916124d4565b60405180910390a160408051600181524260208201527ff7104ec8d70cbee7bb54da17843aa32c11b77c11c6197f005ec8b2b4f5de6958910160405180910390a15050565b60015460ff161561098d5760405163d93c066560e01b815260040160405180910390fd5b600260005403611a6b57604051633ee5aeb560e01b815260040160405180910390fd5b6002600055565b6000805b600654811015611aeb57600d600060068381548110611a9757611a976122dd565b60009182526020808320909101546001600160a01b031683528281019390935260409182018120600b5460ff90811683529352205416611ad957600091505090565b80611ae3816124bb565b915050611a76565b506001905090565b8215611b94576000826001600160a01b03168260405160006040518083038185875af1925050503d8060008114611b46576040519150601f19603f3d011682016040523d82523d6000602084013e611b4b565b606091505b5050905080611b8e5760405162461bcd60e51b815260206004820152600f60248201526e151c985b9cd9995c8819985a5b1959608a1b6044820152606401610730565b50611c09565b60405163a9059cbb60e01b81526001600160a01b0383811660048301526024820183905285169063a9059cbb906044016020604051808303816000875af1158015611be3573d6000803e3d6000fd5b505050506040513d601f19601f82011682018060405250810190611c079190612528565b505b50505050565b611c17611f42565b6001805460ff191690557f5db9ee0a495bf2e6ff9c91a7834c1ba4fdd244a5e8aa4e537bd38aeae4b073aa335b6040516001600160a01b0390911681526020016110bd565b611c64611a24565b6001805460ff1916811790557f62e78cea01bee320cd4e420270b5ea74000d11b0c9f74754ebdbfc544b05a25833611c44565b60008215611cef5760003411611ce85760405162461bcd60e51b815260206004820152601660248201527526bab9ba1039b2b732103730ba34bb32903a37b5b2b760511b6044820152606401610730565b5034611dab565b3415611d2f5760405162461bcd60e51b815260206004820152600f60248201526e2737903730ba34bb32903a37b5b2b760891b6044820152606401610730565b6040516323b872dd60e01b8152336004820152306024820152604481018390526001600160a01b038516906323b872dd906064016020604051808303816000875af1158015611d82573d6000803e3d6000fd5b505050506040513d601f19601f82011682018060405250810190611da69190612528565b508190505b9392505050565b60005b81811015611f3d576000838383818110611dd157611dd16122dd565b9050602002016020810190611de69190612140565b6001600160a01b03811660009081526007602052604090205490915060ff16611e515760405162461bcd60e51b815260206004820181905260248201527f5061796f7574206f7264657220636f6e7461696e73206e6f6e2d6d656d6265726044820152606401610730565b6000611e5e836001612489565b90505b83811015611f2857848482818110611e7b57611e7b6122dd565b9050602002016020810190611e909190612140565b6001600160a01b0316858585818110611eab57611eab6122dd565b9050602002016020810190611ec09190612140565b6001600160a01b031603611f165760405162461bcd60e51b815260206004820152601960248201527f4475706c696361746520696e207061796f7574206f72646572000000000000006044820152606401610730565b80611f20816124bb565b915050611e61565b50508080611f35906124bb565b915050611db5565b505050565b60015460ff1661098d57604051638dfc202b60e01b815260040160405180910390fd5b828054828255906000526020600020908101928215611fb8579160200282015b82811115611fb85781546001600160a01b0319166001600160a01b03843516178255602090920191600190910190611f85565b50611fc4929150611fc8565b5090565b5b80821115611fc45760008155600101611fc9565b600060208284031215611fef57600080fd5b5035919050565b80356001600160a01b038116811461200d57600080fd5b919050565b634e487b7160e01b600052604160045260246000fd5b801515811461203657600080fd5b50565b803561200d81612028565b60008060008060008060c0878903121561205d57600080fd5b61206687611ff6565b955061207460208801611ff6565b9450604087013567ffffffffffffffff8082111561209157600080fd5b818901915089601f8301126120a557600080fd5b8135818111156120b7576120b7612012565b604051601f8201601f19908116603f011681019083821181831017156120df576120df612012565b816040528281528c60208487010111156120f857600080fd5b8260208601602083013760006020848301015280985050505050506060870135925061212660808801611ff6565b915061213460a08801612039565b90509295509295509295565b60006020828403121561215257600080fd5b611dab82611ff6565b6000806040838503121561216e57600080fd5b61217783611ff6565b9150602083013560ff8116811461218d57600080fd5b809150509250929050565b6020808252825182820181905260009190848201906040850190845b818110156121d95783516001600160a01b0316835292840192918401916001016121b4565b50909695505050505050565b600060208083528351808285015260005b81811015612212578581018301518582016040015282016121f6565b506000604082860101526040601f19601f8301168501019250505092915050565b6000806020838503121561224657600080fd5b823567ffffffffffffffff8082111561225e57600080fd5b818501915085601f83011261227257600080fd5b81358181111561228157600080fd5b8660208260051b850101111561229657600080fd5b60209290920196919550909350505050565b634e487b7160e01b600052601160045260246000fd5b60ff82811682821603908111156122d7576122d76122a8565b92915050565b634e487b7160e01b600052603260045260246000fd5b80820281158282048414176122d7576122d76122a8565b600181811c9082168061231e57607f821691505b60208210810361233e57634e487b7160e01b600052602260045260246000fd5b50919050565b601f821115611f3d57600081815260208120601f850160051c8101602086101561236b5750805b601f850160051c820191505b8181101561238a57828155600101612377565b505050505050565b815167ffffffffffffffff8111156123ac576123ac612012565b6123c0816123ba845461230a565b84612344565b602080601f8311600181146123f557600084156123dd5750858301515b600019600386901b1c1916600185901b17855561238a565b600085815260208120601f198616915b8281101561242457888601518255948401946001909101908401612405565b50858210156124425787850151600019600388901b60f8161c191681555b5050505050600190811b01905550565b6020808252601a908201527f4f6e6c792063726561746f722063616e2063616c6c2074686973000000000000604082015260600190565b808201808211156122d7576122d76122a8565b600060ff821660ff81036124b2576124b26122a8565b60010192915050565b6000600182016124cd576124cd6122a8565b5060010190565b6040808252810183905260008460608301825b86811015612515576001600160a01b0361250084611ff6565b168252602092830192909101906001016124e7565b5060209390930193909352509392505050565b60006020828403121561253a57600080fd5b8151611dab8161202856fea264697066735822122054ac35e1dc4cd441a068e3b68eae821c11c8bdad789430ba566f47ff88eadafa64736f6c63430008140033",
+  "deployedBytecode": "0x6080604052600436106102305760003560e01c80635fa0b65f1161012e578063a230c524116100ab578063cd421fbf1161006f578063cd421fbf14610673578063d7bb99ba1461068a578063d9a6722014610692578063ea0e35b1146106a7578063eca42fba146106bc57600080fd5b8063a230c524146105cc578063a9e6c7fb146105fc578063b2fa1c9e14610612578063c30db74614610631578063cccf25601461065157600080fd5b8063997072f7116100f2578063997072f7146105345780639af4ee7e146105495780639d76ea581461056a5780639eab52531461058a578063a0f243b81461059f57600080fd5b80635fa0b65f146104b357806362a4e0f1146104c95780638371e6b4146104de5780638456cb59146104f35780638a19c8bc1461050857600080fd5b80632f890b93116101bc5780633f4ba83a116101805780633f4ba83a1461042f57806343662f4e1461044457806359bbcb3d146104665780635c975abb1461047b5780635daf08ca1461049357600080fd5b80632f890b9314610379578063346477c714610399578063380dd901146103c95780633c3ccc44146103df5780633f08399c146103f457600080fd5b806312065fe01161020357806312065fe0146102dd57806316d3a990146102fa578063194e36f51461031a5780631dcbe5001461032f57806322f3e2d41461035f57600080fd5b806302d05d3f1461023557806305a95f0414610277578063063fcfcc1461028e5780630b529a17146102bd575b600080fd5b34801561024157600080fd5b5060015461025a9061010090046001600160a01b031681565b6040516001600160a01b0390911681526020015b60405180910390f35b34801561028357600080fd5b5061028c6106dc565b005b34801561029a57600080fd5b50600b546102ad90610100900460ff1681565b604051901515815260200161026e565b3480156102c957600080fd5b5061025a6102d8366004611fdd565b61098f565b3480156102e957600080fd5b50475b60405190815260200161026e565b34801561030657600080fd5b5061028c610315366004612044565b6109b9565b34801561032657600080fd5b5061025a610ca3565b34801561033b57600080fd5b506102ad61034a366004612140565b60086020526000908152604090205460ff1681565b34801561036b57600080fd5b506010546102ad9060ff1681565b34801561038557600080fd5b5061028c610394366004612140565b610d0b565b3480156103a557600080fd5b506102ad6103b4366004612140565b600c6020526000908152604090205460ff1681565b3480156103d557600080fd5b506102ec600f5481565b3480156103eb57600080fd5b5061028c610e94565b34801561040057600080fd5b506102ad61040f36600461215b565b600d60209081526000928352604080842090915290825290205460ff1681565b34801561043b57600080fd5b5061028c6110c7565b34801561045057600080fd5b506104596110fe565b60405161026e9190612198565b34801561047257600080fd5b506102ad611160565b34801561048757600080fd5b5060015460ff166102ad565b34801561049f57600080fd5b5061025a6104ae366004611fdd565b61116f565b3480156104bf57600080fd5b506102ec60055481565b3480156104d557600080fd5b5061045961117f565b3480156104ea57600080fd5b5061028c61132d565b3480156104ff57600080fd5b5061028c6114c0565b34801561051457600080fd5b50600b546105229060ff1681565b60405160ff909116815260200161026e565b34801561054057600080fd5b506006546102ec565b34801561055557600080fd5b506004546102ad90600160a01b900460ff1681565b34801561057657600080fd5b5060045461025a906001600160a01b031681565b34801561059657600080fd5b506104596114f7565b3480156105ab57600080fd5b506102ec6105ba366004612140565b60096020526000908152604090205481565b3480156105d857600080fd5b506102ad6105e7366004612140565b60076020526000908152604090205460ff1681565b34801561060857600080fd5b506102ec600e5481565b34801561061e57600080fd5b506010546102ad90610100900460ff1681565b34801561063d57600080fd5b5060025461025a906001600160a01b031681565b34801561065d57600080fd5b50610666611557565b60405161026e91906121e5565b34801561067f57600080fd5b506102ec62278d0081565b61028c6115e5565b34801561069e57600080fd5b50610522600581565b3480156106b357600080fd5b50610522600c81565b3480156106c857600080fd5b5061028c6106d7366004612233565b611859565b60105460ff1680156106f65750601054610100900460ff16155b6107395760405162461bcd60e51b815260206004820152600f60248201526e506f6f6c206e6f742061637469766560881b60448201526064015b60405180910390fd5b610741611a24565b610749611a48565b610751611a72565b6107955760405162461bcd60e51b8152602060048201526015602482015274139bdd08195d995c9e5bdb99481a185cc81c185a59605a1b6044820152606401610730565b600b54610100900460ff16156107e65760405162461bcd60e51b8152602060048201526016602482015275149bdd5b9908185b1c9958591e481c185a59081bdd5d60521b6044820152606401610730565b600b54600090600a906107fe9060019060ff166122be565b60ff1681548110610811576108116122dd565b6000918252602090912001546001600160a01b031690503381146108775760405162461bcd60e51b815260206004820152601f60248201527f4f6e6c7920726563697069656e742063616e20636c61696d207061796f7574006044820152606401610730565b600b805461ff0019166101001790556001600160a01b0381166000908152600c60205260408120805460ff191660011790556006546005546108b991906122f3565b6004549091506108df906001600160a01b03811690600160a01b900460ff168484611af3565b600b546040805183815260ff90921660208301526001600160a01b038416917f882acae0bded9e8351bc191c3a610fdfdfc5c20f670b69c7569ae0fbdeda81b8910160405180910390a2600654600b5460ff1610610981576010805461ffff19166101001790556040517fd57799724d5c069e66abd552aca9bc70e8f36d98f34d0d84841983bc469a4e4a906109789042815260200190565b60405180910390a15b505061098d6001600055565b565b600a818154811061099f57600080fd5b6000918252602090912001546001600160a01b0316905081565b60105462010000900460ff1615610a085760405162461bcd60e51b8152602060048201526013602482015272105b1c9958591e481a5b9a5d1a585b1a5e9959606a1b6044820152606401610730565b6010805462ff000019166201000017905582610a665760405162461bcd60e51b815260206004820152601b60248201527f496e76616c696420636f6e747269627574696f6e20616d6f756e7400000000006044820152606401610730565b8015610adc576001600160a01b03821615610ad75760405162461bcd60e51b815260206004820152602b60248201527f546f6b656e2061646472657373206d757374206265207a65726f20666f72206e60448201526a30ba34bb32903a37b5b2b760a91b6064820152608401610730565b610b32565b6001600160a01b038216610b325760405162461bcd60e51b815260206004820152601f60248201527f496e76616c696420746f6b656e206164647265737320666f72204552433230006044820152606401610730565b60018054610100600160a81b0319166101006001600160a01b038981169190910291909117909155600280546001600160a01b0319169187169190911790556003610b7d8582612392565b506005839055600480546001600160a01b038481166001600160a81b031990921691909117600160a01b84151502179091556006805460018181019092557ff652222313e28459528d920b65115c16c04f3efc82aaedc97be59f3f377c0d3f0180546001600160a01b0319168984169081179091556000818152600760209081526040808320805460ff19908116871790915560088352928190208054909316909417909155915186815290928816917f8e5acdd034f8bf8fded53cd37f8b0cb6a72b385988e92dc71f664f5dfcfcd8a7910160405180910390a3856001600160a01b03167f7f3b9effe05cfb4f31f854004de03199fd03fe56bf38a48b2aa9a9f4402d6e2342604051610c9391815260200190565b60405180910390a2505050505050565b600b5460009060ff161580610cbe5750600a54600b5460ff16115b15610cc95750600090565b600b54600a90610cde9060019060ff166122be565b60ff1681548110610cf157610cf16122dd565b6000918252602090912001546001600160a01b0316919050565b60015461010090046001600160a01b03163314610d3a5760405162461bcd60e51b815260040161073090612452565b610d42611a24565b60105460ff1615610d955760405162461bcd60e51b815260206004820181905260248201527f43616e6e6f7420696e7669746520616674657220524f534341207374617274736044820152606401610730565b6001600160a01b03811660009081526008602052604090205460ff1615610df05760405162461bcd60e51b815260206004820152600f60248201526e105b1c9958591e481a5b9d9a5d1959608a1b6044820152606401610730565b600654600c11610e385760405162461bcd60e51b815260206004820152601360248201527213585e081b595b58995c9cc81c995858da1959606a1b6044820152606401610730565b6001600160a01b03808216600081815260086020526040808220805460ff19166001908117909155549051610100909104909316927f6c246c8894ac239253d22cd508dbe8eb7e027e0589cdd4ff16dbb4238ccd98349190a350565b3360009081526007602052604090205460ff16610ee25760405162461bcd60e51b815260206004820152600c60248201526b2737ba10309036b2b6b132b960a11b6044820152606401610730565b610eea611a24565b60105460ff168015610f045750601054610100900460ff16155b610f435760405162461bcd60e51b815260206004820152601060248201526f524f534341206e6f742061637469766560801b6044820152606401610730565b600b54610100900460ff16610f9a5760405162461bcd60e51b815260206004820152601a60248201527f43757272656e7420726f756e64206e6f742070616964206f75740000000000006044820152606401610730565b600654600b5460ff1610610fe65760405162461bcd60e51b8152602060048201526013602482015272416c6c20726f756e647320636f6d706c65746560681b6044820152606401610730565b62278d00600f54610ff79190612489565b4210156110465760405162461bcd60e51b815260206004820152601960248201527f33302d646179206379636c65206e6f7420636f6d706c657465000000000000006044820152606401610730565b600b805460ff169060006110598361249c565b82546101009290920a60ff81810219909316918316021790915542600f819055600b805461ff001981169091556040805191909316815260208101919091527ff7104ec8d70cbee7bb54da17843aa32c11b77c11c6197f005ec8b2b4f5de69589250015b60405180910390a1565b60015461010090046001600160a01b031633146110f65760405162461bcd60e51b815260040161073090612452565b61098d611c0f565b6060600a80548060200260200160405190810160405280929190818152602001828054801561115657602002820191906000526020600020905b81546001600160a01b03168152600190910190602001808311611138575b5050505050905090565b600061116a611a72565b905090565b6006818154811061099f57600080fd5b60606000805b60065481101561120157600d6000600683815481106111a6576111a66122dd565b60009182526020808320909101546001600160a01b031683528281019390935260409182018120600b5460ff90811683529352205416156111ef57816111eb816124bb565b9250505b806111f9816124bb565b915050611185565b5060008167ffffffffffffffff81111561121d5761121d612012565b604051908082528060200260200182016040528015611246578160200160208202803683370190505b5090506000805b60065481101561132457600d60006006838154811061126e5761126e6122dd565b60009182526020808320909101546001600160a01b031683528281019390935260409182018120600b5460ff908116835293522054161561131257600681815481106112bc576112bc6122dd565b9060005260206000200160009054906101000a90046001600160a01b03168383815181106112ec576112ec6122dd565b6001600160a01b03909216602092830291909101909101528161130e816124bb565b9250505b8061131c816124bb565b91505061124d565b50909392505050565b3360009081526008602052604090205460ff1661137a5760405162461bcd60e51b815260206004820152600b60248201526a139bdd081a5b9d9a5d195960aa1b6044820152606401610730565b611382611a24565b60105460ff16156113d55760405162461bcd60e51b815260206004820152601e60248201527f43616e6e6f74206a6f696e20616674657220524f5343412073746172747300006044820152606401610730565b3360009081526007602052604090205460ff16156114285760405162461bcd60e51b815260206004820152601060248201526f20b63932b0b23c90309036b2b6b132b960811b6044820152606401610730565b6006805460018181019092557ff652222313e28459528d920b65115c16c04f3efc82aaedc97be59f3f377c0d3f0180546001600160a01b0319163390811790915560008181526007602052604090819020805460ff191690931790925590517f7f3b9effe05cfb4f31f854004de03199fd03fe56bf38a48b2aa9a9f4402d6e23906114b69042815260200190565b60405180910390a2565b60015461010090046001600160a01b031633146114ef5760405162461bcd60e51b815260040161073090612452565b61098d611c5c565b60606006805480602002602001604051908101604052809291908181526020018280548015611156576020028201919060005260206000209081546001600160a01b03168152600190910190602001808311611138575050505050905090565b600380546115649061230a565b80601f01602080910402602001604051908101604052809291908181526020018280546115909061230a565b80156115dd5780601f106115b2576101008083540402835291602001916115dd565b820191906000526020600020905b8154815290600101906020018083116115c057829003601f168201915b505050505081565b3360009081526007602052604090205460ff166116335760405162461bcd60e51b815260206004820152600c60248201526b2737ba10309036b2b6b132b960a11b6044820152606401610730565b60105460ff16801561164d5750601054610100900460ff16155b61168b5760405162461bcd60e51b815260206004820152600f60248201526e506f6f6c206e6f742061637469766560881b6044820152606401610730565b611693611a24565b61169b611a48565b336000908152600d60209081526040808320600b5460ff908116855292529091205416156117015760405162461bcd60e51b8152602060048201526013602482015272105b1c9958591e4818dbdb9d1c9a589d5d1959606a1b6044820152606401610730565b600654600b5460ff16111561174e5760405162461bcd60e51b8152602060048201526013602482015272416c6c20726f756e647320636f6d706c65746560681b6044820152606401610730565b336000818152600d60209081526040808320600b5460ff1684528252808320805460ff19166001179055600554938352600990915281208054909190611795908490612489565b90915550506004546005546117c0916001600160a01b03811691600160a01b90910460ff1690611c97565b50600b546005546040805160ff9093168352602083019190915233917fe18ade3c83eb782f6b575ec07c91d1dce24ca2893272cabc5d86e759110d3b65910160405180910390a261180f611a72565b1561184f57600b5460405160ff90911681527f78a0925e040149ea78c23d3aabf9577f31cb0afe2252a07da3322fb93f9c697d9060200160405180910390a15b61098d6001600055565b60015461010090046001600160a01b031633146118885760405162461bcd60e51b815260040161073090612452565b611890611a24565b60105460ff16156118d55760405162461bcd60e51b815260206004820152600f60248201526e105b1c9958591e481cdd185c9d1959608a1b6044820152606401610730565b6006546005111561191d5760405162461bcd60e51b81526020600482015260126024820152714e6f7420656e6f756768206d656d6265727360701b6044820152606401610730565b600654811461196e5760405162461bcd60e51b815260206004820152601b60248201527f496e76616c6964207061796f7574206f72646572206c656e67746800000000006044820152606401610730565b6119788282611db2565b611984600a8383611f65565b5060108054600160ff199182168117909255600b8054909116909117905542600e819055600f8190556040517f7e680909351c6b66c0ef9f13e0724b2785bb330a595466a2b2bf175f69df01e8916119df91859185916124d4565b60405180910390a160408051600181524260208201527ff7104ec8d70cbee7bb54da17843aa32c11b77c11c6197f005ec8b2b4f5de6958910160405180910390a15050565b60015460ff161561098d5760405163d93c066560e01b815260040160405180910390fd5b600260005403611a6b57604051633ee5aeb560e01b815260040160405180910390fd5b6002600055565b6000805b600654811015611aeb57600d600060068381548110611a9757611a976122dd565b60009182526020808320909101546001600160a01b031683528281019390935260409182018120600b5460ff90811683529352205416611ad957600091505090565b80611ae3816124bb565b915050611a76565b506001905090565b8215611b94576000826001600160a01b03168260405160006040518083038185875af1925050503d8060008114611b46576040519150601f19603f3d011682016040523d82523d6000602084013e611b4b565b606091505b5050905080611b8e5760405162461bcd60e51b815260206004820152600f60248201526e151c985b9cd9995c8819985a5b1959608a1b6044820152606401610730565b50611c09565b60405163a9059cbb60e01b81526001600160a01b0383811660048301526024820183905285169063a9059cbb906044016020604051808303816000875af1158015611be3573d6000803e3d6000fd5b505050506040513d601f19601f82011682018060405250810190611c079190612528565b505b50505050565b611c17611f42565b6001805460ff191690557f5db9ee0a495bf2e6ff9c91a7834c1ba4fdd244a5e8aa4e537bd38aeae4b073aa335b6040516001600160a01b0390911681526020016110bd565b611c64611a24565b6001805460ff1916811790557f62e78cea01bee320cd4e420270b5ea74000d11b0c9f74754ebdbfc544b05a25833611c44565b60008215611cef5760003411611ce85760405162461bcd60e51b815260206004820152601660248201527526bab9ba1039b2b732103730ba34bb32903a37b5b2b760511b6044820152606401610730565b5034611dab565b3415611d2f5760405162461bcd60e51b815260206004820152600f60248201526e2737903730ba34bb32903a37b5b2b760891b6044820152606401610730565b6040516323b872dd60e01b8152336004820152306024820152604481018390526001600160a01b038516906323b872dd906064016020604051808303816000875af1158015611d82573d6000803e3d6000fd5b505050506040513d601f19601f82011682018060405250810190611da69190612528565b508190505b9392505050565b60005b81811015611f3d576000838383818110611dd157611dd16122dd565b9050602002016020810190611de69190612140565b6001600160a01b03811660009081526007602052604090205490915060ff16611e515760405162461bcd60e51b815260206004820181905260248201527f5061796f7574206f7264657220636f6e7461696e73206e6f6e2d6d656d6265726044820152606401610730565b6000611e5e836001612489565b90505b83811015611f2857848482818110611e7b57611e7b6122dd565b9050602002016020810190611e909190612140565b6001600160a01b0316858585818110611eab57611eab6122dd565b9050602002016020810190611ec09190612140565b6001600160a01b031603611f165760405162461bcd60e51b815260206004820152601960248201527f4475706c696361746520696e207061796f7574206f72646572000000000000006044820152606401610730565b80611f20816124bb565b915050611e61565b50508080611f35906124bb565b915050611db5565b505050565b60015460ff1661098d57604051638dfc202b60e01b815260040160405180910390fd5b828054828255906000526020600020908101928215611fb8579160200282015b82811115611fb85781546001600160a01b0319166001600160a01b03843516178255602090920191600190910190611f85565b50611fc4929150611fc8565b5090565b5b80821115611fc45760008155600101611fc9565b600060208284031215611fef57600080fd5b5035919050565b80356001600160a01b038116811461200d57600080fd5b919050565b634e487b7160e01b600052604160045260246000fd5b801515811461203657600080fd5b50565b803561200d81612028565b60008060008060008060c0878903121561205d57600080fd5b61206687611ff6565b955061207460208801611ff6565b9450604087013567ffffffffffffffff8082111561209157600080fd5b818901915089601f8301126120a557600080fd5b8135818111156120b7576120b7612012565b604051601f8201601f19908116603f011681019083821181831017156120df576120df612012565b816040528281528c60208487010111156120f857600080fd5b8260208601602083013760006020848301015280985050505050506060870135925061212660808801611ff6565b915061213460a08801612039565b90509295509295509295565b60006020828403121561215257600080fd5b611dab82611ff6565b6000806040838503121561216e57600080fd5b61217783611ff6565b9150602083013560ff8116811461218d57600080fd5b809150509250929050565b6020808252825182820181905260009190848201906040850190845b818110156121d95783516001600160a01b0316835292840192918401916001016121b4565b50909695505050505050565b600060208083528351808285015260005b81811015612212578581018301518582016040015282016121f6565b506000604082860101526040601f19601f8301168501019250505092915050565b6000806020838503121561224657600080fd5b823567ffffffffffffffff8082111561225e57600080fd5b818501915085601f83011261227257600080fd5b81358181111561228157600080fd5b8660208260051b850101111561229657600080fd5b60209290920196919550909350505050565b634e487b7160e01b600052601160045260246000fd5b60ff82811682821603908111156122d7576122d76122a8565b92915050565b634e487b7160e01b600052603260045260246000fd5b80820281158282048414176122d7576122d76122a8565b600181811c9082168061231e57607f821691505b60208210810361233e57634e487b7160e01b600052602260045260246000fd5b50919050565b601f821115611f3d57600081815260208120601f850160051c8101602086101561236b5750805b601f850160051c820191505b8181101561238a57828155600101612377565b505050505050565b815167ffffffffffffffff8111156123ac576123ac612012565b6123c0816123ba845461230a565b84612344565b602080601f8311600181146123f557600084156123dd5750858301515b600019600386901b1c1916600185901b17855561238a565b600085815260208120601f198616915b8281101561242457888601518255948401946001909101908401612405565b50858210156124425787850151600019600388901b60f8161c191681555b5050505050600190811b01905550565b6020808252601a908201527f4f6e6c792063726561746f722063616e2063616c6c2074686973000000000000604082015260600190565b808201808211156122d7576122d76122a8565b600060ff821660ff81036124b2576124b26122a8565b60010192915050565b6000600182016124cd576124cd6122a8565b5060010190565b6040808252810183905260008460608301825b86811015612515576001600160a01b0361250084611ff6565b168252602092830192909101906001016124e7565b5060209390930193909352509392505050565b60006020828403121561253a57600080fd5b8151611dab8161202856fea264697066735822122054ac35e1dc4cd441a068e3b68eae821c11c8bdad789430ba566f47ff88eadafa64736f6c63430008140033",
+  "devdoc": {
+    "details": "Members contribute fixed amounts each round, one member receives the pot each round Payout order is provided off-chain by the creator for fairness and transparency",
+    "errors": {
+      "EnforcedPause()": [
+        {
+          "details": "The operation failed because the contract is paused."
+        }
+      ],
+      "ExpectedPause()": [
+        {
+          "details": "The operation failed because the contract is not paused."
+        }
+      ],
+      "ReentrancyGuardReentrantCall()": [
+        {
+          "details": "Unauthorized reentrant call."
+        }
+      ]
+    },
+    "events": {
+      "Paused(address)": {
+        "details": "Emitted when the pause is triggered by `account`."
+      },
+      "Unpaused(address)": {
+        "details": "Emitted when the pause is lifted by `account`."
+      }
+    },
+    "kind": "dev",
+    "methods": {
+      "constructor": {
+        "details": "Prevents the implementation contract from being initialized"
+      },
+      "contribute()": {
+        "details": "For ERC20: Member must have approved the contract to spend tokens before calling      For native token: Must send exact amount of native currency"
+      },
+      "everyonePaid()": {
+        "returns": {
+          "_0": "True if all members have contributed, false otherwise"
+        }
+      },
+      "getBalance()": {
+        "returns": {
+          "_0": "Balance in wei"
+        }
+      },
+      "getCurrentRecipient()": {
+        "returns": {
+          "_0": "Address of the member who should receive payout this round"
+        }
+      },
+      "getMemberCount()": {
+        "returns": {
+          "_0": "Member count"
+        }
+      },
+      "getMembers()": {
+        "returns": {
+          "_0": "Array of member addresses"
+        }
+      },
+      "getPayoutOrder()": {
+        "returns": {
+          "_0": "Array of addresses in payout order"
+        }
+      },
+      "getRoundContributors()": {
+        "returns": {
+          "_0": "Array of addresses who have paid"
+        }
+      },
+      "initialize(address,address,string,uint256,address,bool)": {
+        "details": "This replaces the constructor for cloned instances",
+        "params": {
+          "_circleId": "Address of the Lens.xyz circle contract",
+          "_circleName": "Name of the circle",
+          "_contributionAmount": "Fixed contribution amount per round",
+          "_creator": "Address of the user creating the pool",
+          "_isNativeToken": "Whether this pool uses native token (cBTC) or ERC20 token",
+          "_tokenAddress": "Address of the ERC20 token to use for contributions (zero address if native)"
+        }
+      },
+      "inviteMember(address)": {
+        "details": "Only creator can invite, only before ROSCA starts",
+        "params": {
+          "member": "Address of the member to invite"
+        }
+      },
+      "joinPool()": {
+        "details": "Can only join before ROSCA starts"
+      },
+      "pause()": {
+        "details": "Only creator can pause"
+      },
+      "paused()": {
+        "details": "Returns true if the contract is paused, and false otherwise."
+      },
+      "startNextRound()": {
+        "details": "Any member can call this after the 30-day cycle is complete"
+      },
+      "startROSCA(address[])": {
+        "details": "Only creator can start, requires min members, payout order generated off-chain",
+        "params": {
+          "_payoutOrder": "Array of addresses defining payout order (must include all members exactly once)"
+        }
+      },
+      "triggerPayout()": {
+        "details": "Only the designated recipient can trigger their own payout Requires all members to have contributed for the current round"
+      },
+      "unpause()": {
+        "details": "Only creator can unpause"
+      }
+    },
+    "title": "ROSCAPool",
+    "version": 1
+  },
+  "userdoc": {
+    "kind": "user",
+    "methods": {
+      "CYCLE_DURATION()": {
+        "notice": "Duration of each cycle/round in seconds (30 days)"
+      },
+      "MAX_MEMBERS()": {
+        "notice": "Maximum number of members allowed in a ROSCA"
+      },
+      "MIN_MEMBERS()": {
+        "notice": "Minimum number of members required to start a ROSCA"
+      },
+      "circleId()": {
+        "notice": "Address of the Lens.xyz circle contract"
+      },
+      "circleName()": {
+        "notice": "Human-readable name of the circle"
+      },
+      "constructor": {
+        "notice": "Constructor for implementation contract"
+      },
+      "contribute()": {
+        "notice": "Allows a member to contribute for the current round"
+      },
+      "contributionAmount()": {
+        "notice": "Fixed contribution amount per round in wei"
+      },
+      "creator()": {
+        "notice": "Address of the user who created this pool"
+      },
+      "currentRound()": {
+        "notice": "Current round number (1-indexed)"
+      },
+      "currentRoundPaidOut()": {
+        "notice": "Whether the current round's payout has been completed"
+      },
+      "currentRoundStartTime()": {
+        "notice": "Timestamp when the current round started"
+      },
+      "everyonePaid()": {
+        "notice": "Checks if everyone has paid for the current round"
+      },
+      "getBalance()": {
+        "notice": "Gets the contract's current balance"
+      },
+      "getCurrentRecipient()": {
+        "notice": "Gets the current round's recipient"
+      },
+      "getMemberCount()": {
+        "notice": "Gets the total number of members"
+      },
+      "getMembers()": {
+        "notice": "Gets all members"
+      },
+      "getPayoutOrder()": {
+        "notice": "Gets the complete payout order"
+      },
+      "getRoundContributors()": {
+        "notice": "Gets list of members who have contributed in the current round"
+      },
+      "hasPaid(address,uint8)": {
+        "notice": "Tracks whether a member has paid for a specific round"
+      },
+      "hasReceivedPayout(address)": {
+        "notice": "Mapping to track which members have received their payout"
+      },
+      "initialize(address,address,string,uint256,address,bool)": {
+        "notice": "Initializes a new ROSCA pool clone"
+      },
+      "inviteMember(address)": {
+        "notice": "Invites a new member to the ROSCA"
+      },
+      "isActive()": {
+        "notice": "Whether the ROSCA is currently active"
+      },
+      "isComplete()": {
+        "notice": "Whether the ROSCA has completed all rounds"
+      },
+      "isInvited(address)": {
+        "notice": "Mapping to check if an address has been invited"
+      },
+      "isMember(address)": {
+        "notice": "Mapping to check if an address is a member"
+      },
+      "isNativeToken()": {
+        "notice": "Whether this pool uses native token (cBTC) or ERC20 token"
+      },
+      "joinPool()": {
+        "notice": "Allows an invited member to join the pool"
+      },
+      "members(uint256)": {
+        "notice": "Array of all members in the pool"
+      },
+      "pause()": {
+        "notice": "Pauses the contract in case of emergency"
+      },
+      "payoutOrder(uint256)": {
+        "notice": "Array defining the order in which members receive payouts"
+      },
+      "roscaStartTime()": {
+        "notice": "Timestamp when the ROSCA was started"
+      },
+      "startNextRound()": {
+        "notice": "Starts the next round after the cycle duration has passed"
+      },
+      "startROSCA(address[])": {
+        "notice": "Starts the ROSCA with a provided payout order"
+      },
+      "tokenAddress()": {
+        "notice": "Address of the ERC20 token used for contributions (zero address if native token)"
+      },
+      "totalContributed(address)": {
+        "notice": "Total amount contributed by each member across all rounds"
+      },
+      "triggerPayout()": {
+        "notice": "Triggers the payout for the current round"
+      },
+      "unpause()": {
+        "notice": "Unpauses the contract"
+      }
+    },
+    "notice": "Rotating Savings and Credit Association pool implementation",
+    "version": 1
+  },
+  "storageLayout": {
+    "storage": [
+      {
+        "astId": 1146,
+        "contract": "contracts/pools/ROSCAPool.sol:ROSCAPool",
+        "label": "_status",
+        "offset": 0,
+        "slot": "0",
+        "type": "t_uint256"
+      },
+      {
+        "astId": 1027,
+        "contract": "contracts/pools/ROSCAPool.sol:ROSCAPool",
+        "label": "_paused",
+        "offset": 0,
+        "slot": "1",
+        "type": "t_bool"
+      },
+      {
+        "astId": 3708,
+        "contract": "contracts/pools/ROSCAPool.sol:ROSCAPool",
+        "label": "creator",
+        "offset": 1,
+        "slot": "1",
+        "type": "t_address"
+      },
+      {
+        "astId": 3711,
+        "contract": "contracts/pools/ROSCAPool.sol:ROSCAPool",
+        "label": "circleId",
+        "offset": 0,
+        "slot": "2",
+        "type": "t_address"
+      },
+      {
+        "astId": 3714,
+        "contract": "contracts/pools/ROSCAPool.sol:ROSCAPool",
+        "label": "circleName",
+        "offset": 0,
+        "slot": "3",
+        "type": "t_string_storage"
+      },
+      {
+        "astId": 3717,
+        "contract": "contracts/pools/ROSCAPool.sol:ROSCAPool",
+        "label": "tokenAddress",
+        "offset": 0,
+        "slot": "4",
+        "type": "t_address"
+      },
+      {
+        "astId": 3720,
+        "contract": "contracts/pools/ROSCAPool.sol:ROSCAPool",
+        "label": "isNativeToken",
+        "offset": 20,
+        "slot": "4",
+        "type": "t_bool"
+      },
+      {
+        "astId": 3723,
+        "contract": "contracts/pools/ROSCAPool.sol:ROSCAPool",
+        "label": "contributionAmount",
+        "offset": 0,
+        "slot": "5",
+        "type": "t_uint256"
+      },
+      {
+        "astId": 3727,
+        "contract": "contracts/pools/ROSCAPool.sol:ROSCAPool",
+        "label": "members",
+        "offset": 0,
+        "slot": "6",
+        "type": "t_array(t_address)dyn_storage"
+      },
+      {
+        "astId": 3732,
+        "contract": "contracts/pools/ROSCAPool.sol:ROSCAPool",
+        "label": "isMember",
+        "offset": 0,
+        "slot": "7",
+        "type": "t_mapping(t_address,t_bool)"
+      },
+      {
+        "astId": 3737,
+        "contract": "contracts/pools/ROSCAPool.sol:ROSCAPool",
+        "label": "isInvited",
+        "offset": 0,
+        "slot": "8",
+        "type": "t_mapping(t_address,t_bool)"
+      },
+      {
+        "astId": 3742,
+        "contract": "contracts/pools/ROSCAPool.sol:ROSCAPool",
+        "label": "totalContributed",
+        "offset": 0,
+        "slot": "9",
+        "type": "t_mapping(t_address,t_uint256)"
+      },
+      {
+        "astId": 3746,
+        "contract": "contracts/pools/ROSCAPool.sol:ROSCAPool",
+        "label": "payoutOrder",
+        "offset": 0,
+        "slot": "10",
+        "type": "t_array(t_address)dyn_storage"
+      },
+      {
+        "astId": 3749,
+        "contract": "contracts/pools/ROSCAPool.sol:ROSCAPool",
+        "label": "currentRound",
+        "offset": 0,
+        "slot": "11",
+        "type": "t_uint8"
+      },
+      {
+        "astId": 3752,
+        "contract": "contracts/pools/ROSCAPool.sol:ROSCAPool",
+        "label": "currentRoundPaidOut",
+        "offset": 1,
+        "slot": "11",
+        "type": "t_bool"
+      },
+      {
+        "astId": 3757,
+        "contract": "contracts/pools/ROSCAPool.sol:ROSCAPool",
+        "label": "hasReceivedPayout",
+        "offset": 0,
+        "slot": "12",
+        "type": "t_mapping(t_address,t_bool)"
+      },
+      {
+        "astId": 3764,
+        "contract": "contracts/pools/ROSCAPool.sol:ROSCAPool",
+        "label": "hasPaid",
+        "offset": 0,
+        "slot": "13",
+        "type": "t_mapping(t_address,t_mapping(t_uint8,t_bool))"
+      },
+      {
+        "astId": 3767,
+        "contract": "contracts/pools/ROSCAPool.sol:ROSCAPool",
+        "label": "roscaStartTime",
+        "offset": 0,
+        "slot": "14",
+        "type": "t_uint256"
+      },
+      {
+        "astId": 3770,
+        "contract": "contracts/pools/ROSCAPool.sol:ROSCAPool",
+        "label": "currentRoundStartTime",
+        "offset": 0,
+        "slot": "15",
+        "type": "t_uint256"
+      },
+      {
+        "astId": 3773,
+        "contract": "contracts/pools/ROSCAPool.sol:ROSCAPool",
+        "label": "isActive",
+        "offset": 0,
+        "slot": "16",
+        "type": "t_bool"
+      },
+      {
+        "astId": 3776,
+        "contract": "contracts/pools/ROSCAPool.sol:ROSCAPool",
+        "label": "isComplete",
+        "offset": 1,
+        "slot": "16",
+        "type": "t_bool"
+      },
+      {
+        "astId": 3779,
+        "contract": "contracts/pools/ROSCAPool.sol:ROSCAPool",
+        "label": "initialized",
+        "offset": 2,
+        "slot": "16",
+        "type": "t_bool"
+      }
+    ],
+    "types": {
+      "t_address": {
+        "encoding": "inplace",
+        "label": "address",
+        "numberOfBytes": "20"
+      },
+      "t_array(t_address)dyn_storage": {
+        "base": "t_address",
+        "encoding": "dynamic_array",
+        "label": "address[]",
+        "numberOfBytes": "32"
+      },
+      "t_bool": {
+        "encoding": "inplace",
+        "label": "bool",
+        "numberOfBytes": "1"
+      },
+      "t_mapping(t_address,t_bool)": {
+        "encoding": "mapping",
+        "key": "t_address",
+        "label": "mapping(address => bool)",
+        "numberOfBytes": "32",
+        "value": "t_bool"
+      },
+      "t_mapping(t_address,t_mapping(t_uint8,t_bool))": {
+        "encoding": "mapping",
+        "key": "t_address",
+        "label": "mapping(address => mapping(uint8 => bool))",
+        "numberOfBytes": "32",
+        "value": "t_mapping(t_uint8,t_bool)"
+      },
+      "t_mapping(t_address,t_uint256)": {
+        "encoding": "mapping",
+        "key": "t_address",
+        "label": "mapping(address => uint256)",
+        "numberOfBytes": "32",
+        "value": "t_uint256"
+      },
+      "t_mapping(t_uint8,t_bool)": {
+        "encoding": "mapping",
+        "key": "t_uint8",
+        "label": "mapping(uint8 => bool)",
+        "numberOfBytes": "32",
+        "value": "t_bool"
+      },
+      "t_string_storage": {
+        "encoding": "bytes",
+        "label": "string",
+        "numberOfBytes": "32"
+      },
+      "t_uint256": {
+        "encoding": "inplace",
+        "label": "uint256",
+        "numberOfBytes": "32"
+      },
+      "t_uint8": {
+        "encoding": "inplace",
+        "label": "uint8",
+        "numberOfBytes": "1"
+      }
+    }
+  }
+}

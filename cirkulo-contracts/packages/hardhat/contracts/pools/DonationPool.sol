@@ -1,9 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/utils/Pausable.sol";
 import "../interfaces/IXershaPool.sol";
+import "../libraries/TokenTransfer.sol";
 
 /**
  * @title DonationPool
@@ -11,6 +13,8 @@ import "../interfaces/IXershaPool.sol";
  * @dev Includes refund mechanism if goal is not met by deadline
  */
 contract DonationPool is IXershaPool, ReentrancyGuard, Pausable {
+    using TokenTransfer for address;
+
     // ========== State Variables ==========
 
     /// @notice Address of the user who created this pool
@@ -21,6 +25,12 @@ contract DonationPool is IXershaPool, ReentrancyGuard, Pausable {
 
     /// @notice Human-readable name of the circle
     string public circleName;
+
+    /// @notice Address of the ERC20 token used for donations (zero address if native token)
+    address public tokenAddress;
+
+    /// @notice Whether this pool uses native token (cBTC) or ERC20 token
+    bool public isNativeToken;
 
     /// @notice Address that will receive the donated funds
     address public beneficiary;
@@ -57,6 +67,9 @@ contract DonationPool is IXershaPool, ReentrancyGuard, Pausable {
 
     /// @notice Whether refunds are enabled (goal not met by deadline)
     bool public refundsEnabled;
+
+    /// @notice Whether this contract has been initialized (for clone pattern)
+    bool private initialized;
 
     // ========== Events ==========
 
@@ -95,25 +108,48 @@ contract DonationPool is IXershaPool, ReentrancyGuard, Pausable {
     // ========== Constructor ==========
 
     /**
-     * @notice Creates a new Donation pool
+     * @notice Constructor for implementation contract
+     * @dev Prevents the implementation contract from being initialized
+     */
+    constructor() {
+        initialized = true;
+    }
+
+    /**
+     * @notice Initializes a new Donation pool clone
+     * @dev This replaces the constructor for cloned instances
      * @param _creator Address of the user creating the pool
      * @param _circleId Address of the Lens.xyz circle contract
      * @param _circleName Name of the circle
      * @param _beneficiary Address that will receive the funds
      * @param _goalAmount Target fundraising amount in wei
      * @param _deadline Deadline as Unix timestamp
+     * @param _tokenAddress Address of the ERC20 token to use for donations (zero address if native)
+     * @param _isNativeToken Whether this pool uses native token (cBTC) or ERC20 token
      */
-    constructor(
+    function initialize(
         address _creator,
         address _circleId,
         string memory _circleName,
         address _beneficiary,
         uint256 _goalAmount,
-        uint256 _deadline
-    ) {
+        uint256 _deadline,
+        address _tokenAddress,
+        bool _isNativeToken
+    ) external {
+        require(!initialized, "Already initialized");
+        initialized = true;
+
         require(_beneficiary != address(0), "Invalid beneficiary");
         require(_goalAmount > 0, "Goal must be positive");
         require(_deadline > block.timestamp, "Deadline must be future");
+
+        // Validate token address based on token type
+        if (_isNativeToken) {
+            require(_tokenAddress == address(0), "Token address must be zero for native token");
+        } else {
+            require(_tokenAddress != address(0), "Invalid token address for ERC20");
+        }
 
         creator = _creator;
         circleId = _circleId;
@@ -121,6 +157,8 @@ contract DonationPool is IXershaPool, ReentrancyGuard, Pausable {
         beneficiary = _beneficiary;
         goalAmount = _goalAmount;
         deadline = _deadline;
+        tokenAddress = _tokenAddress;
+        isNativeToken = _isNativeToken;
         isActive = true;
 
         // Creator automatically becomes a member
@@ -163,24 +201,28 @@ contract DonationPool is IXershaPool, ReentrancyGuard, Pausable {
 
     /**
      * @notice Allows a member to donate to the pool
-     * @dev Only members can donate, must be before deadline
+     * @dev For ERC20: Member must have approved the contract to spend tokens before calling
+     *      For native token: amount parameter is ignored, msg.value is used
+     * @param amount Amount of ERC20 tokens to donate (ignored for native token pools)
      */
-    function donate() external payable onlyMember whenNotPaused nonReentrant {
-        require(msg.value > 0, "Must donate something");
+    function donate(uint256 amount) external payable onlyMember whenNotPaused nonReentrant {
         require(block.timestamp <= deadline, "Deadline passed");
         require(!fundsReleased, "Funds already released");
         require(!refundsEnabled, "Refunds enabled, cannot donate");
         require(isActive, "Pool not active");
+        require(isNativeToken || amount > 0, "Must donate something");
+
+        uint256 donationAmount = TokenTransfer.receiveTokens(tokenAddress, isNativeToken, amount);
 
         // Track first-time donors
         if (donations[msg.sender] == 0) {
             donors.push(msg.sender);
         }
 
-        donations[msg.sender] += msg.value;
-        totalRaised += msg.value;
+        donations[msg.sender] += donationAmount;
+        totalRaised += donationAmount;
 
-        emit DonationMade(msg.sender, msg.value);
+        emit DonationMade(msg.sender, donationAmount);
 
         // Check if goal reached
         if (totalRaised >= goalAmount) {
@@ -205,11 +247,11 @@ contract DonationPool is IXershaPool, ReentrancyGuard, Pausable {
         fundsReleased = true;
         isActive = false;
 
-        uint256 amount = address(this).balance;
+        uint256 amount = isNativeToken
+            ? address(this).balance
+            : IERC20(tokenAddress).balanceOf(address(this));
 
-        // Use call instead of transfer for better compatibility
-        (bool success, ) = payable(beneficiary).call{value: amount}("");
-        require(success, "Transfer failed");
+        TokenTransfer.sendTokens(tokenAddress, isNativeToken, beneficiary, amount);
 
         emit FundsReleased(beneficiary, amount);
     }
@@ -242,9 +284,7 @@ contract DonationPool is IXershaPool, ReentrancyGuard, Pausable {
         donations[msg.sender] = 0;
         totalRaised -= amount;
 
-        // Use call instead of transfer for better compatibility
-        (bool success, ) = payable(msg.sender).call{value: amount}("");
-        require(success, "Transfer failed");
+        TokenTransfer.sendTokens(tokenAddress, isNativeToken, msg.sender, amount);
 
         emit RefundClaimed(msg.sender, amount);
     }

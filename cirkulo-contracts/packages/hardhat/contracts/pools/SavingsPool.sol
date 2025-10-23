@@ -1,9 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/utils/Pausable.sol";
 import "../interfaces/IXershaPool.sol";
+import "../libraries/TokenTransfer.sol";
 
 /**
  * @title SavingsPool
@@ -11,6 +13,8 @@ import "../interfaces/IXershaPool.sol";
  * @dev Members maintain individual balances and can set collective savings goals
  */
 contract SavingsPool is IXershaPool, ReentrancyGuard, Pausable {
+    using TokenTransfer for address;
+
     // ========== State Variables ==========
 
     /// @notice Address of the user who created this pool
@@ -21,6 +25,12 @@ contract SavingsPool is IXershaPool, ReentrancyGuard, Pausable {
 
     /// @notice Human-readable name of the circle
     string public circleName;
+
+    /// @notice Address of the ERC20 token used for savings (zero address if native token)
+    address public tokenAddress;
+
+    /// @notice Whether this pool uses native token (cBTC) or ERC20 token
+    bool public isNativeToken;
 
     /// @notice Individual balances for each member
     mapping(address => uint256) public balances;
@@ -45,6 +55,9 @@ contract SavingsPool is IXershaPool, ReentrancyGuard, Pausable {
 
     /// @notice Whether the pool is currently active
     bool public isActive;
+
+    /// @notice Whether this contract has been initialized (for clone pattern)
+    bool private initialized;
 
     // ========== Events ==========
 
@@ -81,15 +94,44 @@ contract SavingsPool is IXershaPool, ReentrancyGuard, Pausable {
     // ========== Constructor ==========
 
     /**
-     * @notice Creates a new Savings pool
+     * @notice Constructor for implementation contract
+     * @dev Prevents the implementation contract from being initialized
+     */
+    constructor() {
+        initialized = true;
+    }
+
+    /**
+     * @notice Initializes a new Savings pool clone
+     * @dev This replaces the constructor for cloned instances
      * @param _creator Address of the user creating the pool
      * @param _circleId Address of the Lens.xyz circle contract
      * @param _circleName Name of the circle
+     * @param _tokenAddress Address of the ERC20 token to use for savings (zero address if native)
+     * @param _isNativeToken Whether this pool uses native token (cBTC) or ERC20 token
      */
-    constructor(address _creator, address _circleId, string memory _circleName) {
+    function initialize(
+        address _creator,
+        address _circleId,
+        string memory _circleName,
+        address _tokenAddress,
+        bool _isNativeToken
+    ) external {
+        require(!initialized, "Already initialized");
+        initialized = true;
+
+        // Validate token address based on token type
+        if (_isNativeToken) {
+            require(_tokenAddress == address(0), "Token address must be zero for native token");
+        } else {
+            require(_tokenAddress != address(0), "Invalid token address for ERC20");
+        }
+
         creator = _creator;
         circleId = _circleId;
         circleName = _circleName;
+        tokenAddress = _tokenAddress;
+        isNativeToken = _isNativeToken;
         isActive = true;
 
         // Creator automatically becomes a member
@@ -132,20 +174,24 @@ contract SavingsPool is IXershaPool, ReentrancyGuard, Pausable {
 
     /**
      * @notice Allows a member to deposit funds into their savings
-     * @dev Amount is tracked in member's individual balance
+     * @dev For ERC20: Member must have approved the contract to spend tokens before calling
+     *      For native token: amount parameter is ignored, msg.value is used
+     * @param amount Amount of ERC20 tokens to deposit (ignored for native token pools)
      */
-    function deposit() external payable onlyMember poolIsActive whenNotPaused nonReentrant {
-        require(msg.value > 0, "Must deposit something");
+    function deposit(uint256 amount) external payable onlyMember poolIsActive whenNotPaused nonReentrant {
+        require(isNativeToken || amount > 0, "Must deposit something");
 
-        balances[msg.sender] += msg.value;
-        totalSaved += msg.value;
+        uint256 depositAmount = TokenTransfer.receiveTokens(tokenAddress, isNativeToken, amount);
 
-        emit Deposited(msg.sender, msg.value);
+        balances[msg.sender] += depositAmount;
+        totalSaved += depositAmount;
+
+        emit Deposited(msg.sender, depositAmount);
     }
 
     /**
      * @notice Allows a member to withdraw from their savings balance
-     * @param amount Amount to withdraw in wei
+     * @param amount Amount of tokens to withdraw
      */
     function withdraw(uint256 amount) external onlyMember whenNotPaused nonReentrant {
         require(amount > 0, "Must withdraw something");
@@ -154,9 +200,7 @@ contract SavingsPool is IXershaPool, ReentrancyGuard, Pausable {
         balances[msg.sender] -= amount;
         totalSaved -= amount;
 
-        // Use call instead of transfer for better compatibility
-        (bool success, ) = payable(msg.sender).call{value: amount}("");
-        require(success, "Transfer failed");
+        TokenTransfer.sendTokens(tokenAddress, isNativeToken, msg.sender, amount);
 
         emit Withdrawn(msg.sender, amount);
     }

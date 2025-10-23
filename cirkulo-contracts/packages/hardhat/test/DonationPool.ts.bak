@@ -1,13 +1,12 @@
 import { expect } from "chai";
 import { ethers } from "hardhat";
-import { DonationPool, MockCUSD, XershaFactory } from "../typechain-types";
+import { DonationPool, MockCUSD } from "../typechain-types";
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import { time } from "@nomicfoundation/hardhat-network-helpers";
 
 describe("DonationPool", function () {
   let donationPool: DonationPool;
   let mockToken: MockCUSD;
-  let xershaFactory: XershaFactory;
   let circleId: string;
   let creator: SignerWithAddress;
   let beneficiary: SignerWithAddress;
@@ -38,35 +37,19 @@ describe("DonationPool", function () {
     deadline = (await time.latest()) + 86400 * 30;
 
     // Use a simple address as circleId (can be any non-zero address for cross-chain reference)
-    circleId = nonMember.address; // Use nonMember address to avoid conflicts
+    circleId = creator.address;
 
-    // Deploy implementation contracts
-    const ROSCAPoolFactory = await ethers.getContractFactory("ROSCAPool");
-    const roscaImpl = await ROSCAPoolFactory.deploy();
-
-    const SavingsPoolFactory = await ethers.getContractFactory("SavingsPool");
-    const savingsImpl = await SavingsPoolFactory.deploy();
-
+    // Deploy Donation pool
     const DonationPoolFactory = await ethers.getContractFactory("DonationPool");
-    const donationImpl = await DonationPoolFactory.deploy();
-
-    // Deploy XershaFactory
-    const XershaFactoryFactory = await ethers.getContractFactory("XershaFactory");
-    xershaFactory = await XershaFactoryFactory.deploy(
+    donationPool = await DonationPoolFactory.deploy(
       creator.address,
-      await roscaImpl.getAddress(),
-      await savingsImpl.getAddress(),
-      await donationImpl.getAddress(),
+      circleId,
+      circleName,
+      beneficiary.address,
+      goalAmount,
+      deadline,
+      await mockToken.getAddress(),
     );
-
-    // Create Donation pool via factory
-    await xershaFactory
-      .connect(creator)
-      .createDonationPool(circleId, circleName, beneficiary.address, goalAmount, deadline, await mockToken.getAddress(), false);
-
-    // Get the created pool
-    const poolAddress = await xershaFactory.circleToPool(circleId);
-    donationPool = await ethers.getContractAt("DonationPool", poolAddress);
   });
 
   describe("Deployment", function () {

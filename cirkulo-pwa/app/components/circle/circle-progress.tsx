@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import type { Circle } from "app/types/feed";
 import { Card, CardContent, CardHeader, CardTitle } from "app/components/ui/card";
-import { Trophy, Target, RefreshCw, Users } from "lucide-react";
+import { Trophy, Target, RefreshCw, Users, TrendingUp } from "lucide-react";
 import { cn } from "app/lib/utils";
 
 export interface CircleProgressProps {
@@ -10,15 +10,48 @@ export interface CircleProgressProps {
 }
 
 export function CircleProgress({ circle, className }: CircleProgressProps) {
-  // Format currency
-  const formatCurrency = (amount: number): string => {
+  // Format currency based on token type
+  const formatCurrency = (amount: number, currency?: "cusd" | "cbtc"): string => {
+    if (currency === "cbtc") {
+      // cBTC: Show up to 8 decimals, but remove trailing zeros
+      const formatted = amount.toFixed(8).replace(/\.?0+$/, '');
+      return `${formatted} cBTC`;
+    }
+
+    // CUSD/USD: Show as dollars with 2 decimal places
     return new Intl.NumberFormat("en-US", {
       style: "currency",
       currency: "USD",
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
     }).format(amount);
   };
+
+  // For contribution circles, show simple savings display (open-ended, no goal)
+  if (circle.circleType === "contribution") {
+    return (
+      <Card className={cn("bg-white/90 backdrop-blur-sm border-0 shadow-lg", className)}>
+        <CardHeader>
+          <CardTitle className="text-xl sm:text-2xl">Collective Savings</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          {/* Large Total Display */}
+          <div className="text-center space-y-3">
+            <div className="text-5xl sm:text-6xl font-bold text-neutral-900">
+              {formatCurrency(circle.currentAmount, circle.currency)}
+            </div>
+            <p className="text-sm text-neutral-600">Total Saved by Group</p>
+          </div>
+
+          {/* Members Count */}
+          <div className="bg-neutral-50 rounded-xl p-4 text-center">
+            <p className="text-xs text-neutral-600 mb-1">Members</p>
+            <p className="text-2xl font-bold text-neutral-900">{circle.memberCount}</p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   // For rotating circles, show round-based progress
   if (circle.circleType === "rotating") {
@@ -84,7 +117,7 @@ export function CircleProgress({ circle, className }: CircleProgressProps) {
 
             <div className="space-y-1">
               <div className="text-2xl sm:text-3xl font-bold text-neutral-900">
-                {formatCurrency(circle.goalAmount / totalRounds)}
+                {formatCurrency(circle.goalAmount / totalRounds, circle.currency)}
               </div>
               <div className="text-sm text-neutral-600">
                 per round contribution
@@ -206,10 +239,10 @@ export function CircleProgress({ circle, className }: CircleProgressProps) {
 
           <div className="space-y-1">
             <div className="text-2xl sm:text-3xl font-bold text-neutral-900">
-              {formatCurrency(circle.currentAmount)}
+              {formatCurrency(circle.currentAmount, circle.currency)}
             </div>
             <div className="text-sm text-neutral-600">
-              of {formatCurrency(circle.goalAmount)} goal
+              of {formatCurrency(circle.goalAmount, circle.currency)} goal
             </div>
           </div>
         </div>
@@ -293,7 +326,7 @@ export function CircleProgress({ circle, className }: CircleProgressProps) {
                   Next Milestone: {nextMilestone}%
                 </p>
                 <p className="text-xs text-neutral-600 mt-0.5">
-                  {formatCurrency(circle.goalAmount * (nextMilestone / 100) - circle.currentAmount)} to go
+                  {formatCurrency(circle.goalAmount * (nextMilestone / 100) - circle.currentAmount, circle.currency)} to go
                 </p>
               </div>
             </div>
@@ -309,7 +342,7 @@ export function CircleProgress({ circle, className }: CircleProgressProps) {
                     Congratulations! Goal achieved!
                   </p>
                   <p className="text-xs text-success-700 mt-0.5">
-                    You saved {formatCurrency(circle.goalAmount)} together
+                    You saved {formatCurrency(circle.goalAmount, circle.currency)} together
                   </p>
                 </div>
               </div>

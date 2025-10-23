@@ -1,13 +1,12 @@
 import { expect } from "chai";
 import { ethers } from "hardhat";
-import { SavingsPool, MockCUSD, XershaFactory } from "../typechain-types";
+import { SavingsPool, MockCUSD } from "../typechain-types";
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import { time } from "@nomicfoundation/hardhat-network-helpers";
 
 describe("SavingsPool", function () {
   let savingsPool: SavingsPool;
   let mockToken: MockCUSD;
-  let xershaFactory: XershaFactory;
   let circleId: string;
   let creator: SignerWithAddress;
   let member1: SignerWithAddress;
@@ -32,33 +31,11 @@ describe("SavingsPool", function () {
     await mockToken.mint(member3.address, mintAmount);
 
     // Use a simple address as circleId (can be any non-zero address for cross-chain reference)
-    circleId = nonMember.address; // Use nonMember address to avoid conflicts
+    circleId = creator.address;
 
-    // Deploy implementation contracts
-    const ROSCAPoolFactory = await ethers.getContractFactory("ROSCAPool");
-    const roscaImpl = await ROSCAPoolFactory.deploy();
-
+    // Deploy Savings pool
     const SavingsPoolFactory = await ethers.getContractFactory("SavingsPool");
-    const savingsImpl = await SavingsPoolFactory.deploy();
-
-    const DonationPoolFactory = await ethers.getContractFactory("DonationPool");
-    const donationImpl = await DonationPoolFactory.deploy();
-
-    // Deploy XershaFactory
-    const XershaFactoryFactory = await ethers.getContractFactory("XershaFactory");
-    xershaFactory = await XershaFactoryFactory.deploy(
-      creator.address,
-      await roscaImpl.getAddress(),
-      await savingsImpl.getAddress(),
-      await donationImpl.getAddress(),
-    );
-
-    // Create Savings pool via factory
-    await xershaFactory.connect(creator).createSavingsPool(circleId, circleName, await mockToken.getAddress(), false);
-
-    // Get the created pool
-    const poolAddress = await xershaFactory.circleToPool(circleId);
-    savingsPool = await ethers.getContractAt("SavingsPool", poolAddress);
+    savingsPool = await SavingsPoolFactory.deploy(creator.address, circleId, circleName, await mockToken.getAddress());
   });
 
   describe("Deployment", function () {

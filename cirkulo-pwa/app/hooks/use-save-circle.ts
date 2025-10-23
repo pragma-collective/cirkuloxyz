@@ -16,6 +16,7 @@ export interface SaveCircleRequest {
 	lensGroupAddress: string;
 	poolDeploymentTxHash: string;
 	circleType: "contribution" | "rotating" | "fundraising";
+	currency: "cusd" | "cbtc";
 }
 
 /**
@@ -31,6 +32,7 @@ export interface SaveCircleResponse {
 		poolAddress: string;
 		lensGroupAddress: string;
 		circleType: string;
+		currency: string;
 		creatorAddress: string;
 		createdAt: string;
 	};

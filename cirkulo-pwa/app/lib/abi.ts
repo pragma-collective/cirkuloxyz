@@ -103,6 +103,16 @@ export const xershaFactoryAbi = [
         name: "deadline",
         type: "uint256",
       },
+      {
+        internalType: "address",
+        name: "tokenAddress",
+        type: "address",
+      },
+      {
+        internalType: "bool",
+        name: "isNativeToken",
+        type: "bool",
+      },
     ],
     name: "createDonationPool",
     outputs: [
@@ -132,6 +142,16 @@ export const xershaFactoryAbi = [
         name: "contributionAmount",
         type: "uint256",
       },
+      {
+        internalType: "address",
+        name: "tokenAddress",
+        type: "address",
+      },
+      {
+        internalType: "bool",
+        name: "isNativeToken",
+        type: "bool",
+      },
     ],
     name: "createROSCA",
     outputs: [
@@ -155,6 +175,16 @@ export const xershaFactoryAbi = [
         internalType: "string",
         name: "circleName",
         type: "string",
+      },
+      {
+        internalType: "address",
+        name: "tokenAddress",
+        type: "address",
+      },
+      {
+        internalType: "bool",
+        name: "isNativeToken",
+        type: "bool",
       },
     ],
     name: "createSavingsPool",
@@ -292,6 +322,22 @@ export function getXershaFactoryAddress(): `0x${string}` {
 
   if (!address) {
     throw new Error("VITE_XERSHA_FACTORY_ADDRESS not set in environment variables");
+  }
+
+  return address as `0x${string}`;
+}
+
+/**
+ * Get MockCUSD token contract address from environment variable
+ *
+ * For local development: Set VITE_MOCK_CUSD_ADDRESS to the deployed MockCUSD contract address
+ * For production: Replace with actual CUSD stablecoin address on Citrea
+ */
+export function getMockCUSDAddress(): `0x${string}` {
+  const address = import.meta.env.VITE_MOCK_CUSD_ADDRESS;
+
+  if (!address) {
+    throw new Error("VITE_MOCK_CUSD_ADDRESS not set in environment variables");
   }
 
   return address as `0x${string}`;

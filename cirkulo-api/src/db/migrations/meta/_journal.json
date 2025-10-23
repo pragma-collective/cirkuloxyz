@@ -43,6 +43,13 @@
       "when": 1761144948444,
       "tag": "0005_bumpy_the_watchers",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1761218407290,
+      "tag": "0006_short_warbound",
+      "breakpoints": true
     }
   ]
 }

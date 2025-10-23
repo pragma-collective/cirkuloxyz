@@ -18,6 +18,7 @@ export interface FetchCircleResponse {
 		lensGroupAddress: string;
 		poolDeploymentTxHash: string | null;
 		circleType: "contribution" | "rotating" | "fundraising";
+		currency: "cusd" | "cbtc";
 		creatorAddress: string;
 		createdAt: string;
 		updatedAt: string;

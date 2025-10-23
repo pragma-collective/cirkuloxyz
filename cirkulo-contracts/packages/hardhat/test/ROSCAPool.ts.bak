@@ -1,13 +1,12 @@
 import { expect } from "chai";
 import { ethers } from "hardhat";
-import { ROSCAPool, MockCUSD, XershaFactory } from "../typechain-types";
+import { ROSCAPool, MockCUSD } from "../typechain-types";
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import { time } from "@nomicfoundation/hardhat-network-helpers";
 
 describe("ROSCAPool", function () {
   let roscaPool: ROSCAPool;
   let mockToken: MockCUSD;
-  let xershaFactory: XershaFactory;
   let circleId: string;
   let creator: SignerWithAddress;
   let member1: SignerWithAddress;
@@ -37,35 +36,17 @@ describe("ROSCAPool", function () {
     await mockToken.mint(member5.address, mintAmount);
 
     // Use a simple address as circleId (can be any non-zero address for cross-chain reference)
-    circleId = nonMember.address; // Use nonMember address to avoid conflicts
+    circleId = creator.address;
 
-    // Deploy implementation contracts
+    // Deploy ROSCA pool
     const ROSCAPoolFactory = await ethers.getContractFactory("ROSCAPool");
-    const roscaImpl = await ROSCAPoolFactory.deploy();
-
-    const SavingsPoolFactory = await ethers.getContractFactory("SavingsPool");
-    const savingsImpl = await SavingsPoolFactory.deploy();
-
-    const DonationPoolFactory = await ethers.getContractFactory("DonationPool");
-    const donationImpl = await DonationPoolFactory.deploy();
-
-    // Deploy XershaFactory
-    const XershaFactoryFactory = await ethers.getContractFactory("XershaFactory");
-    xershaFactory = await XershaFactoryFactory.deploy(
+    roscaPool = await ROSCAPoolFactory.deploy(
       creator.address,
-      await roscaImpl.getAddress(),
-      await savingsImpl.getAddress(),
-      await donationImpl.getAddress(),
+      circleId,
+      circleName,
+      contributionAmount,
+      await mockToken.getAddress(),
     );
-
-    // Create ROSCA pool via factory
-    await xershaFactory
-      .connect(creator)
-      .createROSCA(circleId, circleName, contributionAmount, await mockToken.getAddress(), false);
-
-    // Get the created pool
-    const poolAddress = await xershaFactory.circleToPool(circleId);
-    roscaPool = await ethers.getContractAt("ROSCAPool", poolAddress);
   });
 
   describe("Deployment", function () {
@@ -198,12 +179,14 @@ describe("ROSCAPool", function () {
 
     it("Should fail with less than MIN_MEMBERS", async function () {
       // Create new pool with only 3 members
-      const smallCircleId = member4.address; // Use a different circle ID
-      await xershaFactory
-        .connect(creator)
-        .createROSCA(smallCircleId, "Small Circle", contributionAmount, await mockToken.getAddress(), false);
-      const smallPoolAddress = await xershaFactory.circleToPool(smallCircleId);
-      const smallPool = await ethers.getContractAt("ROSCAPool", smallPoolAddress);
+      const ROSCAPoolFactory = await ethers.getContractFactory("ROSCAPool");
+      const smallPool = await ROSCAPoolFactory.deploy(
+        creator.address,
+        circleId,
+        circleName,
+        contributionAmount,
+        await mockToken.getAddress(),
+      );
 
       await smallPool.connect(creator).inviteMember(member1.address);
       await smallPool.connect(member1).joinPool();
@@ -383,12 +366,14 @@ describe("ROSCAPool", function () {
 
     it("Should prevent payout before everyone contributes", async function () {
       // Create new round scenario
-      const newCircleId = member5.address; // Use a different circle ID
-      await xershaFactory
-        .connect(creator)
-        .createROSCA(newCircleId, "Payout Test Circle", contributionAmount, await mockToken.getAddress(), false);
-      const newPoolAddress = await xershaFactory.circleToPool(newCircleId);
-      const newPool = await ethers.getContractAt("ROSCAPool", newPoolAddress);
+      const ROSCAPoolFactory = await ethers.getContractFactory("ROSCAPool");
+      const newPool = await ROSCAPoolFactory.deploy(
+        creator.address,
+        circleId,
+        circleName,
+        contributionAmount,
+        await mockToken.getAddress(),
+      );
 
       await newPool.connect(creator).inviteMember(member1.address);
       await newPool.connect(member1).joinPool();
@@ -466,12 +451,14 @@ describe("ROSCAPool", function () {
 
     it("Should prevent starting next round before payout", async function () {
       // Start a new test case
-      const roundCircleId = ethers.Wallet.createRandom().address; // Use a random address for this test
-      await xershaFactory
-        .connect(creator)
-        .createROSCA(roundCircleId, "Round Test Circle", contributionAmount, await mockToken.getAddress(), false);
-      const newPoolAddress = await xershaFactory.circleToPool(roundCircleId);
-      const newPool = await ethers.getContractAt("ROSCAPool", newPoolAddress);
+      const ROSCAPoolFactory = await ethers.getContractFactory("ROSCAPool");
+      const newPool = await ROSCAPoolFactory.deploy(
+        creator.address,
+        circleId,
+        circleName,
+        contributionAmount,
+        await mockToken.getAddress(),
+      );
 
       await newPool.connect(creator).inviteMember(member1.address);
       await newPool.connect(member1).joinPool();
