@@ -69,6 +69,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
 		primaryWallet,
 		setShowAuthFlow,
 		handleLogOut,
+		sdkHasLoaded,
 	} = useDynamicContext();
 
 	const [isLoading, setIsLoading] = useState(false);
@@ -97,6 +98,16 @@ export function WalletProvider({ children }: { children: ReactNode }) {
 			username: dynamicUser.username,
 		};
 	}, [dynamicUser?.userId, dynamicUser?.email, dynamicUser?.username]);
+
+	// Log Dynamic SDK initialization state
+	useEffect(() => {
+		console.log("[WalletContext] Dynamic SDK state:", {
+			sdkHasLoaded,
+			hasUser: !!dynamicUser,
+			hasWallet: !!primaryWallet,
+			isConnected,
+		});
+	}, [sdkHasLoaded, dynamicUser, primaryWallet, isConnected]);
 
 	// Listen for auth success events to resolve pending connect promises
 	useEffect(() => {
@@ -211,18 +222,22 @@ export function WalletProvider({ children }: { children: ReactNode }) {
 		setIsLoading(false);
 	}, [handleLogOut]);
 
+	// Combined loading state: manual connect loading OR SDK initialization loading
+	// SDK must finish loading before we can determine true connection state
+	const combinedIsLoading = isLoading || !sdkHasLoaded;
+
 	const value = useMemo(
 		() => ({
 			walletAddress,
 			user,
 			isConnected,
-			isLoading,
+			isLoading: combinedIsLoading,
 			connect,
 			disconnect,
 		}),
 		// Only re-create context value when wallet STATE changes, not when callbacks change
 		// Callbacks are stable enough and don't need to trigger re-renders
-		[walletAddress, user, isConnected, isLoading],
+		[walletAddress, user, isConnected, combinedIsLoading],
 	);
 
 	return (

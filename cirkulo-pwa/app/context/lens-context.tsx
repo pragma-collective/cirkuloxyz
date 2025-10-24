@@ -61,6 +61,8 @@ export interface LensContextType {
 	accountsError: Error | null;
 	/** Whether user has at least one Lens account */
 	hasAccounts: boolean;
+	/** Whether accounts fetch has completed (even if resulted in 0 accounts) */
+	hasAccountsFetched: boolean;
 	/**
 	 * Authenticate with a specific Lens account
 	 * Creates new session and stores metadata
@@ -126,6 +128,7 @@ export function LensProvider({
 		lensAccounts: accounts,
 		isLoading: isLoadingAccounts,
 		error: accountsError,
+		hasFetched: hasAccountsFetched,
 	} = useFetchLensAccounts(walletAddress);
 
 	// Derived state
@@ -215,6 +218,10 @@ export function LensProvider({
 					setSessionClient(resumed.value);
 
 					console.log(
+						"[LensContext] Session client state update dispatched - React will batch with isResumingSession clear",
+					);
+
+					console.log(
 						"[LensContext] Session resume complete:",
 						metadata.username || metadata.accountAddress,
 						"- Account will be restored by fallback effect",
@@ -243,15 +250,9 @@ export function LensProvider({
 				);
 				clearSessionMetadata();
 			} finally {
-				// CRITICAL: Delay clearing loading state to ensure React batches all previous state updates
-				// This prevents navigation from running with stale sessionClient/selectedAccount state
-				console.log(
-					"[LensContext] Delaying isResumingSession clear to ensure state propagates",
-				);
-				setTimeout(() => {
-					console.log("[LensContext] Clearing isResumingSession flag");
-					setIsResumingSession(false);
-				}, 0);
+				// Clear loading state - React will batch this with previous state updates
+				console.log("[LensContext] Clearing isResumingSession flag");
+				setIsResumingSession(false);
 			}
 		};
 
@@ -462,6 +463,7 @@ export function LensProvider({
 			isResumingSession,
 			accountsError,
 			hasAccounts,
+			hasAccountsFetched,
 			authenticate,
 			logout,
 		}),
@@ -475,6 +477,7 @@ export function LensProvider({
 			isResumingSession,
 			accountsError,
 			hasAccounts,
+			hasAccountsFetched,
 		],
 	);
 

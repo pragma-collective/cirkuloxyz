@@ -61,10 +61,17 @@ export default function AuthenticatedRoute() {
 	// User has wallet but no Lens session yet
 	// AuthContext navigation hook will handle routing to onboarding or select-account
 	// This should only happen after loading is complete
+	// CRITICAL: Show loading spinner to prevent navigation with incomplete state
 	if (!hasLensSession) {
-		// Instead of showing another loading state, let the navigation hook redirect
-		// This prevents the white page during navigation
-		return null;
+		console.log("[AuthenticatedRoute] Waiting for Lens session to propagate");
+		return (
+			<div className="min-h-screen flex items-center justify-center bg-neutral-50">
+				<div className="flex flex-col items-center gap-4">
+					<Loader2 className="size-12 text-primary-600 animate-spin" />
+					<p className="text-sm text-neutral-600">Loading session...</p>
+				</div>
+			</div>
+		);
 	}
 
 	// User is fully authenticated (wallet + Lens session)

@@ -24,6 +24,7 @@ export interface UseFetchLensAccountsReturn {
 	lensAccounts: LensAccount[];
 	isLoading: boolean;
 	error: Error | null;
+	hasFetched: boolean;
 }
 
 /**
@@ -45,6 +46,7 @@ export function useFetchLensAccounts(
 	const [lensAccounts, setLensAccounts] = useState<LensAccount[]>([]);
 	const [isLoading, setIsLoading] = useState(false);
 	const [error, setError] = useState<Error | null>(null);
+	const [hasFetched, setHasFetched] = useState(false);
 
 	// Track previous wallet address VALUE to prevent unnecessary re-fetching
 	const previousAddressRef = useRef<string | undefined>(undefined);
@@ -71,6 +73,7 @@ export function useFetchLensAccounts(
 			setIsLoading(false);
 			setLensAccounts([]);
 			setError(null);
+			setHasFetched(false);
 			hasFetchedRef.current = false;
 			return;
 		}
@@ -112,6 +115,7 @@ export function useFetchLensAccounts(
 					setLensAccounts(accounts);
 					console.log("[useFetchLensAccounts] Fetch complete, found", accounts.length, "accounts");
 					setIsLoading(false);
+					setHasFetched(true);
 					hasFetchedRef.current = true;
 				} else {
 					// No accounts found - not an error, just empty result
@@ -120,6 +124,7 @@ export function useFetchLensAccounts(
 					setLensAccounts(emptyArray);
 					console.log("[useFetchLensAccounts] Fetch complete, no accounts found");
 					setIsLoading(false);
+					setHasFetched(true);
 					hasFetchedRef.current = true;
 				}
 			} catch (err) {
@@ -131,11 +136,12 @@ export function useFetchLensAccounts(
 				setError(errorMessage);
 				setLensAccounts([]);
 				setIsLoading(false);
+				setHasFetched(true);  // Mark as fetched even on error
 			}
 		};
 
 		fetchLensAccount();
 	}, [walletAddress]);
 
-	return { lensAccounts, isLoading, error };
+	return { lensAccounts, isLoading, error, hasFetched };
 }

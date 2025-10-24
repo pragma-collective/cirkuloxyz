@@ -178,9 +178,10 @@ export function useAuthNavigation(
 		// PERFORMANCE: Early exit for authenticated users - skip ALL logic
 		// This prevents unnecessary effect execution during normal navigation
 		// between authenticated routes (e.g., dashboard → profile)
-		if (hasLensSession && walletConnected && hasResolvedInitialAuth) {
+		if (hasLensSession && walletConnected) {
 			console.log(
 				"[AuthNavigation] Authenticated user, no navigation needed",
+				{ currentPath: location.pathname },
 			);
 			return;
 		}
@@ -247,10 +248,12 @@ export function useAuthNavigation(
 		hasLensSession,
 		isLoading,
 		hasResolvedInitialAuth,
-		// NOTE: location.pathname intentionally removed to prevent effect
-		// from running on every route change for authenticated users
+		location.pathname,
 		// NOTE: navigate intentionally removed - it's stable and doesn't
 		// need to trigger this effect. This prevents unnecessary runs during navigation.
+		// NOTE: location.pathname IS included because we need to re-evaluate
+		// navigation when the path changes (e.g., manual URL changes)
+		// The early exit for authenticated users prevents unnecessary runs
 	]);
 }
 

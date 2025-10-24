@@ -16,6 +16,7 @@ import {
 	useContext,
 	useMemo,
 	useCallback,
+	useEffect,
 	type ReactNode,
 } from "react";
 import { getWalletClient } from "wagmi/actions";
@@ -80,6 +81,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 	const isLoading =
 		wallet.isLoading || lens.isLoadingAccounts || lens.isResumingSession;
 
+	// Auth is fully resolved when loading is complete AND either:
+	// - No wallet connected (nothing more to load)
+	// - Accounts have been fetched (even if empty array)
+	// This prevents navigation from running with accountCount: 0 while accounts are still loading
+	const hasResolvedInitialAuth = !isLoading && (
+		!wallet.isConnected || // No wallet = resolved
+		lens.hasAccountsFetched // Account fetch complete (even if empty) = resolved
+	);
+
+	// Debug: Log when session client changes
+	useEffect(() => {
+		console.log("[AuthContext] Session client changed:", {
+			hasSessionClient: !!lens.sessionClient,
+			isLoading,
+			hasResolvedInitialAuth,
+		});
+	}, [lens.sessionClient, isLoading, hasResolvedInitialAuth]);
+
 	// Auto-navigate based on auth state
 	// Only navigates after initial auth resolution to prevent premature redirects
 	useAuthNavigation(
@@ -87,7 +106,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 		lens.accounts.length,
 		!!lens.sessionClient,
 		isLoading,
-		!isLoading,  // hasResolvedInitialAuth is simply !isLoading
+		hasResolvedInitialAuth,
 	);
 
 	// Simple memoization for user object to prevent recreation
