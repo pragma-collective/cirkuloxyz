@@ -5,7 +5,7 @@ const resend = new Resend(process.env.RESEND_API_KEY);
 
 // Email configuration
 const FROM_EMAIL = process.env.FROM_EMAIL || "noreply@xersha.xyz";
-const APP_URL = process.env.APP_URL || "http://localhost:8000";
+const APP_URL = process.env.APP_URL || "http://localhost:5173";
 
 export interface SendInviteEmailParams {
 	to: string;

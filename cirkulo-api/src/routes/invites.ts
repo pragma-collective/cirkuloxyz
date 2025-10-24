@@ -329,9 +329,8 @@ invites.openapi(inviteUserRoute, async (c) => {
 		const emailResult = await sendInviteEmail({
 			to: recipientEmail,
 			inviterName,
+			inviteToken: newInvite.code,
 		});
-
-		console.log("SEND RESULT: ", emailResult);
 
 		// Return success response
 		return c.json(
@@ -433,6 +432,7 @@ invites.openapi(resendInviteRoute, async (c) => {
 		const emailResult = await sendInviteEmail({
 			to: invite.recipientEmail,
 			inviterName,
+			inviteToken: invite.code,
 		});
 
 		// Return success response
