@@ -1,6 +1,6 @@
-# Cirkulo Internal Tool - Set App Sponsorship
+# Cirkulo Internal Tool - Lens Sponsorship Manager
 
-**One-time use only.** This is a proper React app to connect your Lens app with its sponsorship contract.
+Internal tool for managing Lens Protocol app sponsorships. Use this to set up gas-free transactions for your app and manage sponsorship funding.
 
 ## Setup
 
@@ -12,58 +12,89 @@ pnpm dev
 
 Open http://localhost:5173
 
-## Usage
+## Features
 
-1. **Connect your Builder wallet** - Click "Connect Wallet" (MetaMask will popup)
+### 1. Set App Sponsorship (One-Time Setup)
+Link your Lens app with its sponsorship contract to enable gas-free transactions.
 
-2. **Enter your addresses:**
-   - App Address: Get from Lens dashboard (the app you created)
-   - Sponsorship Address: Get from Lens dashboard (the sponsorship you created)
+**Steps:**
+1. **Connect Wallet** - Connect your Builder wallet (the wallet that created the app)
+2. **Enter Addresses**
+   - App Address: Get from Lens dashboard (your app contract)
+   - Sponsorship Address: Get from Lens dashboard (your sponsorship contract)
+3. **Authenticate as Builder** - Sign message with your wallet
+4. **Set Sponsorship** - Confirm transaction to link app with sponsorship
 
-3. **Authenticate as Builder** - Click "Authenticate with Lens" and sign the message in MetaMask
+### 2. Fund Sponsorship
+Add GRASS tokens to your sponsorship contract to pay for user transactions.
 
-4. **Set Sponsorship** - Click "Set Sponsorship" and confirm the transaction
+**Steps:**
+1. **Enter Sponsorship Address** - Contract address from Lens dashboard
+2. **View Current Balance** - Balance displays automatically
+3. **Enter Amount** - How much GRASS to send (e.g., 1, 10, 100)
+4. **Fund** - Confirm transaction in MetaMask
+5. **Balance Updates** - New balance shows after transaction confirms
 
-5. **Done!** - Once successful, delete this folder
+**Cost Estimates:**
+- Each transaction: ~0.001-0.01 GRASS
+- 1 GRASS ≈ 100-1000 transactions
+- Start with 1-10 GRASS for testing
 
 ## What This Does
 
-Calls `setAppSponsorship` on Lens Protocol to link your app with your sponsorship contract. After this:
-- Your app will automatically sponsor gas fees for logged-in users
-- Users won't pay gas for transactions in your app
-- Make sure your sponsorship contract has sufficient funds (GHO/GRASS)
+**Set App Sponsorship:**
+Calls `setAppSponsorship` on Lens Protocol to link your app with sponsorship. After this, your app automatically sponsors gas fees for logged-in users.
+
+**Fund Sponsorship:**
+Sends GRASS tokens to the sponsorship contract. The contract uses these funds to pay gas fees for your users' transactions.
 
 ## Network
 
-Currently configured for **Lens Testnet**.
+Currently configured for **Lens Testnet** (Chain ID: 37111).
 
-To use mainnet, edit `src/main.tsx` and `src/App.tsx`:
-- Change `lensTestnet` to `lens` in wagmi config
-- Change `testnet` to `production` in Lens client
+**To use mainnet:**
+1. Edit `src/main.tsx` - Change chain definition to Lens mainnet
+2. Edit `src/App.tsx` - Change `testnet` to `production` for Lens client
+3. Use GHO tokens instead of GRASS for funding
+
+## Important Notes
+
+- **Builder wallet required** - Must be the wallet that created the app in Lens dashboard
+- **Set sponsorship once** - Only needs to be done one time per app
+- **Monitor balance** - Check Lens dashboard regularly and top up as needed
+- **Disconnect wallet** - Click "Disconnect" in top right when done
 
 ## Troubleshooting
 
 **"Please connect your wallet first"**
-- Make sure MetaMask is installed
+- Install MetaMask or compatible Web3 wallet
 - Click "Connect Wallet" button
+- Approve connection in wallet popup
 
 **"Authentication failed"**
-- Ensure you're using the wallet that created the app
-- Check you're on the correct network (Lens Testnet)
+- Use the wallet that created the app (Builder wallet)
+- Check you're on Lens Testnet (Chain ID: 37111)
+- Try refreshing and reconnecting
 
 **"Transaction failed"**
-- Verify both addresses are correct (0x format)
-- Ensure sponsorship contract has funds
-- Check you're the owner/admin of both contracts
+- Verify addresses are correct (0x format)
+- Ensure you're the owner/admin of both contracts
+- Check you have enough GRASS for gas fees
 
-## After Success
+**Balance not showing**
+- Verify sponsorship address is correct
+- Wait a few seconds for balance to load
+- Check console for errors (F12)
 
-1. Transaction will confirm on-chain
-2. Your app will now sponsor transactions
-3. Monitor funds in Lens dashboard
-4. **Delete this folder** - it's a one-time tool
+## After Setup
+
+1. **Monitor usage** - Track transaction volume in Lens dashboard
+2. **Top up funds** - Use Section 2 to add more GRASS as needed
+3. **Test app** - Verify users have gasless transactions
+4. **Keep tool** - Unlike one-time tools, keep this for managing funding
 
 ## Reference
 
-- [Lens Docs](https://lens.xyz/docs/protocol/sponsorships/sponsoring-transactions)
+- [Lens Sponsorship Docs](https://lens.xyz/docs/protocol/sponsorships/sponsoring-transactions)
 - [Lens Dashboard](https://developer.lens.xyz/)
+- [Lens Explorer (Testnet)](https://block-explorer.testnet.lens.dev)
