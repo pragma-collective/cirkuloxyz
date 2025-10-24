@@ -242,7 +242,7 @@ export function InviteModal({
 						<button
 							type="submit"
 							disabled={isSubmitting || success}
-							className="flex-1 px-6 py-3 bg-gradient-to-r from-primary-500 to-secondary-500 text-white font-semibold rounded-xl hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-none"
+							className="flex-1 px-6 py-3 bg-linear-to-r from-primary-500 to-secondary-500 text-white font-semibold rounded-xl hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-none"
 						>
 							{isSubmitting ? (
 								<span className="flex items-center justify-center gap-2">

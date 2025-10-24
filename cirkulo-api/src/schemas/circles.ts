@@ -35,7 +35,10 @@ export const CreateCircleSchema = z.object({
 				"0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef",
 		}),
 	circleType: circleTypeEnum.describe("Type of circle/pool"),
-	currency: currencyEnum.default("cusd").describe("Currency type for the pool (cusd or cbtc)").openapi({ example: "cusd" }),
+	currency: currencyEnum
+		.default("cusd")
+		.describe("Currency type for the pool (cusd or cbtc)")
+		.openapi({ example: "cusd" }),
 });
 
 // Create Circle Response Schema
@@ -166,6 +169,77 @@ export const getCircleRoute = createRoute({
 		},
 		404: {
 			description: "Circle not found",
+			content: {
+				"application/json": {
+					schema: ErrorSchema,
+				},
+			},
+		},
+		500: {
+			description: "Internal server error",
+			content: {
+				"application/json": {
+					schema: ErrorSchema,
+				},
+			},
+		},
+	},
+});
+
+// Get My Circles Response Schema
+export const GetMyCirclesResponseSchema = z.object({
+	success: z.boolean().describe("Whether the request was successful"),
+	data: z
+		.array(
+			z.object({
+				// Circle data from database
+				id: z.string().describe("Database ID"),
+				circleName: z.string().describe("Circle name"),
+				poolAddress: z.string().describe("Pool contract address"),
+				lensGroupAddress: z.string().describe("Lens group address"),
+				poolDeploymentTxHash: z
+					.string()
+					.nullable()
+					.describe("Pool deployment transaction hash"),
+				circleType: circleTypeEnum.describe("Circle type"),
+				currency: currencyEnum.describe("Currency type"),
+				creatorAddress: z.string().describe("Creator's address"),
+				createdAt: z.string().describe("Creation timestamp"),
+				updatedAt: z.string().describe("Last update timestamp"),
+				// Lens group data
+				lensGroup: z
+					.object({
+						address: z.string().describe("Group address"),
+						owner: z.string().describe("Group owner address"),
+						metadata: z.any().nullable().describe("Group metadata from Lens"),
+						timestamp: z.number().describe("Group creation timestamp"),
+					})
+					.describe("Group data from Lens Protocol"),
+			}),
+		)
+		.describe("Array of circles with their corresponding Lens group data"),
+});
+
+// Get My Circles Route Definition
+export const getMyCirclesRoute = createRoute({
+	method: "get",
+	path: "/me",
+	tags: ["Circles"],
+	summary: "Get authenticated user's circles",
+	description:
+		"Retrieves all circles where the authenticated user is a member. Cross-matches Lens Protocol groups with off-chain circle records. Requires authentication.",
+	security: [{ bearerAuth: [] }],
+	responses: {
+		200: {
+			description: "Circles retrieved successfully",
+			content: {
+				"application/json": {
+					schema: GetMyCirclesResponseSchema,
+				},
+			},
+		},
+		401: {
+			description: "Unauthorized - Invalid or missing authentication token",
 			content: {
 				"application/json": {
 					schema: ErrorSchema,

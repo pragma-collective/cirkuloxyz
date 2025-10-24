@@ -1,221 +1,210 @@
 {
-  "id": "fd9dc4bb-abc2-4bd8-b1c2-f09b2d7f8143",
-  "prevId": "97e10e40-7e39-4abd-865b-dc1fe4dd255b",
-  "version": "7",
-  "dialect": "postgresql",
-  "tables": {
-    "public.circles": {
-      "name": "circles",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "uuid",
-          "primaryKey": true,
-          "notNull": true,
-          "default": "gen_random_uuid()"
-        },
-        "circle_name": {
-          "name": "circle_name",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "pool_address": {
-          "name": "pool_address",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "lens_group_address": {
-          "name": "lens_group_address",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "pool_deployment_tx_hash": {
-          "name": "pool_deployment_tx_hash",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "creator_address": {
-          "name": "creator_address",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "circle_type": {
-          "name": "circle_type",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "currency": {
-          "name": "currency",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "'cusd'"
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        },
-        "updated_at": {
-          "name": "updated_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        }
-      },
-      "indexes": {},
-      "foreignKeys": {},
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {
-        "circles_pool_address_unique": {
-          "name": "circles_pool_address_unique",
-          "nullsNotDistinct": false,
-          "columns": [
-            "pool_address"
-          ]
-        },
-        "circles_lens_group_address_unique": {
-          "name": "circles_lens_group_address_unique",
-          "nullsNotDistinct": false,
-          "columns": [
-            "lens_group_address"
-          ]
-        }
-      },
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
-    "public.invites": {
-      "name": "invites",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "uuid",
-          "primaryKey": true,
-          "notNull": true,
-          "default": "gen_random_uuid()"
-        },
-        "code": {
-          "name": "code",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "gen_random_uuid()"
-        },
-        "recipient_email": {
-          "name": "recipient_email",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "config_salt": {
-          "name": "config_salt",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "group_address": {
-          "name": "group_address",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "sender_address": {
-          "name": "sender_address",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "status": {
-          "name": "status",
-          "type": "invite_status",
-          "typeSchema": "public",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "'pending'"
-        },
-        "expires_at": {
-          "name": "expires_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "accepted_at": {
-          "name": "accepted_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "registered_tx_hash": {
-          "name": "registered_tx_hash",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        },
-        "updated_at": {
-          "name": "updated_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        }
-      },
-      "indexes": {},
-      "foreignKeys": {},
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {
-        "invites_code_unique": {
-          "name": "invites_code_unique",
-          "nullsNotDistinct": false,
-          "columns": [
-            "code"
-          ]
-        }
-      },
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    }
-  },
-  "enums": {
-    "public.invite_status": {
-      "name": "invite_status",
-      "schema": "public",
-      "values": [
-        "pending",
-        "accepted",
-        "expired",
-        "cancelled"
-      ]
-    }
-  },
-  "schemas": {},
-  "sequences": {},
-  "roles": {},
-  "policies": {},
-  "views": {},
-  "_meta": {
-    "columns": {},
-    "schemas": {},
-    "tables": {}
-  }
+	"id": "fd9dc4bb-abc2-4bd8-b1c2-f09b2d7f8143",
+	"prevId": "97e10e40-7e39-4abd-865b-dc1fe4dd255b",
+	"version": "7",
+	"dialect": "postgresql",
+	"tables": {
+		"public.circles": {
+			"name": "circles",
+			"schema": "",
+			"columns": {
+				"id": {
+					"name": "id",
+					"type": "uuid",
+					"primaryKey": true,
+					"notNull": true,
+					"default": "gen_random_uuid()"
+				},
+				"circle_name": {
+					"name": "circle_name",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": true
+				},
+				"pool_address": {
+					"name": "pool_address",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": true
+				},
+				"lens_group_address": {
+					"name": "lens_group_address",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": true
+				},
+				"pool_deployment_tx_hash": {
+					"name": "pool_deployment_tx_hash",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": false
+				},
+				"creator_address": {
+					"name": "creator_address",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": true
+				},
+				"circle_type": {
+					"name": "circle_type",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": true
+				},
+				"currency": {
+					"name": "currency",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": true,
+					"default": "'cusd'"
+				},
+				"created_at": {
+					"name": "created_at",
+					"type": "timestamp",
+					"primaryKey": false,
+					"notNull": true,
+					"default": "now()"
+				},
+				"updated_at": {
+					"name": "updated_at",
+					"type": "timestamp",
+					"primaryKey": false,
+					"notNull": true,
+					"default": "now()"
+				}
+			},
+			"indexes": {},
+			"foreignKeys": {},
+			"compositePrimaryKeys": {},
+			"uniqueConstraints": {
+				"circles_pool_address_unique": {
+					"name": "circles_pool_address_unique",
+					"nullsNotDistinct": false,
+					"columns": ["pool_address"]
+				},
+				"circles_lens_group_address_unique": {
+					"name": "circles_lens_group_address_unique",
+					"nullsNotDistinct": false,
+					"columns": ["lens_group_address"]
+				}
+			},
+			"policies": {},
+			"checkConstraints": {},
+			"isRLSEnabled": false
+		},
+		"public.invites": {
+			"name": "invites",
+			"schema": "",
+			"columns": {
+				"id": {
+					"name": "id",
+					"type": "uuid",
+					"primaryKey": true,
+					"notNull": true,
+					"default": "gen_random_uuid()"
+				},
+				"code": {
+					"name": "code",
+					"type": "uuid",
+					"primaryKey": false,
+					"notNull": true,
+					"default": "gen_random_uuid()"
+				},
+				"recipient_email": {
+					"name": "recipient_email",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": true
+				},
+				"config_salt": {
+					"name": "config_salt",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": true
+				},
+				"group_address": {
+					"name": "group_address",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": true
+				},
+				"sender_address": {
+					"name": "sender_address",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": true
+				},
+				"status": {
+					"name": "status",
+					"type": "invite_status",
+					"typeSchema": "public",
+					"primaryKey": false,
+					"notNull": true,
+					"default": "'pending'"
+				},
+				"expires_at": {
+					"name": "expires_at",
+					"type": "timestamp",
+					"primaryKey": false,
+					"notNull": true
+				},
+				"accepted_at": {
+					"name": "accepted_at",
+					"type": "timestamp",
+					"primaryKey": false,
+					"notNull": false
+				},
+				"registered_tx_hash": {
+					"name": "registered_tx_hash",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": false
+				},
+				"created_at": {
+					"name": "created_at",
+					"type": "timestamp",
+					"primaryKey": false,
+					"notNull": true,
+					"default": "now()"
+				},
+				"updated_at": {
+					"name": "updated_at",
+					"type": "timestamp",
+					"primaryKey": false,
+					"notNull": true,
+					"default": "now()"
+				}
+			},
+			"indexes": {},
+			"foreignKeys": {},
+			"compositePrimaryKeys": {},
+			"uniqueConstraints": {
+				"invites_code_unique": {
+					"name": "invites_code_unique",
+					"nullsNotDistinct": false,
+					"columns": ["code"]
+				}
+			},
+			"policies": {},
+			"checkConstraints": {},
+			"isRLSEnabled": false
+		}
+	},
+	"enums": {
+		"public.invite_status": {
+			"name": "invite_status",
+			"schema": "public",
+			"values": ["pending", "accepted", "expired", "cancelled"]
+		}
+	},
+	"schemas": {},
+	"sequences": {},
+	"roles": {},
+	"policies": {},
+	"views": {},
+	"_meta": {
+		"columns": {},
+		"schemas": {},
+		"tables": {}
+	}
 }

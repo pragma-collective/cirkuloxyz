@@ -2,6 +2,7 @@ import { evmAddress, PublicClient, testnet } from "@lens-protocol/client";
 import {
 	fetchAccount,
 	fetchGroupMembers,
+	fetchGroups,
 	fetchGroup as lensProtocolFetchGroup,
 } from "@lens-protocol/client/actions";
 
@@ -221,5 +222,34 @@ export async function isGroupOwner(
 		console.error("Error checking group ownership:", error);
 		// For security: if we can't verify, deny access
 		return false;
+	}
+}
+
+/**
+ * Fetch all groups where the user is a member
+ * @param memberAddress - The member's address
+ * @returns Array of groups or null if error
+ */
+export async function getGroupsByMember(memberAddress: string) {
+	try {
+		console.log(`📡 Fetching groups for member ${memberAddress}`);
+
+		const result = await fetchGroups(lensClient, {
+			filter: {
+				member: evmAddress(memberAddress),
+			},
+		});
+
+		if (result.isErr()) {
+			console.error("Error fetching groups from Lens Protocol:", result.error);
+			return null;
+		}
+
+		console.log(`✅ Found ${result.value.items.length} groups for member`);
+
+		return result.value.items;
+	} catch (error) {
+		console.error("Error fetching groups by member:", error);
+		return null;
 	}
 }

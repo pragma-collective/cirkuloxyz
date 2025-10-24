@@ -141,7 +141,7 @@ export function InviteForm({ circleName, circleId, onSuccess }: InviteFormProps)
 				<button
 					type="submit"
 					disabled={isSubmitting || isPending}
-					className="w-full px-6 py-3 bg-gradient-to-r from-primary-500 to-secondary-500 text-white font-semibold rounded-xl hover:shadow-lg active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-none touch-manipulation min-h-[44px]"
+					className="w-full px-6 py-3 bg-linear-to-r from-primary-500 to-secondary-500 text-white font-semibold rounded-xl hover:shadow-lg active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-none touch-manipulation min-h-[44px]"
 				>
 					{(isSubmitting || isPending) ? (
 						<span className="flex items-center justify-center gap-2">
