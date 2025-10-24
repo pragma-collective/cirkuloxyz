@@ -47,6 +47,7 @@ export const circles = pgTable("circles", {
 	creatorAddress: text("creator_address").notNull(), // Circle creator from JWT act.sub
 	circleType: text("circle_type").notNull(), // "contribution" | "rotating" | "fundraising"
 	currency: text("currency").notNull().default("cusd"), // "cusd" | "cbtc" - currency type for pool
+	categories: text("categories").array(), // Array of category strings for fundraising/public circles
 	createdAt: timestamp("created_at").defaultNow().notNull(),
 	updatedAt: timestamp("updated_at")
 		.defaultNow()

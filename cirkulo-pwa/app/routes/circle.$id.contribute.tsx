@@ -208,12 +208,7 @@ export default function ContributePage({ loaderData }: Route.ComponentProps) {
     // Success state
     if (isSuccess) return "bg-success-600 hover:bg-success-600";
 
-    // Fundraising uses green gradient like circle-hero
-    if (circle?.circleType === "fundraising") {
-      return "bg-gradient-to-r from-success-500 to-teal-500 hover:from-success-600 hover:to-teal-600";
-    }
-
-    // Default: primary-secondary gradient (for contribution and rotating)
+    // All circle types use the same primary-secondary gradient
     return "bg-gradient-to-r from-primary-500 to-secondary-500 hover:from-primary-600 hover:to-secondary-600";
   };
 
@@ -307,21 +302,6 @@ export default function ContributePage({ loaderData }: Route.ComponentProps) {
             </span>
           </div>
 
-          {/* Confirmation Status */}
-          {isConfirming && !error && !isSuccess && (
-            <div className="flex items-center gap-2 p-4 bg-primary-50 border border-primary-200 rounded-xl">
-              <Loader2 className="size-5 text-primary-600 animate-spin shrink-0" />
-              <div className="flex-1">
-                <p className="text-sm font-medium text-primary-900">
-                  {isApproving ? "Confirming approval..." : "Confirming contribution..."}
-                </p>
-                <p className="text-xs text-primary-700 mt-1">
-                  Waiting for transaction to be mined
-                </p>
-              </div>
-            </div>
-          )}
-
           {/* Error Message */}
           {error && (
             <div className="flex items-center gap-2 p-4 bg-error-50 border border-error-200 rounded-xl">
@@ -337,6 +317,38 @@ export default function ContributePage({ loaderData }: Route.ComponentProps) {
               <p className="text-sm text-success-700">
                 Contribution successful! Redirecting...
               </p>
+            </div>
+          )}
+
+          {/* Pre-select Amount Pills - Only for non-ROSCA circles */}
+          {!isROSCA && (
+            <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-2">
+              {(currency === "cbtc"
+                ? [0.0001, 0.0005, 0.001, 0.005, 0.01, 0.05]
+                : [10, 25, 50, 100, 250, 500]
+              ).map((presetAmount) => {
+                const amountStr = presetAmount.toString();
+                const isSelected = amount === amountStr;
+
+                return (
+                  <button
+                    key={presetAmount}
+                    type="button"
+                    onClick={() => setAmount(amountStr)}
+                    disabled={isContributing || isApproving || isSuccess}
+                    className={cn(
+                      "px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all",
+                      "border-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/30",
+                      isSelected
+                        ? "bg-primary-600 text-white border-primary-600"
+                        : "bg-white text-neutral-700 border-neutral-300 hover:border-primary-300 hover:bg-primary-50",
+                      (isContributing || isApproving || isSuccess) && "opacity-60 cursor-not-allowed"
+                    )}
+                  >
+                    {currency === "cbtc" ? `${presetAmount} cBTC` : `$${presetAmount}`}
+                  </button>
+                );
+              })}
             </div>
           )}
 
