@@ -53,6 +53,8 @@ export interface CreateAccountResult {
 	txHash?: string;
 	/** Address of the newly created Lens account */
 	accountAddress?: string;
+	/** New session client after switching to account owner role */
+	sessionClient?: SessionClient;
 	/** Error if account creation failed */
 	error?: Error;
 }
@@ -430,6 +432,8 @@ export function useCreateLensAccount(): UseCreateLensAccountReturn {
 					account: accountAddress,
 				});
 
+				let newSessionClient: SessionClient | undefined;
+
 				if (switchResult.isErr()) {
 					// Log the error but don't fail the entire operation
 					// The account was created successfully, switching is optional
@@ -438,18 +442,22 @@ export function useCreateLensAccount(): UseCreateLensAccountReturn {
 						switchResult.error,
 					);
 				} else {
-					console.log("[CreateLensAccount] Switched to account owner");
+					// Capture the new session client after switching
+					newSessionClient = switchResult.value;
+					console.log("[CreateLensAccount] Switched to account owner, new session client obtained");
 				}
 
 				console.log("[CreateLensAccount] Account creation complete:", {
 					txHash,
 					accountAddress,
 					username: params.username,
+					hasSessionClient: !!newSessionClient,
 				});
 
 				return {
 					txHash,
 					accountAddress,
+					sessionClient: newSessionClient,
 				};
 			} catch (err) {
 				const errorMessage =

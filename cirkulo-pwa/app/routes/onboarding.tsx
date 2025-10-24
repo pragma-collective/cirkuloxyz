@@ -55,6 +55,7 @@ export default function Onboarding() {
 	const navigate = useNavigate();
 	const { primaryWallet } = useDynamicContext();
 	const { createAccount, isCreating } = useCreateLensAccount();
+	const { setSession } = useLensSession();
 
 	// UI state
 	const [isSuccess, setIsSuccess] = useState(false);
@@ -231,15 +232,35 @@ export default function Onboarding() {
 			console.log("[Onboarding] Account created successfully:", {
 				txHash: result.txHash,
 				accountAddress: result.accountAddress,
+				hasSessionClient: !!result.sessionClient,
 			});
+
+			// If we have a session client, inject it into LensContext
+			if (result.sessionClient && result.accountAddress) {
+				console.log("[Onboarding] Injecting session into LensContext");
+
+				// Create LensAccount object from result
+				const newAccount = {
+					address: result.accountAddress,
+					username: data.lensUsername.trim(),
+					metadata: {
+						name: data.name.trim(),
+						bio: data.bio?.trim(),
+						picture: data.profilePhoto ? URL.createObjectURL(data.profilePhoto) : undefined,
+					},
+				};
+
+				// Inject session into LensContext
+				setSession(result.sessionClient, newAccount, primaryWallet.address);
+
+				console.log("[Onboarding] Session injected, auth navigation will handle routing");
+			}
 
 			// Show success state
 			setIsSuccess(true);
 
-			// Navigate to dashboard after 1.5 seconds
-			setTimeout(() => {
-				navigate("/dashboard");
-			}, 1500);
+			// Let auth navigation handle routing to dashboard
+			// The session is now set, so auth navigation will redirect to /dashboard
 		} catch (error) {
 			console.error("[Onboarding] Account creation failed:", error);
 			setError("lensUsername", {
