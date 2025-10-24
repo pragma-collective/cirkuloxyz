@@ -73,8 +73,6 @@ export interface LensContextType {
 	) => Promise<{ success: boolean; error?: string }>;
 	/** Logout from Lens session */
 	logout: () => Promise<void>;
-	/** Update session client (for manual session creation) */
-	setSessionClient: (client: SessionClient | null) => void;
 }
 
 const LensContext = createContext<LensContextType | undefined>(undefined);
@@ -393,14 +391,21 @@ export function LensProvider({
 	}, [logout]);
 
 	// Memoize the accounts reference to prevent unnecessary re-renders
-	const stableAccounts = useMemo(
-		() => accounts,
-		[
-			// Only recreate if length changes or the actual content changes
-			accounts.length,
-			accounts.map((a) => a.address).join(","),
-		],
-	);
+	// Use a ref to cache the joined addresses string for comparison
+	const accountsKeyRef = useRef<string>("");
+	const stableAccounts = useMemo(() => {
+		// Create a key from account addresses for comparison
+		const newKey = accounts.map((a) => a.address).join(",");
+
+		// Only update if the key actually changed
+		if (accountsKeyRef.current !== newKey) {
+			accountsKeyRef.current = newKey;
+			return accounts;
+		}
+
+		// Return the previous accounts array if nothing changed
+		return accounts;
+	}, [accounts]);
 
 	const value = useMemo(
 		() => ({
@@ -413,10 +418,9 @@ export function LensProvider({
 			hasAccounts,
 			authenticate,
 			logout,
-			setSessionClient,
 		}),
 		// Only re-create context value when Lens STATE changes, not when callbacks change
-		// Callbacks are stable enough and don't need to trigger re-renders
+		// Callbacks are stable via useCallback and don't need to be in dependencies
 		[
 			sessionClient,
 			stableAccounts,
@@ -425,7 +429,6 @@ export function LensProvider({
 			isResumingSession,
 			accountsError,
 			hasAccounts,
-			setSessionClient,
 		],
 	);
 

@@ -18,7 +18,8 @@ import {
 	useCallback,
 	type ReactNode,
 } from "react";
-import { useWalletClient } from "wagmi";
+import { getWalletClient } from "wagmi/actions";
+import { wagmiConfig } from "app/lib/wagmi";
 import { useWallet } from "app/context/wallet-context";
 import { useLensSession, type LensAccount } from "app/context/lens-context";
 import { useAuthNavigation } from "app/hooks/use-auth-navigation";
@@ -50,6 +51,8 @@ export interface AuthContextType {
 	isLoading: boolean;
 	/** Whether user has an active Lens session */
 	hasLensSession: boolean;
+	/** Lens session client (for API calls requiring authentication) */
+	sessionClient: any | null;
 	/** Login with wallet (shows Dynamic modal) */
 	login: () => Promise<User>;
 	/** Logout from both wallet and Lens */
@@ -71,9 +74,6 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: ReactNode }) {
 	const wallet = useWallet();
 	const lens = useLensSession();
-	const { data: wagmiWalletClient } = useWalletClient();
-
-
 
 	// Combined loading state
 	// Includes wallet loading, account loading, and session resume
@@ -197,8 +197,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 					account.username || account.address,
 				);
 
-				// Get wallet client from wagmi (has account hoisted)
-				if (!wagmiWalletClient) {
+				// Get wallet client on-demand from wagmi
+				const walletClient = await getWalletClient(wagmiConfig);
+
+				if (!walletClient) {
 					console.error("[AuthContext] Wagmi wallet client not available");
 					return {
 						success: false,
@@ -211,7 +213,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 					account,
 					wallet.walletAddress,
 					appAddress,
-					wagmiWalletClient,
+					walletClient,
 				);
 
 				if (result.success) {
@@ -230,7 +232,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 				};
 			}
 		},
-		[wallet.walletAddress, lens.authenticate, wagmiWalletClient],
+		[wallet.walletAddress, lens.authenticate],
 	);
 
 	// Memoize context value to prevent unnecessary re-renders
@@ -240,6 +242,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 			user,
 			isLoading,
 			hasLensSession: !!lens.sessionClient,
+			sessionClient: lens.sessionClient,
 			login,
 			logout,
 			selectAccount,

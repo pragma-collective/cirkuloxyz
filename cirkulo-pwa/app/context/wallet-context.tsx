@@ -82,7 +82,12 @@ export function WalletProvider({ children }: { children: ReactNode }) {
 	// Check if user is authenticated (has both user and wallet)
 	const isConnected = Boolean(dynamicUser && primaryWallet);
 
+	// Extract wallet address first (used in multiple places)
+	// Store as string for stability to prevent re-renders from object reference changes
+	const walletAddress: string | null = primaryWallet?.address || null;
+
 	// Map Dynamic user to our WalletUser interface
+	// Memoize based on actual VALUES, not object reference to prevent unnecessary re-renders
 	const user: WalletUser | null = useMemo(() => {
 		if (!dynamicUser) return null;
 
@@ -91,11 +96,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
 			email: dynamicUser.email,
 			username: dynamicUser.username,
 		};
-	}, [dynamicUser]);
-
-	// Store just the wallet address as a string for stability
-	// When we need the connector or other properties, we'll get them from Dynamic context
-	const walletAddress: string | null = primaryWallet?.address || null;
+	}, [dynamicUser?.userId, dynamicUser?.email, dynamicUser?.username]);
 
 	// Listen for auth success events to resolve pending connect promises
 	useEffect(() => {

@@ -54,13 +54,16 @@ export function meta({}: Route.MetaArgs) {
 export default function Onboarding() {
 	const navigate = useNavigate();
 	const { primaryWallet } = useDynamicContext();
-	const { sessionClient, setSessionClient } = useAuth();
 	const { createAccount, isCreating } = useCreateLensAccount();
 
 	// UI state
 	const [isSuccess, setIsSuccess] = useState(false);
 	const [showTooltip, setShowTooltip] = useState(false);
 	const [isCheckingUsername, setIsCheckingUsername] = useState(false);
+
+	// Local session client for onboarding authentication
+	// This is separate from the main auth session and only used during account creation
+	const [onboardingSessionClient, setOnboardingSessionClient] = useState<any>(null);
 
 	// React Hook Form setup
 	const {
@@ -90,14 +93,14 @@ export default function Onboarding() {
 		const username = e.target.value;
 
 		// Only check if username passes basic validation and we have a session
-		if (!username.trim() || errors.lensUsername || !sessionClient) {
+		if (!username.trim() || errors.lensUsername || !onboardingSessionClient) {
 			return;
 		}
 
 		setIsCheckingUsername(true);
 
 		try {
-			const availability = await checkUsername(username.trim(), sessionClient);
+			const availability = await checkUsername(username.trim(), onboardingSessionClient);
 
 			if (!availability.available) {
 				setError("lensUsername", {
@@ -126,7 +129,7 @@ export default function Onboarding() {
 			}
 
 			// Authenticate as onboarding user (if not already authenticated)
-			let activeSessionClient = sessionClient;
+			let activeSessionClient = onboardingSessionClient;
 
 			if (!activeSessionClient) {
 				console.log("[Onboarding] Authenticating as onboarding user...");
@@ -142,7 +145,7 @@ export default function Onboarding() {
 
 					if (authResult.sessionClient) {
 						activeSessionClient = authResult.sessionClient;
-						setSessionClient(authResult.sessionClient);
+						setOnboardingSessionClient(authResult.sessionClient);
 						console.log("[Onboarding] Successfully authenticated");
 					} else {
 						const errorMsg =

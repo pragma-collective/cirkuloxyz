@@ -43,7 +43,8 @@ const lensTestnet = [
  */
 function LensProviderWrapper({ children }: { children: React.ReactNode }) {
 	const { walletAddress } = useWallet();
-	return <LensProvider walletAddress={walletAddress}>{children}</LensProvider>;
+	// Convert null to undefined for LensProvider
+	return <LensProvider walletAddress={walletAddress || undefined}>{children}</LensProvider>;
 }
 
 /**
