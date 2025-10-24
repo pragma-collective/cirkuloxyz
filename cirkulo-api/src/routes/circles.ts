@@ -22,7 +22,15 @@ circles.openapi(createCircleRoute, async (c) => {
 	try {
 		// Get validated request body
 		const body = c.req.valid("json");
-		const { circleName, poolAddress, lensGroupAddress, poolDeploymentTxHash, circleType, currency, categories } = body;
+		const {
+			circleName,
+			poolAddress,
+			lensGroupAddress,
+			poolDeploymentTxHash,
+			circleType,
+			currency,
+			categories,
+		} = body;
 
 		// Get authenticated user info from JWT token
 		const jwtPayload = c.get("jwtPayload");
@@ -309,9 +317,9 @@ circles.openapi(getCircleRoute, async (c) => {
 					lensGroupAddress: circle.lensGroupAddress,
 					poolDeploymentTxHash: circle.poolDeploymentTxHash,
 					circleType: circle.circleType as
-					| "contribution"
-					| "rotating"
-					| "fundraising",
+						| "contribution"
+						| "rotating"
+						| "fundraising",
 					currency: circle.currency as "cusd" | "cbtc",
 					categories: circle.categories || undefined,
 					creatorAddress: circle.creatorAddress,

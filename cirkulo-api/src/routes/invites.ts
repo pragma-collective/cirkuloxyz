@@ -13,11 +13,83 @@ import {
 	inviteUserRoute,
 	markAcceptedRoute,
 	resendInviteRoute,
+	validateInviteRoute,
 } from "../schemas/invites";
 
 const invites = new OpenAPIHono<AuthContext>();
 
-// Apply auth middleware to all invite routes
+// Validate invite endpoint - PUBLIC (no auth required)
+invites.openapi(validateInviteRoute, async (c) => {
+	try {
+		const { code } = c.req.valid("query");
+
+		console.log(`[ValidateInvite] Validating invite code: ${code}`);
+
+		// Find invite by code
+		const [invite] = await db
+			.select()
+			.from(invitesTable)
+			.where(eq(invitesTable.code, code))
+			.limit(1);
+
+		if (!invite) {
+			return c.json(
+				{
+					error: "Invite not found",
+					details: "No invitation found with this code",
+				},
+				404,
+			);
+		}
+
+		// Check expiration
+		const now = new Date();
+		let status = invite.status;
+		if (status === "pending" && invite.expiresAt < now) {
+			status = "expired";
+		}
+
+		console.log(`[ValidateInvite] Found invite with status: ${status}`);
+
+		// Fetch group details from Lens
+		const group = await fetchGroup(invite.groupAddress);
+
+		// Get inviter's Lens username
+		const lensUsername = await getLensUsername(invite.senderAddress);
+		const inviterName = lensUsername || invite.senderAddress;
+
+		console.log(
+			`[ValidateInvite] Group: ${group.name}, Inviter: ${inviterName}`,
+		);
+
+		return c.json(
+			{
+				code: invite.code,
+				groupAddress: invite.groupAddress,
+				circleName: group.name || "Unnamed Circle",
+				circleDescription: group.description,
+				inviterName,
+				memberCount: undefined, // Not available in our simplified fetchGroup
+				createdAt: invite.createdAt.toISOString(),
+				expiresAt: invite.expiresAt.toISOString(),
+				status,
+			},
+			200,
+		);
+	} catch (error) {
+		console.error("[ValidateInvite] Error:", error);
+
+		return c.json(
+			{
+				error: "Failed to validate invite",
+				details: error instanceof Error ? error.message : "Unknown error",
+			},
+			500,
+		);
+	}
+});
+
+// Apply auth middleware to all protected invite routes
 invites.use("/*", authMiddleware);
 
 // Get invites for a group (owner only)
@@ -257,6 +329,7 @@ invites.openapi(inviteUserRoute, async (c) => {
 		const emailResult = await sendInviteEmail({
 			to: recipientEmail,
 			inviterName,
+			inviteToken: newInvite.code,
 		});
 
 		// Return success response
@@ -359,6 +432,7 @@ invites.openapi(resendInviteRoute, async (c) => {
 		const emailResult = await sendInviteEmail({
 			to: invite.recipientEmail,
 			inviterName,
+			inviteToken: invite.code,
 		});
 
 		// Return success response

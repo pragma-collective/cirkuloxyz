@@ -20,6 +20,7 @@ import { useReadContract } from "wagmi";
 import { formatEther, type Address } from "viem";
 import { savingsPoolAbi, donationPoolAbi, roscaPoolAbi } from "app/lib/pool-abis";
 import { citreaTestnet } from "app/lib/wagmi";
+import { useAuth } from "~/context/auth-context";
 
 // Client-side loader to fetch group data (runs in browser, SPA-compatible)
 export async function clientLoader({ params }: Route.ClientLoaderArgs) {
@@ -61,6 +62,7 @@ export function meta({ loaderData }: Route.MetaArgs) {
 export default function CircleDetail({ loaderData }: Route.ComponentProps) {
 	const navigate = useNavigate();
 	const params = useParams();
+	const auth = useAuth();
 	const circleId = params.id;
 
 	// Use group data from loader (already fetched during route load)
@@ -383,7 +385,7 @@ export default function CircleDetail({ loaderData }: Route.ComponentProps) {
 						<div className="pt-4 space-x-4">
 							<Button
 								onClick={() => window.location.reload()}
-								className="bg-gradient-to-r from-primary-500 to-secondary-500 text-white"
+								className="bg-linear-to-r from-primary-500 to-secondary-500 text-white"
 							>
 								Try Again
 							</Button>
@@ -422,7 +424,7 @@ export default function CircleDetail({ loaderData }: Route.ComponentProps) {
 						<div className="pt-4 space-x-4">
 							<button
 								onClick={() => window.location.reload()}
-								className="px-6 py-3 bg-gradient-to-r from-primary-500 to-secondary-500 text-white rounded-xl font-semibold hover:shadow-lg transition-all"
+								className="px-6 py-3 bg-linear-to-r from-primary-500 to-secondary-500 text-white rounded-xl font-semibold hover:shadow-lg transition-all"
 							>
 								Try Again
 							</button>
@@ -461,7 +463,7 @@ export default function CircleDetail({ loaderData }: Route.ComponentProps) {
 						<div className="pt-4">
 							<button
 								onClick={() => navigate("/dashboard")}
-								className="px-6 py-3 bg-gradient-to-r from-primary-500 to-secondary-500 text-white rounded-xl font-semibold hover:shadow-lg transition-all"
+								className="px-6 py-3 bg-linear-to-r from-primary-500 to-secondary-500 text-white rounded-xl font-semibold hover:shadow-lg transition-all"
 							>
 								Back to Dashboard
 							</button>
@@ -524,6 +526,7 @@ export default function CircleDetail({ loaderData }: Route.ComponentProps) {
 				onShare={handleShare}
 				onJoin={handleJoin}
 				isMember={isMember}
+				groupOwner={group?.owner}
 			/>
 
 			{/* Main Content */}

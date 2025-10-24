@@ -9,6 +9,7 @@
 
 import { useCallback, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router";
+import { getPendingInvite } from "~/lib/invite-storage";
 
 /**
  * Navigation destination result
@@ -47,6 +48,16 @@ export function determineAuthDestination(
 	hasSession: boolean,
 	currentPath: string,
 ): NavigationDestination {
+	// Special handling for invite route - never auto-navigate away from it
+	// The invite page handles auth state internally
+	if (currentPath.startsWith("/invite")) {
+		return {
+			shouldNavigate: false,
+			destination: null,
+			reason: "On invite page - handles auth internally",
+		};
+	}
+
 	// If wallet not connected, user should be on login
 	if (!walletConnected) {
 		if (currentPath === "/login") {
@@ -65,6 +76,17 @@ export function determineAuthDestination(
 
 	// If already has Lens session, no need to navigate away from app routes
 	if (hasSession) {
+		// Check if there's a pending invite - redirect to invite page with code
+		const pendingInvite = getPendingInvite();
+		console.log('PENDING INVITE: ', pendingInvite);
+		if (pendingInvite && !currentPath.startsWith("/invite")) {
+			return {
+				shouldNavigate: true,
+				destination: `/invite?code=${pendingInvite.code}`,
+				reason: "User authenticated, has pending invite",
+			};
+		}
+
 		// User is fully authenticated, they can be anywhere in the app
 		return {
 			shouldNavigate: false,
@@ -163,10 +185,25 @@ export function useAuthNavigation(
 	const location = useLocation();
 
 	useEffect(() => {
-		// PERFORMANCE: Early exit for authenticated users - skip ALL logic
-		// This prevents unnecessary effect execution during normal navigation
-		// between authenticated routes (e.g., dashboard → profile)
+		// CHECK FOR PENDING INVITE FIRST (before any early exits)
+		// This must run before the authenticated user early exit
 		if (hasLensSession && walletConnected) {
+			const pendingInvite = getPendingInvite();
+			if (pendingInvite && !location.pathname.startsWith("/invite")) {
+				console.log(
+					"[AuthNavigation] Authenticated user with pending invite, redirecting",
+					{
+						inviteCode: pendingInvite.code,
+						currentPath: location.pathname,
+					},
+				);
+				navigate(`/invite?code=${pendingInvite.code}`, { replace: true });
+				return;
+			}
+
+			// PERFORMANCE: Early exit for authenticated users - skip ALL logic
+			// This prevents unnecessary effect execution during normal navigation
+			// between authenticated routes (e.g., dashboard → profile)
 			console.log(
 				"[AuthNavigation] Authenticated user, no navigation needed",
 				{ currentPath: location.pathname },

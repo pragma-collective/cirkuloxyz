@@ -390,3 +390,64 @@ export const getInvitesRoute = createRoute({
 		},
 	},
 });
+
+// ============= VALIDATE INVITE ROUTE =============
+
+/**
+ * Validate Invite Route - Public endpoint for validating invite codes
+ * Used by the invite landing page to check if an invite is valid
+ */
+export const validateInviteRoute = createRoute({
+	method: "get",
+	path: "/validate",
+	request: {
+		query: z.object({
+			code: z.string().uuid("Invalid invite code format"),
+		}),
+	},
+	responses: {
+		200: {
+			description: "Invite is valid - returns invite and circle details",
+			content: {
+				"application/json": {
+					schema: z.object({
+						code: z.string().describe("Invite code"),
+						groupAddress: z.string().describe("Group/circle address"),
+						circleName: z.string().describe("Circle name"),
+						circleDescription: z
+							.string()
+							.optional()
+							.describe("Circle description"),
+						inviterName: z.string().describe("Name of person who sent invite"),
+						memberCount: z
+							.number()
+							.optional()
+							.describe("Number of circle members"),
+						createdAt: z.string().optional().describe("Circle creation date"),
+						expiresAt: z.string().describe("Invite expiration date"),
+						status: z
+							.enum(["pending", "accepted", "expired", "cancelled"])
+							.describe("Invite status"),
+					}),
+				},
+			},
+		},
+		404: {
+			description: "Invite not found or invalid",
+			content: {
+				"application/json": {
+					schema: ErrorSchema,
+				},
+			},
+		},
+		500: {
+			description: "Internal server error",
+			content: {
+				"application/json": {
+					schema: ErrorSchema,
+				},
+			},
+		},
+	},
+	tags: ["Invites"],
+});

@@ -15,6 +15,9 @@ export default [
 		// Login page (no guard - needs to be accessible to everyone)
 		route("login", "routes/login.tsx"),
 
+		// Invite page (no guard - accessible to everyone, handles auth internally)
+		route("invite", "routes/invite.tsx"),
+
 		// Auth flow routes (wallet required, but NOT Lens session)
 		// Redirects to /dashboard if user is already fully authenticated
 		layout("components/auth-flow-guard.tsx", [
