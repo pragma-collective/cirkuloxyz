@@ -1,14 +1,31 @@
 # Task
 
-Next task we're going to work on is the auth scenario where users have an existing lens account.
+frontend-developer, lets review how our auth flow currently works. The auth-context.ts is a bit messy and confusing.
 
-A user may have 0 - many lens account. We already handled the 0 / no lens account when we redirect them to the onboarding
+We wanna simplify the code and fix the auth process all together.
 
-Now we're going to handle the scenario where a user has one or more lens profile. We need a page to redirect them
-and show the available accounts, so they can choose which account to authenticate into.
+Here's what we expect from the auth flow.
 
-It should look good if user has only one account and accounts should be properly displayed if the user has multiple
+- We use dynamic.xyz for creating user wallets.
+- We use lens account to track sessions, lens accounts require a wallet which is provided by dynamic
 
-It should display the photo and username of each account in the page and a button to select that profile and authenticate as account owner
+The flow is:
 
-ui-ux-designer to design the page and frontend-developer to implement code
+- Once a user successfully authenticates with dynamic. We retrieve the lens profile (accounts available) of the user wallet address from dynamic
+- If a user has no lens profile, we redirect the user to onboarding
+- If the user has one or more lens profile, we redirect the user to the account selector page and have them select which lens account the want to login to.
+
+Let's review our current component architecture related to auth and see if need to refactor or have a separate higher order component for the auth flow (login, onboarding, account selector).
+
+Since we are managing 2 sessions which can expire (dynamic, lens), we want to call the logout on the other if the other expires.
+
+i.e 
+- Dynamic session expires -> call logout on lens sdk
+- Lens resume session failed -> call logout on dynamic sdk
+
+Let's also check how we can keep the session alive for both in our app
+
+Let's also check how we can keep the session alive for both in our app. 
+
+Create a task list that we're gonna start to implement next
+

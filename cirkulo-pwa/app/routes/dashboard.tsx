@@ -8,7 +8,6 @@ import { FeedContainer } from "app/components/dashboard/feed-container";
 import { mockUserStats, mockCircles, mockFeedItems } from "app/lib/mock-data";
 import type { FeedFilter } from "app/types/feed";
 import { Home, Compass, PlusCircle, Bell, User } from "lucide-react";
-import { useDynamicContext } from "@dynamic-labs/sdk-react-core";
 
 export function meta({}: Route.MetaArgs) {
 	return [
@@ -25,14 +24,6 @@ export default function Dashboard() {
 	const navigate = useNavigate();
 	const [feedFilter, setFeedFilter] = useState<FeedFilter>("all");
 	const [feedItems, setFeedItems] = useState(mockFeedItems);
-	const { primaryWallet } = useDynamicContext();
-
-	useEffect(() => {
-		console.log(
-			"ENABLED_NETWORKS",
-			primaryWallet?.connector.getEnabledNetworks(),
-		);
-	}, [primaryWallet]);
 
 	// Handle like action
 	const handleLike = useCallback((itemId: string) => {

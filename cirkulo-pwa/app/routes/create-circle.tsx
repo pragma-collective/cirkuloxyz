@@ -25,6 +25,7 @@ import {
 import { cn } from "app/lib/utils";
 import { useDynamicContext } from "@dynamic-labs/sdk-react-core";
 import { useAuth } from "app/context/auth-context";
+import { useLensSession } from "app/context/lens-context";
 import { useCreateLensGroup } from "app/hooks/create-lens-group";
 import { useSaveCircle } from "~/hooks/use-save-circle";
 import { xershaFactoryAbi, getXershaFactoryAddress, getMockCUSDAddress } from "app/lib/abi";
@@ -68,7 +69,8 @@ interface FormData {
 export default function CreateCircle() {
   const navigate = useNavigate();
   const { primaryWallet } = useDynamicContext();
-  const { sessionClient } = useAuth();
+  const { user } = useAuth();
+  const { sessionClient } = useLensSession();
   const { createGroup, isCreating, error: groupCreationError } = useCreateLensGroup();
   const saveCircleMutation = useSaveCircle();
 

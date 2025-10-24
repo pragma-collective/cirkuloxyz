@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { evmAddress } from "@lens-protocol/client";
 import { fetchAccountsAvailable } from "@lens-protocol/client/actions";
 import { lensClient } from "app/lib/lens";
@@ -43,16 +43,43 @@ export function useFetchLensAccounts(
 	walletAddress: string | undefined,
 ): UseFetchLensAccountsReturn {
 	const [lensAccounts, setLensAccounts] = useState<LensAccount[]>([]);
-	const [isLoading, setIsLoading] = useState(true);
+	const [isLoading, setIsLoading] = useState(false);
 	const [error, setError] = useState<Error | null>(null);
 
+	// Track previous wallet address VALUE to prevent unnecessary re-fetching
+	const previousAddressRef = useRef<string | undefined>(undefined);
+	const hasFetchedRef = useRef(false);
+
+	// Cache the accounts array to return the same reference if unchanged
+	const accountsCacheRef = useRef<LensAccount[]>([]);
+
 	useEffect(() => {
+		// Check if wallet address VALUE has actually changed
+		// This prevents re-fetching when only the reference changes during navigation
+		if (previousAddressRef.current === walletAddress && hasFetchedRef.current) {
+			// Address value hasn't changed and we've already fetched, skip fetching
+			console.log("[useFetchLensAccounts] Skipping fetch - address unchanged:", walletAddress?.slice(0, 6));
+			return;
+		}
+
+		// Update the previous address ref
+		previousAddressRef.current = walletAddress;
+
 		// Early return if no wallet address
 		if (!walletAddress) {
+			console.log("[useFetchLensAccounts] No wallet address, clearing state");
+			setIsLoading(false);
+			setLensAccounts([]);
+			setError(null);
+			hasFetchedRef.current = false;
 			return;
 		}
 
 		const fetchLensAccount = async () => {
+			console.log("[useFetchLensAccounts] Starting fetch for:", walletAddress.slice(0, 6));
+
+			// Only set loading state when we're ACTUALLY fetching
+			// This prevents false loading states during navigation
 			setIsLoading(true);
 			setError(null);
 
@@ -80,10 +107,20 @@ export function useFetchLensAccounts(
 						};
 					});
 
+					// Only update if accounts actually changed
+					accountsCacheRef.current = accounts;
 					setLensAccounts(accounts);
+					console.log("[useFetchLensAccounts] Fetch complete, found", accounts.length, "accounts");
 					setIsLoading(false);
+					hasFetchedRef.current = true;
 				} else {
-					setLensAccounts([]);
+					// No accounts found - not an error, just empty result
+					const emptyArray = accountsCacheRef.current.length === 0 ? accountsCacheRef.current : [];
+					accountsCacheRef.current = emptyArray;
+					setLensAccounts(emptyArray);
+					console.log("[useFetchLensAccounts] Fetch complete, no accounts found");
+					setIsLoading(false);
+					hasFetchedRef.current = true;
 				}
 			} catch (err) {
 				const errorMessage =
@@ -94,7 +131,6 @@ export function useFetchLensAccounts(
 				setError(errorMessage);
 				setLensAccounts([]);
 				setIsLoading(false);
-			} finally {
 			}
 		};
 

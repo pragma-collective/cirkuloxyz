@@ -32,6 +32,7 @@ import {
 } from "app/hooks/create-lens-account";
 import { useDynamicContext } from "@dynamic-labs/sdk-react-core";
 import { useAuth } from "app/context/auth-context";
+import { useLensSession } from "app/context/lens-context";
 import {
 	onboardingSchema,
 	type OnboardingFormData,
@@ -55,10 +56,6 @@ export default function Onboarding() {
 	const { primaryWallet } = useDynamicContext();
 	const { sessionClient, setSessionClient } = useAuth();
 	const { createAccount, isCreating } = useCreateLensAccount();
-
-	// Authentication state
-	const [isAuthenticating, setIsAuthenticating] = useState(false);
-	const [authError, setAuthError] = useState<string | null>(null);
 
 	// UI state
 	const [isSuccess, setIsSuccess] = useState(false);
@@ -87,53 +84,6 @@ export default function Onboarding() {
 	const bioValue = watch("bio") || "";
 	const bioCharCount = bioValue.length;
 	const bioMaxChars = 280;
-
-	// Authenticate as onboarding user when page loads
-	useEffect(() => {
-		const authenticateUser = async () => {
-			if (!primaryWallet || !APP_ADDRESS) {
-				console.log("[Onboarding] Waiting for wallet connection");
-				return;
-			}
-
-			// Skip if already authenticated
-			if (sessionClient) {
-				return;
-			}
-
-			setIsAuthenticating(true);
-			setAuthError(null);
-
-			try {
-				// @ts-expect-error - getWalletClient exists at runtime but not in type definition
-				const walletClient = await primaryWallet.getWalletClient();
-				const result = await authenticateAsOnboardingUser(
-					primaryWallet.address,
-					APP_ADDRESS,
-					walletClient,
-				);
-
-				if (result.sessionClient) {
-					// Store in context so it's available globally
-					setSessionClient(result.sessionClient);
-					console.log("[Onboarding] Successfully authenticated");
-				} else {
-					const errorMsg = result.error?.message || "Authentication failed";
-					setAuthError(errorMsg);
-					console.error("[Onboarding] Authentication failed:", result.error);
-				}
-			} catch (err) {
-				const errorMsg =
-					err instanceof Error ? err.message : "Authentication failed";
-				setAuthError(errorMsg);
-				console.error("[Onboarding] Authentication error:", err);
-			} finally {
-				setIsAuthenticating(false);
-			}
-		};
-
-		authenticateUser();
-	}, [primaryWallet, sessionClient, setSessionClient]);
 
 	// Handle username blur for real-time availability check
 	const handleUsernameBlur = async (e: React.FocusEvent<HTMLInputElement>) => {
@@ -166,21 +116,56 @@ export default function Onboarding() {
 	// Handle form submission
 	const onSubmit = async (data: OnboardingFormData) => {
 		try {
-			// Check if we have a session client and wallet
-			if (!sessionClient) {
-				setError("lensUsername", {
-					type: "manual",
-					message: "Authentication required. Please refresh the page.",
-				});
-				return;
-			}
-
-			if (!primaryWallet) {
+			// Check if wallet is connected
+			if (!primaryWallet || !APP_ADDRESS) {
 				setError("lensUsername", {
 					type: "manual",
 					message: "Wallet not connected. Please connect your wallet.",
 				});
 				return;
+			}
+
+			// Authenticate as onboarding user (if not already authenticated)
+			let activeSessionClient = sessionClient;
+
+			if (!activeSessionClient) {
+				console.log("[Onboarding] Authenticating as onboarding user...");
+
+				try {
+					// @ts-expect-error - getWalletClient exists at runtime but not in type definition
+					const walletClient = await primaryWallet.getWalletClient();
+					const authResult = await authenticateAsOnboardingUser(
+						primaryWallet.address,
+						APP_ADDRESS,
+						walletClient,
+					);
+
+					if (authResult.sessionClient) {
+						activeSessionClient = authResult.sessionClient;
+						setSessionClient(authResult.sessionClient);
+						console.log("[Onboarding] Successfully authenticated");
+					} else {
+						const errorMsg =
+							authResult.error?.message || "Authentication failed";
+						console.error("[Onboarding] Authentication failed:", authResult.error);
+						setError("lensUsername", {
+							type: "manual",
+							message: errorMsg,
+						});
+						return;
+					}
+				} catch (authErr) {
+					const errorMsg =
+						authErr instanceof Error
+							? authErr.message
+							: "Authentication failed. Please try again.";
+					console.error("[Onboarding] Authentication error:", authErr);
+					setError("lensUsername", {
+						type: "manual",
+						message: errorMsg,
+					});
+					return;
+				}
 			}
 
 			// Upload profile photo and metadata to Grove
@@ -228,7 +213,7 @@ export default function Onboarding() {
 				metadataUri: metadataResponse.uri, // lens://... URI from Grove
 				walletAddress: primaryWallet.address,
 				appAddress: APP_ADDRESS,
-				sessionClient, // Reuse existing session
+				sessionClient: activeSessionClient, // Use authenticated session
 			});
 
 			if (result.error) {
