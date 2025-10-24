@@ -18,6 +18,7 @@ import { useSearchParams } from "react-router";
 import { useAuth } from "~/context/auth-context";
 import { useValidateInvite } from "~/hooks/use-validate-invite";
 import { useInviteFlow } from "~/hooks/use-invite-flow";
+import { clearPendingInvite } from "~/lib/invite-storage";
 import { toast } from "~/lib/toast";
 import { Button } from "~/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "~/components/ui/card";
@@ -38,13 +39,20 @@ export default function InvitePage() {
 		error: validationError,
 	} = useValidateInvite(inviteCode || "");
 
-	console.log('[validatedInvite] ', validatedInvite);
-
 	const {
 		isProcessing,
 		storePendingInviteForLogin,
 		processInviteImmediately,
 	} = useInviteFlow();
+
+	// Clear pending invite when authenticated user lands on invite page
+	// This prevents redirect loop if user navigates away from invite
+	useEffect(() => {
+		if (user && inviteCode) {
+			console.log("[InvitePage] Authenticated user on invite page, clearing pending invite");
+			clearPendingInvite();
+		}
+	}, [user, inviteCode]);
 
 	// Auto-redirect unauthenticated users to login with stored invite
 	useEffect(() => {
@@ -77,6 +85,8 @@ export default function InvitePage() {
 				circleName: validatedInvite.circleName,
 				inviterName: validatedInvite.inviterName,
 			});
+			
+			// Note: Pending invite already cleared when page loaded
 			// Redirect happens in processInviteImmediately
 		} catch (error) {
 			console.error("[InvitePage] Join failed:", error);
@@ -248,10 +258,12 @@ export default function InvitePage() {
 								{validatedInvite.circleDescription}
 							</p>
 						)}
-						<div className="flex items-center gap-2 text-sm text-muted-foreground">
-							<Users className="w-4 h-4" />
-							<span>{validatedInvite.memberCount} members</span>
-						</div>
+						{validatedInvite.memberCount !== undefined && (
+							<div className="flex items-center gap-2 text-sm text-muted-foreground">
+								<Users className="w-4 h-4" />
+								<span>{validatedInvite.memberCount} members</span>
+							</div>
+						)}
 					</div>
 
 					{/* Invite Details */}

@@ -14,6 +14,7 @@ import {
   Heart,
 } from "lucide-react";
 import { cn } from "app/lib/utils";
+import { useAuth } from "~/context/auth-context";
 
 export interface CircleHeroProps {
   circle: Circle;
@@ -22,6 +23,7 @@ export interface CircleHeroProps {
   onShare: () => void;
   onJoin?: () => void;
   isMember?: boolean;
+  groupOwner?: string;
 }
 
 export function CircleHero({
@@ -31,7 +33,15 @@ export function CircleHero({
   onShare,
   onJoin,
   isMember = true,
+  groupOwner,
 }: CircleHeroProps) {
+  const { user } = useAuth();
+  
+  // Check if current user is the owner of the group
+  const isOwner = user?.walletAddress && groupOwner 
+    ? user.walletAddress.toLowerCase() === groupOwner.toLowerCase()
+    : false;
+  
   // Format currency based on token type
   const formatCurrency = (amount: number, currency?: "cusd" | "cbtc"): string => {
     if (currency === "cbtc") {
@@ -324,15 +334,18 @@ export function CircleHero({
 
                 {/* Secondary Actions - Grouped Horizontally on Mobile */}
                 <div className="flex gap-2.5 sm:contents">
-                  <Button
-                    size="lg"
-                    variant="outline"
-                    onClick={onInvite}
-                    className="flex-1 sm:flex-initial gap-2 px-4 sm:px-8"
-                  >
-                    <UserPlus className="size-5" />
-                    Invite Friends
-                  </Button>
+                  {/* Only show Invite Friends for contribution and rotating circles AND if user is the owner */}
+                  {isOwner && (circle.circleType === "contribution" || circle.circleType === "rotating") && (
+                    <Button
+                      size="lg"
+                      variant="outline"
+                      onClick={onInvite}
+                      className="flex-1 sm:flex-initial gap-2 px-4 sm:px-8"
+                    >
+                      <UserPlus className="size-5" />
+                      Invite Friends
+                    </Button>
+                  )}
                   <Button
                     size="lg"
                     variant="outline"

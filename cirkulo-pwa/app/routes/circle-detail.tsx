@@ -20,6 +20,7 @@ import { useReadContract } from "wagmi";
 import { formatEther, type Address } from "viem";
 import { savingsPoolAbi, donationPoolAbi, roscaPoolAbi } from "app/lib/pool-abis";
 import { citreaTestnet } from "app/lib/wagmi";
+import { useAuth } from "~/context/auth-context";
 
 // Client-side loader to fetch group data (runs in browser, SPA-compatible)
 export async function clientLoader({ params }: Route.ClientLoaderArgs) {
@@ -61,6 +62,7 @@ export function meta({ loaderData }: Route.MetaArgs) {
 export default function CircleDetail({ loaderData }: Route.ComponentProps) {
 	const navigate = useNavigate();
 	const params = useParams();
+	const auth = useAuth();
 	const circleId = params.id;
 
 	// Use group data from loader (already fetched during route load)
@@ -524,6 +526,7 @@ export default function CircleDetail({ loaderData }: Route.ComponentProps) {
 				onShare={handleShare}
 				onJoin={handleJoin}
 				isMember={isMember}
+				groupOwner={group?.owner}
 			/>
 
 			{/* Main Content */}

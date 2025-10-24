@@ -15,6 +15,9 @@ export default [
 		// Login page (no guard - needs to be accessible to everyone)
 		route("login", "routes/login.tsx"),
 
+		// Invite page (no guard - accessible to everyone, handles auth internally)
+		route("invite", "routes/invite.tsx"),
+
 		// Auth flow routes (wallet required, but NOT Lens session)
 		// Redirects to /dashboard if user is already fully authenticated
 		layout("components/auth-flow-guard.tsx", [
@@ -34,7 +37,6 @@ export default [
 			route("circle/:id/contribute", "routes/circle.$id.contribute.tsx"),
 			route("circle/:id/members", "routes/circle-members.tsx"),
 			route("circle/:id/invites", "routes/circle-invites.tsx"),
-			route("invite", "routes/invite.tsx"),
 		]),
 	]),
 ] satisfies RouteConfig;

@@ -307,7 +307,7 @@ export default function CreateCircle() {
 
   // Handle radio button change
   const handleRadioChange = (
-    fieldName: "circleType" | "contributionSchedule",
+    fieldName: "circleType" | "contributionSchedule" | "currency",
     value: string
   ) => {
     setFormData((prev) => ({
@@ -315,8 +315,8 @@ export default function CreateCircle() {
       [fieldName]: value,
     }));
 
-    // Clear error for this field if it exists
-    if (errors[fieldName]) {
+    // Clear error for this field if it exists (only for fields with validation)
+    if (fieldName !== "currency" && errors[fieldName as keyof FormErrors]) {
       setErrors((prev) => ({
         ...prev,
         [fieldName]: undefined,
@@ -324,7 +324,7 @@ export default function CreateCircle() {
     }
 
     // Mark field as touched
-    setTouchedFields((prev) => new Set(prev).add(fieldName));
+    setTouchedFields((prev) => new Set(prev).add(fieldName as keyof FormData));
   };
 
   // Handle field blur
@@ -469,6 +469,7 @@ export default function CreateCircle() {
         ownerAddress: walletAddress,
         sessionClient,
         walletClient,
+        circleType: formData.circleType as "contribution" | "rotating" | "fundraising",
       });
 
       if (!result.success) {

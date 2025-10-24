@@ -33,6 +33,7 @@ export interface CreateGroupParams {
   ownerAddress: string;
   sessionClient: SessionClient;
   walletClient: WalletClient;
+  circleType: "contribution" | "rotating" | "fundraising";
 }
 
 export interface CreateGroupResult {
@@ -51,9 +52,9 @@ export async function createLensGroup(
   params: CreateGroupParams
 ): Promise<CreateGroupResult> {
   try {
-    const { name, description, ownerAddress, sessionClient, walletClient } = params;
+    const { name, description, ownerAddress, sessionClient, walletClient, circleType } = params;
 
-    console.log("[CreateLensGroup] Starting group creation:", { name, description, ownerAddress });
+    console.log("[CreateLensGroup] Starting group creation:", { name, description, ownerAddress, circleType });
 
     // Validate owner address format
     if (!ownerAddress || !ownerAddress.startsWith('0x') || ownerAddress.length !== 42) {
@@ -105,50 +106,59 @@ export async function createLensGroup(
 
     console.log("[CreateLensGroup] Metadata uploaded:", metadataUri);
 
-    // Step 3: Configure custom invite rule
-    const ruleContractAddress = import.meta.env.VITE_LENS_INVITE_RULE_CONTRACT_ADDRESS;
+    // Step 3: Configure custom invite rule (only for contribution and rotating circles)
+    const shouldUseCustomRule = circleType === "contribution" || circleType === "rotating";
     
-    if (!ruleContractAddress) {
-      console.error("[CreateLensGroup] VITE_LENS_INVITE_RULE_CONTRACT_ADDRESS not configured");
-      return {
-        success: false,
-        error: "Invite rule contract address not configured",
-      };
+    if (shouldUseCustomRule) {
+      const ruleContractAddress = import.meta.env.VITE_LENS_INVITE_RULE_CONTRACT_ADDRESS;
+      
+      if (!ruleContractAddress) {
+        console.error("[CreateLensGroup] VITE_LENS_INVITE_RULE_CONTRACT_ADDRESS not configured");
+        return {
+          success: false,
+          error: "Invite rule contract address not configured",
+        };
+      }
+
+      // Validate address format
+      if (!ruleContractAddress.startsWith('0x') || ruleContractAddress.length !== 42) {
+        console.error("[CreateLensGroup] Invalid rule contract address format:", ruleContractAddress);
+        return {
+          success: false,
+          error: "Invalid rule contract address format",
+        };
+      }
+
+      console.log("[CreateLensGroup] Using invite rule contract for", circleType, "circle:", ruleContractAddress);
+    } else {
+      console.log("[CreateLensGroup] Skipping custom rule for", circleType, "circle (fundraising circles are open to all)");
     }
 
-    // Validate address format
-    if (!ruleContractAddress.startsWith('0x') || ruleContractAddress.length !== 42) {
-      console.error("[CreateLensGroup] Invalid rule contract address format:", ruleContractAddress);
-      return {
-        success: false,
-        error: "Invalid rule contract address format",
-      };
-    }
-
-    console.log("[CreateLensGroup] Using invite rule contract:", ruleContractAddress);
-
-    // Step 4: Deploy group contract 
-    // NOTE: Temporarily disabled custom invite rule due to KeyValue struct mismatch
-    // TODO: Redeploy contract with correct struct definition and re-enable
-    console.log("[CreateLensGroup] Creating group without custom rule (temporary)...");
+    // Step 4: Deploy group contract
+    console.log("[CreateLensGroup] Creating group with", shouldUseCustomRule ? "custom invite rule" : "no custom rule", "...");
     console.log("[CreateLensGroup] Group creation params:", {
       metadataUri,
       ownerAddress,
+      circleType,
+      hasCustomRule: shouldUseCustomRule,
     });
 
     const createResult = await createGroup(sessionClient, {
       metadataUri: uri(metadataUri),
       owner: evmAddress(ownerAddress),
-      rules: {
+      rules: shouldUseCustomRule ? {
         required: [
           {
             unknownRule: {
-              address: evmAddress(ruleContractAddress),
+              address: evmAddress(import.meta.env.VITE_LENS_INVITE_RULE_CONTRACT_ADDRESS),
               executeOn: [GroupRuleExecuteOn.Joining],
               params: [], // Empty params - configure() doesn't need any parameters
             },
           },
         ],
+        anyOf: [],
+      } : {
+        required: [],
         anyOf: [],
       },
     })

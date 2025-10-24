@@ -97,7 +97,7 @@ export default function CircleInvites({ loaderData }: Route.ComponentProps) {
 
 	// Handle copy invite link
 	const handleCopyLink = useCallback(async (inviteCode: string) => {
-		const inviteUrl = `${window.location.origin}/join/${inviteCode}`;
+		const inviteUrl = `${window.location.origin}/invite?code=${inviteCode}`;
 		try {
 			await navigator.clipboard.writeText(inviteUrl);
 			toast.success("Invite link copied to clipboard!");
