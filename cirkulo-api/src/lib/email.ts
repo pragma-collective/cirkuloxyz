@@ -23,7 +23,7 @@ export async function sendInviteEmail(params: SendInviteEmailParams) {
 
 	// Generate invite link
 	const inviteLink = inviteToken
-		? `${APP_URL}/invite?token=${inviteToken}`
+		? `${APP_URL}/invite?code=${inviteToken}`
 		: `${APP_URL}/signup`;
 
 	const subjectLine = `${inviterName} invited you to join Xersha`;
