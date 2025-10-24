@@ -235,11 +235,11 @@ export default function ContributePage({ loaderData }: Route.ComponentProps) {
       {/* Main content */}
       <div className="relative z-10 flex min-h-screen flex-col">
         {/* Top Bar - Back button + Circle Info */}
-        <div className="flex items-center justify-between p-4 sm:p-6">
+        <div className="flex items-center justify-between p-4 sm:p-6 relative z-20">
           <Button
             variant="ghost"
             onClick={() => navigate(`/circle/${circleId}`)}
-            className="text-neutral-700 hover:text-neutral-900 -ml-2"
+            className="text-neutral-700 hover:text-neutral-900 -ml-2 relative z-20 pointer-events-auto"
           >
             <ArrowLeft className="size-5 mr-2" />
             Back to Circle

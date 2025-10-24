@@ -1,5 +1,6 @@
 import { useState } from "react";
 import type { Circle } from "app/types/feed";
+import type { GroupMember } from "@lens-protocol/client";
 import { Card, CardContent, CardHeader, CardTitle } from "app/components/ui/card";
 import { UserAvatar } from "app/components/ui/user-avatar";
 import { Button } from "app/components/ui/button";
@@ -8,6 +9,7 @@ import { cn } from "app/lib/utils";
 
 export interface CircleMembersProps {
   circle: Circle;
+  members: GroupMember[];
   onInvite: () => void;
   onMemberClick?: (userId: string) => void;
   className?: string;
@@ -15,6 +17,7 @@ export interface CircleMembersProps {
 
 export function CircleMembers({
   circle,
+  members,
   onInvite,
   onMemberClick,
   className,
@@ -22,11 +25,8 @@ export function CircleMembers({
   const [showAll, setShowAll] = useState(false);
 
   // Determine how many members to show
-  const visibleMembers = showAll ? circle.members : circle.members.slice(0, 12);
-  const hasMore = circle.members.length > 12;
-
-  // Mock: Randomly select a top contributor (would come from API in production)
-  const topContributorId = circle.members[0]?.id;
+  const visibleMembers = showAll ? members : members.slice(0, 12);
+  const hasMore = members.length > 12;
 
   return (
     <Card className={cn("bg-white/90 backdrop-blur-sm border-0 shadow-lg", className)}>
@@ -52,25 +52,52 @@ export function CircleMembers({
           {visibleMembers.map((member, index) => {
             const isActive = index < 3; // Mock: first 3 members are "active now"
 
+            // Extract member data from Lens GroupMember type
+            const memberAccount = member.account;
+
+            // Lens metadata fields can be complex objects - extract the actual values
+            const metadataName = typeof memberAccount.metadata?.name === 'string'
+              ? memberAccount.metadata.name
+              : memberAccount.metadata?.name?.value || null;
+
+            const metadataPicture = typeof memberAccount.metadata?.picture === 'string'
+              ? memberAccount.metadata.picture
+              : memberAccount.metadata?.picture?.value || null;
+
+            const usernameValue = typeof memberAccount.username === 'string'
+              ? memberAccount.username
+              : memberAccount.username?.value || memberAccount.username?.localName || null;
+
+            const displayName = metadataName || usernameValue || `${memberAccount.address.slice(0, 6)}...${memberAccount.address.slice(-4)}`;
+            const username = usernameValue || memberAccount.address.slice(0, 8);
+
+            // Convert to User format for UserAvatar component
+            const userForAvatar = {
+              id: memberAccount.address,
+              name: displayName,
+              lensUsername: username,
+              avatar: metadataPicture,
+            };
+
             return (
               <button
-                key={member.id}
-                onClick={onMemberClick ? () => onMemberClick(member.id) : undefined}
+                key={memberAccount.address}
+                onClick={onMemberClick ? () => onMemberClick(memberAccount.address) : undefined}
                 className="w-full bg-neutral-50 border border-neutral-200 rounded-xl p-3 hover:bg-neutral-100 hover:border-neutral-300 hover:shadow-sm transition-all duration-200 cursor-pointer group"
               >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <UserAvatar
-                      user={member}
+                      user={userForAvatar}
                       size="md"
                       className="size-10"
                     />
                     <div className="text-left">
                       <p className="text-sm font-semibold text-neutral-900 truncate max-w-[180px] sm:max-w-[240px]">
-                        {member.name}
+                        {displayName}
                       </p>
                       <p className="text-xs text-neutral-600">
-                        @{member.lensUsername || member.id.slice(0, 8)}
+                        @{username}
                       </p>
                     </div>
                   </div>
