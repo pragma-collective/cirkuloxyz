@@ -373,6 +373,9 @@ invites.openapi(resendInviteRoute, async (c) => {
 		// Extract sender address from sub claim
 		const senderAddress = jwtPayload.sub;
 
+		// @ts-expect-error - act claim is not in the standard JWTPayload type
+		const senderLensAddress = jwtPayload.act?.sub as string;
+
 		if (!senderAddress) {
 			return c.json(
 				{
@@ -424,7 +427,7 @@ invites.openapi(resendInviteRoute, async (c) => {
 		}
 
 		// Fetch Lens username for the sender
-		const lensUsername = await getLensUsername(senderAddress);
+		const lensUsername = await getLensUsername(senderLensAddress);
 		const inviterName = lensUsername || senderAddress;
 
 		console.log(
