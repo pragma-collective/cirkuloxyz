@@ -18,8 +18,7 @@ import { Loader2 } from "lucide-react";
  *
  * 3. **Wallet but No Lens Session**: Show loading while AuthContext navigates
  *    - AuthContext will redirect to /onboarding (no accounts)
- *    - AuthContext will redirect to /select-account (multiple accounts)
- *    - AuthContext will authenticate automatically (single account)
+ *    - AuthContext will redirect to /select-account (one or more accounts)
  *
  * 4. **Fully Authenticated**: Render protected route
  *    - User has wallet connected

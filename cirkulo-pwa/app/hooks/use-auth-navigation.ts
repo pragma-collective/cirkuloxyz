@@ -91,24 +91,9 @@ export function determineAuthDestination(
 		};
 	}
 
-	// One Lens account → dashboard (auto-selected)
-	if (accountCount === 1) {
-		if (currentPath === "/dashboard") {
-			return {
-				shouldNavigate: false,
-				destination: null,
-				reason: "Already on dashboard",
-			};
-		}
-		return {
-			shouldNavigate: true,
-			destination: "/dashboard",
-			reason: "One Lens account, auto-selected",
-		};
-	}
-
-	// Multiple Lens accounts → account selection
-	if (accountCount >= 2) {
+	// One or more Lens accounts → account selection
+	// User must explicitly select their account (even if they only have one)
+	if (accountCount >= 1) {
 		if (currentPath === "/select-account") {
 			return {
 				shouldNavigate: false,
@@ -119,7 +104,10 @@ export function determineAuthDestination(
 		return {
 			shouldNavigate: true,
 			destination: "/select-account",
-			reason: "Multiple Lens accounts, user must choose",
+			reason:
+				accountCount === 1
+					? "One Lens account found, user must confirm selection"
+					: "Multiple Lens accounts, user must choose",
 		};
 	}
 
