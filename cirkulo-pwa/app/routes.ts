@@ -12,13 +12,20 @@ export default [
 
 	// Auth-enabled routes (wrapped with auth context)
 	layout("components/auth-layout.tsx", [
-		// Login page (needs Dynamic for wallet connection)
+		// Login page (no guard - needs to be accessible to everyone)
 		route("login", "routes/login.tsx"),
 
-		// Protected routes (requires authentication)
-		layout("components/protected-route.tsx", [
-			route("select-account", "routes/select-account.tsx"),
+		// Auth flow routes (wallet required, but NOT Lens session)
+		// Redirects to /dashboard if user is already fully authenticated
+		layout("components/auth-flow-guard.tsx", [
 			route("onboarding", "routes/onboarding.tsx"),
+			route("select-account", "routes/select-account.tsx"),
+		]),
+
+		// Authenticated routes (wallet + Lens session required)
+		// Redirects to /login if not authenticated
+		// Shows loading while AuthContext navigates to onboarding/select-account
+		layout("components/authenticated-route.tsx", [
 			route("dashboard", "routes/dashboard.tsx"),
 			route("explore", "routes/explore.tsx"),
 			route("create-circle", "routes/create-circle.tsx"),
