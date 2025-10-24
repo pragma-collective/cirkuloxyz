@@ -150,6 +150,45 @@ The app transparently communicates Bitcoin usage while maintaining a friendly, s
 5. **Rounded Corners**: `rounded-3xl` for cards, `rounded-full` for badges/avatars
 6. **Shadows**: `shadow-xl` and `shadow-2xl` for depth
 
+## Authentication System
+
+Cirkulo uses a dual-session authentication architecture combining:
+- **Dynamic Wallet Session**: Wallet connection (MetaMask, WalletConnect, etc.)
+- **Lens Protocol Session**: Social identity and account management
+
+**Context Hierarchy:**
+- `WalletContext` - Dynamic SDK integration, wallet state management
+- `LensContext` - Lens Protocol sessions, account management
+- `AuthContext` - Unified orchestration layer, auto-navigation
+
+**For complete documentation**, see: `../docs/frontend-authentication.md`
+- Architecture diagrams and data flow
+- Authentication flows (login, session resume, logout)
+- Context deep dives with implementation details
+- Navigation logic and route guards
+- Troubleshooting guide with common issues
+
+**Quick Usage:**
+```typescript
+// Unified auth state (recommended for most components)
+import { useAuth } from "app/context/auth-context";
+const { user, hasLensSession, isLoading } = useAuth();
+
+// Wallet-specific operations
+import { useWallet } from "app/context/wallet-context";
+const { isConnected, walletAddress } = useWallet();
+
+// Lens-specific operations
+import { useLensSession } from "app/context/lens-context";
+const { sessionClient, accounts, selectedAccount } = useLensSession();
+```
+
+**Critical Details:**
+- Dynamic SDK takes 100-200ms to initialize on page load
+- Navigation logic waits for both sessions to load before routing
+- Session resume happens automatically on page refresh
+- Use `useAuth()` for most components, direct contexts only when needed
+
 ## Important Patterns
 
 ### Async Logic and Hooks Pattern
