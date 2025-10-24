@@ -134,14 +134,16 @@ export function CircleHero({
                 <Users className="size-4" />
                 <span>{circle.memberCount} {circle.memberCount === 1 ? "member" : "members"}</span>
               </div>
-              <div className="flex items-center gap-1.5">
-                <Calendar className="size-4" />
-                <span className="capitalize">{circle.contributionSchedule} contributions</span>
-              </div>
-              {circle.category && (
+              {circle.circleType === "rotating" && (
+                <div className="flex items-center gap-1.5">
+                  <Calendar className="size-4" />
+                  <span className="capitalize">{circle.contributionSchedule} contributions</span>
+                </div>
+              )}
+              {circle.categories && circle.categories.length > 0 && (
                 <div className="flex items-center gap-1.5">
                   <span className="px-2 py-1 bg-neutral-100 rounded-full text-xs font-medium capitalize">
-                    {circle.category}
+                    {circle.categories[0]}
                   </span>
                 </div>
               )}
@@ -310,12 +312,7 @@ export function CircleHero({
                 <Button
                   size="lg"
                   onClick={onContribute}
-                  className={cn(
-                    "w-full sm:w-auto gap-2 px-6 sm:px-8 text-white shadow-lg",
-                    circle.circleType === "fundraising"
-                      ? "bg-gradient-to-r from-success-500 to-teal-500 hover:from-success-600 hover:to-teal-600"
-                      : "bg-gradient-to-r from-primary-500 to-secondary-500 hover:from-primary-600 hover:to-secondary-600"
-                  )}
+                  className="w-full sm:w-auto gap-2 px-6 sm:px-8 text-white shadow-lg bg-gradient-to-r from-primary-500 to-secondary-500 hover:from-primary-600 hover:to-secondary-600"
                 >
                   {circle.circleType === "fundraising" ? (
                     <Heart className="size-5" />
