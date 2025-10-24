@@ -31,7 +31,6 @@ invites.openapi(getInvitesRoute, async (c) => {
 
 		// Extract user address from sub claim
 		const userAddress = jwtPayload.sub;
-		console.log(jwtPayload);
 
 		if (!userAddress) {
 			return c.json(

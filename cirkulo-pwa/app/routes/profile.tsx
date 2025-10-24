@@ -7,16 +7,14 @@ import { Button } from "app/components/ui/button";
 import {
   Card,
   CardContent,
-  CardHeader,
-  CardTitle,
 } from "app/components/ui/card";
+import { CircleCard } from "app/components/circles/circle-card";
 import {
   mockCurrentUser,
   mockUserStats,
   mockCircles,
   mockStreak,
   mockProfileActivity,
-  mockUsers,
 } from "app/lib/mock-data";
 import {
   Home,
@@ -26,16 +24,16 @@ import {
   User,
   Edit3,
   Camera,
-  MessageCircle,
-  Share2,
   Flame,
-  Wallet,
-  Target,
   Users,
   TrendingUp,
   DollarSign,
+  Loader2,
+  AlertCircle,
 } from "lucide-react";
 import { cn } from "app/lib/utils";
+import { useAuth } from "app/context/auth-context";
+import { useFetchMyCircles } from "app/hooks/use-fetch-my-circles";
 
 export function meta({}: Route.MetaArgs) {
   return [
@@ -49,6 +47,18 @@ export function meta({}: Route.MetaArgs) {
 
 export default function Profile() {
   const navigate = useNavigate();
+  const { sessionClient } = useAuth();
+
+  // Fetch user's circles from API
+  const {
+    data: circlesResponse,
+    isLoading: isLoadingCircles,
+    error: circlesError,
+    refetch: refetchCircles,
+  } = useFetchMyCircles(sessionClient);
+
+  // Extract circles data
+  const userCircles = circlesResponse?.data || [];
 
   // Format currency
   const formatCurrency = (amount: number): string => {
@@ -482,7 +492,46 @@ export default function Profile() {
               </Button>
             </div>
 
-            {mockCircles.length === 0 ? (
+            {/* Loading State */}
+            {isLoadingCircles && (
+              <Card className="bg-white/90 backdrop-blur-sm border-0 shadow-lg">
+                <CardContent className="py-12">
+                  <div className="flex flex-col items-center justify-center gap-4">
+                    <Loader2 className="size-8 text-primary-600 animate-spin" />
+                    <p className="text-sm text-neutral-600">Loading your circles...</p>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Error State */}
+            {!isLoadingCircles && circlesError && (
+              <Card className="bg-white/90 backdrop-blur-sm border-0 shadow-lg">
+                <CardContent className="py-12">
+                  <div className="flex flex-col items-center justify-center gap-4 text-center">
+                    <div className="p-4 bg-error-100 rounded-full">
+                      <AlertCircle className="size-8 text-error-600" />
+                    </div>
+                    <div className="space-y-2">
+                      <h3 className="text-lg font-semibold text-neutral-900">
+                        Failed to load circles
+                      </h3>
+                      <p className="text-sm text-neutral-600 max-w-md mx-auto">
+                        {circlesError instanceof Error
+                          ? circlesError.message
+                          : "Unable to load your circles. Please try again."}
+                      </p>
+                    </div>
+                    <Button onClick={() => refetchCircles()} variant="outline">
+                      Try Again
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Empty State */}
+            {!isLoadingCircles && !circlesError && userCircles.length === 0 && (
               <Card className="bg-white/90 backdrop-blur-sm border-0 shadow-lg">
                 <CardContent className="py-12">
                   <div className="text-center space-y-4">
@@ -507,154 +556,16 @@ export default function Profile() {
                   </div>
                 </CardContent>
               </Card>
-            ) : (
+            )}
+
+            {/* Circles Grid */}
+            {!isLoadingCircles && !circlesError && userCircles.length > 0 && (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-                {mockCircles.map((circle) => (
-                  <Card
+                {userCircles.map((circle) => (
+                  <CircleCard
                     key={circle.id}
-                    className="bg-white/90 backdrop-blur-sm border-0 shadow-lg hover:shadow-2xl transition-all duration-300 cursor-pointer group overflow-hidden"
-                    onClick={() => navigate(`/circle/${circle.id}`)}
-                  >
-                    <CardHeader className="space-y-4 pb-4">
-                      {/* Circle Header */}
-                      <div className="flex items-start justify-between">
-                        <div className="flex items-center gap-3">
-                          <div className="text-4xl group-hover:scale-110 transition-transform">
-                            {circle.emoji}
-                          </div>
-                          <div>
-                            <CardTitle className="text-lg group-hover:text-primary-600 transition-colors">
-                              {circle.name}
-                            </CardTitle>
-                            <p className="text-xs text-neutral-600 mt-1">
-                              {circle.memberCount} {circle.memberCount === 1 ? "member" : "members"}
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Member Avatar Row */}
-                      <div className="space-y-2">
-                        <div className="flex items-center gap-2">
-                          <div className="flex -space-x-3">
-                            {circle.members.slice(0, 5).map((member, idx) => (
-                              <UserAvatar
-                                key={member.id}
-                                user={member}
-                                size="sm"
-                                className="size-8 ring-2 ring-white"
-                              />
-                            ))}
-                            {circle.memberCount > 5 && (
-                              <div className="size-8 rounded-full bg-neutral-200 ring-2 ring-white flex items-center justify-center text-xs font-medium text-neutral-700">
-                                +{circle.memberCount - 5}
-                              </div>
-                            )}
-                          </div>
-                          <div className="flex items-center gap-1.5">
-                            <div className="w-2 h-2 bg-success-500 rounded-full pulse-dot" />
-                            <span className="text-xs text-neutral-600">Active now</span>
-                          </div>
-                        </div>
-                        <p className="text-xs text-neutral-500">
-                          {Math.min(circle.memberCount, 5)} {circle.memberCount === 1 ? "friend" : "friends"} saving together
-                        </p>
-                      </div>
-
-                      {/* Progress Bar with Shimmer */}
-                      <div className="space-y-2">
-                        <div className="flex items-center justify-between text-sm">
-                          <span className="font-semibold text-neutral-900">
-                            {formatCurrency(circle.currentAmount)}
-                          </span>
-                          <span className="text-neutral-600">
-                            of {formatCurrency(circle.goalAmount)}
-                          </span>
-                        </div>
-                        <div className="relative h-2 bg-neutral-200 rounded-full overflow-hidden">
-                          <div
-                            className="absolute top-0 left-0 h-full bg-gradient-to-r from-primary-500 to-secondary-500 rounded-full transition-all duration-500 shimmer-effect overflow-hidden"
-                            style={{ width: `${Math.min(circle.progress, 100)}%` }}
-                          />
-                        </div>
-                        <div className="flex items-center justify-between text-xs">
-                          <span className="font-medium text-primary-600">
-                            {circle.progress}% complete
-                          </span>
-                          <span className="text-neutral-500 capitalize">
-                            {circle.contributionSchedule}
-                          </span>
-                        </div>
-                      </div>
-
-                      {/* Latest Activity */}
-                      {circle.members.length > 0 && (
-                        <div className="bg-neutral-50 rounded-lg p-3 space-y-2">
-                          <div className="flex items-center gap-2">
-                            <UserAvatar
-                              user={circle.members[0]}
-                              size="sm"
-                              className="size-6"
-                            />
-                            <div className="flex-1 min-w-0">
-                              <p className="text-xs text-neutral-900">
-                                <span className="font-semibold">{circle.members[0].name}</span>
-                                {" "}contributed
-                              </p>
-                            </div>
-                            <span className="text-xs font-semibold text-success-600">
-                              +$150
-                            </span>
-                          </div>
-                          <p className="text-xs text-neutral-500">
-                            2h ago
-                          </p>
-                        </div>
-                      )}
-                    </CardHeader>
-
-                    {/* Quick Actions */}
-                    <CardContent className="pt-0 pb-4">
-                      <div className="grid grid-cols-3 gap-2">
-                        <Button
-                          variant="default"
-                          size="sm"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            console.log("Contribute clicked:", circle.id);
-                          }}
-                          className="text-xs gap-1.5"
-                        >
-                          <DollarSign className="size-3.5" />
-                          Contribute
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            console.log("Chat clicked:", circle.id);
-                          }}
-                          className="text-xs gap-1.5"
-                        >
-                          <MessageCircle className="size-3.5" />
-                          Chat
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            console.log("Share clicked:", circle.id);
-                          }}
-                          className="text-xs gap-1.5"
-                        >
-                          <Share2 className="size-3.5" />
-                          Share
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
+                    circle={circle}
+                  />
                 ))}
               </div>
             )}

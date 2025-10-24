@@ -1,7 +1,7 @@
 import { OpenAPIHono } from "@hono/zod-openapi";
 import auth from "./auth";
-import invites from "./invites";
 import circles from "./circles";
+import invites from "./invites";
 
 const routes = new OpenAPIHono();
 
