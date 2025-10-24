@@ -179,22 +179,48 @@ export function useAuthNavigation(
 		// This prevents unnecessary effect execution during normal navigation
 		// between authenticated routes (e.g., dashboard → profile)
 		if (hasLensSession && walletConnected && hasResolvedInitialAuth) {
+			console.log(
+				"[AuthNavigation] Authenticated user, no navigation needed",
+			);
 			return;
 		}
 
 		// CRITICAL: Don't navigate until initial auth state is resolved
 		// This prevents redirects during page load before session resume completes
 		if (!hasResolvedInitialAuth) {
-			console.log("[AuthNavigation] Waiting for initial auth resolution");
+			console.log(
+				"[AuthNavigation] Waiting for initial auth resolution",
+				{
+					isLoading,
+					walletConnected,
+					accountCount,
+					hasLensSession,
+				},
+			);
 			return;
 		}
 
 		// Skip navigation while auth state is loading
 		// This includes wallet connection, account fetching, and session resume
 		if (isLoading) {
-			console.log("[AuthNavigation] Skipping navigation - auth is loading");
+			console.log(
+				"[AuthNavigation] Skipping navigation - auth is loading",
+				{
+					walletConnected,
+					accountCount,
+					hasLensSession,
+				},
+			);
 			return;
 		}
+
+		// Log current auth state before running navigation logic
+		console.log("[AuthNavigation] Evaluating navigation with state:", {
+			walletConnected,
+			accountCount,
+			hasLensSession,
+			currentPath: location.pathname,
+		});
 
 		// Run navigation logic for unauthenticated or partially authenticated users
 		const result = determineAuthDestination(

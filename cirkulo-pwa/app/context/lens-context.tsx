@@ -102,9 +102,6 @@ export function LensProvider({
 		LensAccount | undefined
 	>(undefined);
 
-	// Track if this is the first mount vs a re-render
-	// This prevents re-initialization during navigation
-	const isMountedRef = useRef(false);
 
 	// Track session resume loading state
 	// Initialize to true if we have session metadata to check
@@ -151,22 +148,14 @@ export function LensProvider({
 	/**
 	 * Resume Lens session from localStorage
 	 *
-	 * Attempts to restore session on mount if:
-	 * 1. Wallet is connected
-	 * 2. Session metadata exists and is valid
-	 * 3. Session wallet matches current wallet
-	 * 4. Session is not expired
+	 * Runs when wallet address changes (initial connection or wallet switch).
+	 * The walletAddress dependency ensures this only runs when needed:
+	 * - Initial mount with no wallet → skipped
+	 * - Wallet connects → session resume runs
+	 * - Navigation (same wallet) → does not re-run
+	 * - Wallet switch → session resume runs for new wallet
 	 */
 	useEffect(() => {
-		// Track if we've already mounted to prevent re-initialization during navigation
-		if (isMountedRef.current) {
-			console.log(
-				"[LensContext] Already mounted, skipping session resume check",
-			);
-			return;
-		}
-		isMountedRef.current = true;
-
 		// Only attempt to resume if wallet is connected
 		if (!walletAddress) {
 			console.log("[LensContext] Skipping session resume: No wallet connected");
@@ -174,6 +163,9 @@ export function LensProvider({
 			setIsResumingSession(false);
 			return;
 		}
+
+		console.log("[LensContext] Wallet connected, checking for session to resume");
+
 
 		const resumeSession = async () => {
 			try {
@@ -211,22 +203,26 @@ export function LensProvider({
 
 				console.log("[LensContext] Attempting to resume Lens session...");
 
-				// Note: isResumingSession is already true if we got here with valid metadata
-				// (set during state initialization)
-
 				// Attempt to resume Lens session
 				const resumed = await lensClient.resumeSession();
 
 				if (resumed.isOk()) {
-					setSessionClient(resumed.value);
 					console.log(
-						"[LensContext] Lens session resumed successfully:",
+						"[LensContext] Session resume SUCCESS, setting client",
+					);
+
+					// Set session client
+					setSessionClient(resumed.value);
+
+					console.log(
+						"[LensContext] Session resume complete:",
 						metadata.username || metadata.accountAddress,
+						"- Account will be restored by fallback effect",
 					);
 				} else {
 					// Resume failed - clear metadata
 					console.log(
-						"[LensContext] Session resume failed:",
+						"[LensContext] Session resume FAILED:",
 						resumed.error.message || "Unknown error",
 					);
 					clearSessionMetadata();
@@ -247,13 +243,63 @@ export function LensProvider({
 				);
 				clearSessionMetadata();
 			} finally {
-				// CLEAR LOADING STATE - Session resume complete (success or failure)
-				setIsResumingSession(false);
+				// CRITICAL: Delay clearing loading state to ensure React batches all previous state updates
+				// This prevents navigation from running with stale sessionClient/selectedAccount state
+				console.log(
+					"[LensContext] Delaying isResumingSession clear to ensure state propagates",
+				);
+				setTimeout(() => {
+					console.log("[LensContext] Clearing isResumingSession flag");
+					setIsResumingSession(false);
+				}, 0);
 			}
 		};
 
 		resumeSession();
-	}, [walletAddress]);
+	}, [walletAddress]); // Only run on wallet connection, account restoration happens in fallback effect
+
+	/**
+	 * Fallback: Restore selected account if session exists but account wasn't set
+	 *
+	 * This handles the edge case where session resume completes before accounts are fetched.
+	 * The main restoration happens in the session resume effect above.
+	 */
+	useEffect(() => {
+		// Only restore if we have a session, accounts are loaded, but no selected account
+		if (!sessionClient || selectedAccount || accounts.length === 0) {
+			return;
+		}
+
+		// Get session metadata to find which account was previously selected
+		const metadata = getSessionMetadata();
+		if (!metadata) {
+			return;
+		}
+
+		console.log(
+			"[LensContext] Fallback: Restoring selected account (session resumed before accounts loaded)",
+		);
+
+		// Find the account that matches the session metadata
+		const matchedAccount = accounts.find(
+			(acc) =>
+				acc.address.toLowerCase() ===
+				metadata.accountAddress.toLowerCase(),
+		);
+
+		if (matchedAccount) {
+			setSelectedAccount(matchedAccount);
+			console.log(
+				"[LensContext] Fallback restore successful:",
+				matchedAccount.username || matchedAccount.address,
+			);
+		} else {
+			console.warn(
+				"[LensContext] Fallback: Could not find account matching session metadata:",
+				metadata.accountAddress,
+			);
+		}
+	}, [sessionClient, accounts, selectedAccount]);
 
 	/**
 	 * Authenticate with a specific Lens account
