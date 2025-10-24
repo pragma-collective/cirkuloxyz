@@ -4,6 +4,7 @@ import { useNavigate, useParams } from "react-router";
 import { Button } from "app/components/ui/button";
 import { ArrowLeft, Loader2, CheckCircle2, AlertCircle } from "lucide-react";
 import { cn } from "app/lib/utils";
+import { useAuth } from "app/context/auth-context";
 import { useFetchCircle } from "~/hooks/use-fetch-circle";
 import { useContribute } from "~/hooks/use-contribute";
 import { fetchGroup } from "@lens-protocol/client/actions";
@@ -48,6 +49,7 @@ export default function ContributePage({ loaderData }: Route.ComponentProps) {
   const navigate = useNavigate();
   const params = useParams();
   const circleId = params.id;
+  const { user } = useAuth();
   const { address: userAddress } = useAccount();
 
   // Fetch data
@@ -276,14 +278,6 @@ export default function ContributePage({ loaderData }: Route.ComponentProps) {
             )}
             style={{ width: `${Math.max(amount.length || 1, 5)}ch` }}
           />
-
-          {/* Approval Status Indicator */}
-          {isApprovalConfirmed && !isSuccess && (
-            <div className="mt-6 flex items-center gap-2 px-4 py-2 bg-success-50 border border-success-200 rounded-full">
-              <CheckCircle2 className="size-5 text-success-600" />
-              <span className="text-sm font-medium text-success-700">Approved!</span>
-            </div>
-          )}
 
           {isROSCA && (
             <p className="text-sm text-neutral-600/80 mt-4 max-w-xs text-center">
