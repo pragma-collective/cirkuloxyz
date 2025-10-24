@@ -91,10 +91,9 @@ yarn start        # Start NextJS debug UI (terminal 3)
 2. **Lens Account Check** (Lens Protocol)
    - PWA fetches Lens accounts for connected wallet address
    - Uses `useFetchLensAccounts` hook (`cirkulo-pwa/app/hooks/fetch-lens-accounts.ts`)
-   - Three scenarios:
+   - Two scenarios:
      - **0 accounts**: Redirect to `/onboarding` (create new Lens account)
-     - **1 account**: Auto-authenticate and redirect to `/dashboard`
-     - **2+ accounts**: Redirect to `/select-account` (user chooses which account)
+     - **1+ accounts**: Redirect to `/select-account` (user confirms/selects account)
 
 3. **Lens Authentication**
    - PWA authenticates with Lens Protocol as account owner

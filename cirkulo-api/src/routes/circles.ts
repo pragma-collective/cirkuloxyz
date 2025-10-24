@@ -22,14 +22,7 @@ circles.openapi(createCircleRoute, async (c) => {
 	try {
 		// Get validated request body
 		const body = c.req.valid("json");
-		const {
-			circleName,
-			poolAddress,
-			lensGroupAddress,
-			poolDeploymentTxHash,
-			circleType,
-			currency,
-		} = body;
+		const { circleName, poolAddress, lensGroupAddress, poolDeploymentTxHash, circleType, currency, categories } = body;
 
 		// Get authenticated user info from JWT token
 		const jwtPayload = c.get("jwtPayload");
@@ -98,6 +91,7 @@ circles.openapi(createCircleRoute, async (c) => {
 				creatorAddress,
 				circleType,
 				currency: currency || "cusd", // Default to cusd if not provided
+				categories: categories || null, // Optional categories array
 			})
 			.returning();
 
@@ -113,11 +107,9 @@ circles.openapi(createCircleRoute, async (c) => {
 					circleName: newCircle.circleName,
 					poolAddress: newCircle.poolAddress,
 					lensGroupAddress: newCircle.lensGroupAddress,
-					circleType: newCircle.circleType as
-						| "contribution"
-						| "rotating"
-						| "fundraising",
-					currency: newCircle.currency as "cusd" | "cbtc",
+					circleType: newCircle.circleType,
+					currency: newCircle.currency,
+					categories: newCircle.categories || undefined,
 					creatorAddress: newCircle.creatorAddress,
 					createdAt: newCircle.createdAt.toISOString(),
 				},
@@ -317,10 +309,11 @@ circles.openapi(getCircleRoute, async (c) => {
 					lensGroupAddress: circle.lensGroupAddress,
 					poolDeploymentTxHash: circle.poolDeploymentTxHash,
 					circleType: circle.circleType as
-						| "contribution"
-						| "rotating"
-						| "fundraising",
+					| "contribution"
+					| "rotating"
+					| "fundraising",
 					currency: circle.currency as "cusd" | "cbtc",
+					categories: circle.categories || undefined,
 					creatorAddress: circle.creatorAddress,
 					createdAt: circle.createdAt.toISOString(),
 					updatedAt: circle.updatedAt.toISOString(),

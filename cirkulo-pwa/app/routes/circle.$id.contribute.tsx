@@ -4,6 +4,7 @@ import { useNavigate, useParams } from "react-router";
 import { Button } from "app/components/ui/button";
 import { ArrowLeft, Loader2, CheckCircle2, AlertCircle } from "lucide-react";
 import { cn } from "app/lib/utils";
+import { useAuth } from "app/context/auth-context";
 import { useFetchCircle } from "~/hooks/use-fetch-circle";
 import { useContribute } from "~/hooks/use-contribute";
 import { fetchGroup } from "@lens-protocol/client/actions";
@@ -48,6 +49,7 @@ export default function ContributePage({ loaderData }: Route.ComponentProps) {
   const navigate = useNavigate();
   const params = useParams();
   const circleId = params.id;
+  const { user } = useAuth();
   const { address: userAddress } = useAccount();
 
   // Fetch data
@@ -208,12 +210,7 @@ export default function ContributePage({ loaderData }: Route.ComponentProps) {
     // Success state
     if (isSuccess) return "bg-success-600 hover:bg-success-600";
 
-    // Fundraising uses green gradient like circle-hero
-    if (circle?.circleType === "fundraising") {
-      return "bg-gradient-to-r from-success-500 to-teal-500 hover:from-success-600 hover:to-teal-600";
-    }
-
-    // Default: primary-secondary gradient (for contribution and rotating)
+    // All circle types use the same primary-secondary gradient
     return "bg-gradient-to-r from-primary-500 to-secondary-500 hover:from-primary-600 hover:to-secondary-600";
   };
 
@@ -238,11 +235,11 @@ export default function ContributePage({ loaderData }: Route.ComponentProps) {
       {/* Main content */}
       <div className="relative z-10 flex min-h-screen flex-col">
         {/* Top Bar - Back button + Circle Info */}
-        <div className="flex items-center justify-between p-4 sm:p-6">
+        <div className="flex items-center justify-between p-4 sm:p-6 relative z-20">
           <Button
             variant="ghost"
             onClick={() => navigate(`/circle/${circleId}`)}
-            className="text-neutral-700 hover:text-neutral-900 -ml-2"
+            className="text-neutral-700 hover:text-neutral-900 -ml-2 relative z-20 pointer-events-auto"
           >
             <ArrowLeft className="size-5 mr-2" />
             Back to Circle
@@ -282,14 +279,6 @@ export default function ContributePage({ loaderData }: Route.ComponentProps) {
             style={{ width: `${Math.max(amount.length || 1, 5)}ch` }}
           />
 
-          {/* Approval Status Indicator */}
-          {isApprovalConfirmed && !isSuccess && (
-            <div className="mt-6 flex items-center gap-2 px-4 py-2 bg-success-50 border border-success-200 rounded-full">
-              <CheckCircle2 className="size-5 text-success-600" />
-              <span className="text-sm font-medium text-success-700">Approved!</span>
-            </div>
-          )}
-
           {isROSCA && (
             <p className="text-sm text-neutral-600/80 mt-4 max-w-xs text-center">
               Fixed amount per 30-day round
@@ -307,21 +296,6 @@ export default function ContributePage({ loaderData }: Route.ComponentProps) {
             </span>
           </div>
 
-          {/* Confirmation Status */}
-          {isConfirming && !error && !isSuccess && (
-            <div className="flex items-center gap-2 p-4 bg-primary-50 border border-primary-200 rounded-xl">
-              <Loader2 className="size-5 text-primary-600 animate-spin shrink-0" />
-              <div className="flex-1">
-                <p className="text-sm font-medium text-primary-900">
-                  {isApproving ? "Confirming approval..." : "Confirming contribution..."}
-                </p>
-                <p className="text-xs text-primary-700 mt-1">
-                  Waiting for transaction to be mined
-                </p>
-              </div>
-            </div>
-          )}
-
           {/* Error Message */}
           {error && (
             <div className="flex items-center gap-2 p-4 bg-error-50 border border-error-200 rounded-xl">
@@ -337,6 +311,38 @@ export default function ContributePage({ loaderData }: Route.ComponentProps) {
               <p className="text-sm text-success-700">
                 Contribution successful! Redirecting...
               </p>
+            </div>
+          )}
+
+          {/* Pre-select Amount Pills - Only for non-ROSCA circles */}
+          {!isROSCA && (
+            <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-2">
+              {(currency === "cbtc"
+                ? [0.0001, 0.0005, 0.001, 0.005, 0.01, 0.05]
+                : [10, 25, 50, 100, 250, 500]
+              ).map((presetAmount) => {
+                const amountStr = presetAmount.toString();
+                const isSelected = amount === amountStr;
+
+                return (
+                  <button
+                    key={presetAmount}
+                    type="button"
+                    onClick={() => setAmount(amountStr)}
+                    disabled={isContributing || isApproving || isSuccess}
+                    className={cn(
+                      "px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all",
+                      "border-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/30",
+                      isSelected
+                        ? "bg-primary-600 text-white border-primary-600"
+                        : "bg-white text-neutral-700 border-neutral-300 hover:border-primary-300 hover:bg-primary-50",
+                      (isContributing || isApproving || isSuccess) && "opacity-60 cursor-not-allowed"
+                    )}
+                  >
+                    {currency === "cbtc" ? `${presetAmount} cBTC` : `$${presetAmount}`}
+                  </button>
+                );
+              })}
             </div>
           )}
 

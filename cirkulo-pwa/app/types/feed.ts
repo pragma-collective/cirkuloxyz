@@ -7,6 +7,9 @@ export type CircleCategory =
   | "technology"
   | "education"
   | "events"
+  | "healthcare"
+  | "community"
+  | "emergency"
   | "other";
 
 // Circle information
@@ -27,7 +30,7 @@ export interface Circle {
   progress: number; // 0-100
   members: User[];
   isPublic?: boolean;
-  category?: CircleCategory;
+  categories?: string[]; // Array of category strings
   createdAt?: string;
   isActive?: boolean;
 }

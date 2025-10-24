@@ -7,6 +7,19 @@ const circleTypeEnum = z.enum(["contribution", "rotating", "fundraising"]);
 // Currency enum
 const currencyEnum = z.enum(["cusd", "cbtc"]);
 
+// Category enum
+const categoryEnum = z.enum([
+	"vacation",
+	"home",
+	"technology",
+	"education",
+	"events",
+	"healthcare",
+	"community",
+	"emergency",
+	"other",
+]);
+
 // Create Circle Request Schema
 export const CreateCircleSchema = z.object({
 	circleName: z
@@ -35,10 +48,8 @@ export const CreateCircleSchema = z.object({
 				"0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef",
 		}),
 	circleType: circleTypeEnum.describe("Type of circle/pool"),
-	currency: currencyEnum
-		.default("cusd")
-		.describe("Currency type for the pool (cusd or cbtc)")
-		.openapi({ example: "cusd" }),
+	currency: currencyEnum.default("cusd").describe("Currency type for the pool (cusd or cbtc)").openapi({ example: "cusd" }),
+	categories: z.array(categoryEnum).optional().describe("Categories for fundraising/public circles").openapi({ example: ["vacation", "community"] }),
 });
 
 // Create Circle Response Schema
@@ -52,6 +63,7 @@ export const CreateCircleResponseSchema = z.object({
 		lensGroupAddress: z.string().describe("Lens group address"),
 		circleType: circleTypeEnum.describe("Circle type"),
 		currency: currencyEnum.describe("Currency type"),
+		categories: z.array(z.string()).optional().describe("Circle categories"),
 		creatorAddress: z.string().describe("Creator's address"),
 		createdAt: z.string().describe("Creation timestamp"),
 	}),
@@ -72,6 +84,7 @@ export const GetCircleResponseSchema = z.object({
 				.describe("Pool deployment transaction hash"),
 			circleType: circleTypeEnum.describe("Circle type"),
 			currency: currencyEnum.describe("Currency type"),
+			categories: z.array(z.string()).optional().nullable().describe("Circle categories"),
 			creatorAddress: z.string().describe("Creator's address"),
 			createdAt: z.string().describe("Creation timestamp"),
 			updatedAt: z.string().describe("Last update timestamp"),

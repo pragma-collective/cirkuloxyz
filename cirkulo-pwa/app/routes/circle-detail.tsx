@@ -12,6 +12,7 @@ import type { FeedItem } from "app/types/feed";
 import { Home, Compass, PlusCircle, Bell, User, Loader2, AlertCircle } from "lucide-react";
 import { mapGroupToCircle } from "app/lib/map-group-to-circle";
 import { useFetchCircle } from "~/hooks/use-fetch-circle";
+import { useFetchGroupMembers } from "~/hooks/use-fetch-group-members";
 import { fetchGroup } from "@lens-protocol/client/actions";
 import { evmAddress } from "@lens-protocol/client";
 import { lensClient } from "app/lib/lens";
@@ -69,17 +70,25 @@ export default function CircleDetail({ loaderData }: Route.ComponentProps) {
 	// Fetch circle data from API
 	const { data: circleData, isLoading: isLoadingCircle, error: circleError } = useFetchCircle(circleId);
 
+	// Fetch group members from Lens Protocol
+	const { memberCount, loading: isLoadingMembers } = useFetchGroupMembers({ groupAddress: circleId });
+
 	// State management
 	const [activityItems, setActivityItems] =
 		useState<FeedItem[]>(mockCircleActivity);
 
-	// Convert Lens group to Circle format, merging with API data
+	// Convert Lens group to Circle format, merging with API data and member count
 	const circle = useMemo(() => {
 		if (group) {
-			return mapGroupToCircle(group, circleData?.data);
+			const mappedCircle = mapGroupToCircle(group, circleData?.data);
+			// Override member count with real data from Lens Protocol if available
+			if (memberCount > 0) {
+				return { ...mappedCircle, memberCount };
+			}
+			return mappedCircle;
 		}
 		return null;
-	}, [group, circleData]);
+	}, [group, circleData, memberCount]);
 
 	// Read pool balance from contract
 	const { data: totalSaved } = useReadContract({

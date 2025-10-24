@@ -52,6 +52,7 @@ interface FormErrors {
   contributionAmount?: string;
   goalAmount?: string;
   endDate?: string;
+  categories?: string;
 }
 
 // Form data interface
@@ -64,6 +65,7 @@ interface FormData {
   contributionAmount: string;
   goalAmount: string;
   endDate: string;
+  categories: string[]; // Array of selected categories for fundraising circles
 }
 
 export default function CreateCircle() {
@@ -95,6 +97,7 @@ export default function CreateCircle() {
     contributionAmount: "",
     goalAmount: "",
     endDate: "",
+    categories: [], // Empty array by default
   });
 
   const [errors, setErrors] = useState<FormErrors>({});
@@ -239,26 +242,43 @@ export default function CreateCircle() {
     return undefined;
   };
 
+  const validateCategories = (value: string[], circleType: string): string | undefined => {
+    // Only required for fundraising circles
+    if (circleType !== "fundraising") return undefined;
+
+    if (!value || value.length === 0) {
+      return "Please select at least one category for fundraising circles";
+    }
+
+    if (value.length > 3) {
+      return "You can select up to 3 categories";
+    }
+
+    return undefined;
+  };
+
   // Validate single field
   const validateField = (
     fieldName: keyof FormData,
-    value: string
+    value: string | string[]
   ): string | undefined => {
     switch (fieldName) {
       case "name":
-        return validateName(value);
+        return validateName(value as string);
       case "description":
-        return validateDescription(value);
+        return validateDescription(value as string);
       case "circleType":
-        return validateCircleType(value);
+        return validateCircleType(value as string);
       case "contributionSchedule":
-        return validateContributionSchedule(value);
+        return validateContributionSchedule(value as string);
       case "contributionAmount":
-        return validateContributionAmount(value, formData.circleType);
+        return validateContributionAmount(value as string, formData.circleType);
       case "goalAmount":
-        return validateGoalAmount(value, formData.circleType);
+        return validateGoalAmount(value as string, formData.circleType);
       case "endDate":
-        return validateEndDate(value, formData.circleType);
+        return validateEndDate(value as string, formData.circleType);
+      case "categories":
+        return validateCategories(value as string[], formData.circleType);
       default:
         return undefined;
     }
@@ -323,6 +343,25 @@ export default function CreateCircle() {
     }));
   };
 
+  // Handle category toggle
+  const handleCategoryToggle = (category: string) => {
+    setFormData((prev) => {
+      const newCategories = prev.categories.includes(category)
+        ? prev.categories.filter((c) => c !== category)
+        : [...prev.categories, category];
+
+      return { ...prev, categories: newCategories };
+    });
+
+    // Clear error for categories field if it exists
+    if (errors.categories) {
+      setErrors((prev) => ({
+        ...prev,
+        categories: undefined,
+      }));
+    }
+  };
+
   // Validate all fields
   const validateForm = (): boolean => {
     const newErrors: FormErrors = {
@@ -333,11 +372,12 @@ export default function CreateCircle() {
       contributionAmount: validateContributionAmount(formData.contributionAmount, formData.circleType),
       goalAmount: validateGoalAmount(formData.goalAmount, formData.circleType),
       endDate: validateEndDate(formData.endDate, formData.circleType),
+      categories: validateCategories(formData.categories, formData.circleType),
     };
 
     setErrors(newErrors);
     setTouchedFields(
-      new Set(["name", "description", "circleType", "contributionSchedule", "contributionAmount", "goalAmount", "endDate"])
+      new Set(["name", "description", "circleType", "contributionSchedule", "contributionAmount", "goalAmount", "endDate", "categories"])
     );
 
     // Check if there are any errors
@@ -617,6 +657,7 @@ export default function CreateCircle() {
                   poolDeploymentTxHash,
                   circleType: formData.circleType as "contribution" | "rotating" | "fundraising",
                   currency: formData.currency as "cusd" | "cbtc",
+                  categories: formData.categories.length > 0 ? formData.categories : undefined,
                 });
 
                 console.log("[CreateCircle] Circle saved to database successfully");
@@ -916,6 +957,61 @@ export default function CreateCircle() {
                     max={maxDate}
                     helperText="When should fundraising end?"
                   />
+                )}
+
+                {/* Categories - Only for fundraising circles */}
+                {formData.circleType === "fundraising" && (
+                  <div className="space-y-3">
+                    <label className="block text-sm font-medium text-neutral-700">
+                      Categories<span className="text-error-500 ml-1">*</span>
+                    </label>
+                    <p className="text-xs text-neutral-600 mb-2">
+                      Select up to 3 categories that best describe your fundraiser
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      {[
+                        { value: "vacation", label: "Vacation & Travel", emoji: "✈️" },
+                        { value: "home", label: "Home & Real Estate", emoji: "🏠" },
+                        { value: "technology", label: "Technology", emoji: "💻" },
+                        { value: "education", label: "Education", emoji: "📚" },
+                        { value: "events", label: "Events", emoji: "🎉" },
+                        { value: "healthcare", label: "Healthcare", emoji: "🏥" },
+                        { value: "community", label: "Community", emoji: "🤝" },
+                        { value: "emergency", label: "Emergency", emoji: "🚨" },
+                        { value: "other", label: "Other", emoji: "📌" },
+                      ].map((category) => {
+                        const isSelected = formData.categories.includes(category.value);
+                        const isDisabled = !isSelected && formData.categories.length >= 3;
+
+                        return (
+                          <button
+                            key={category.value}
+                            type="button"
+                            onClick={() => !isDisabled && handleCategoryToggle(category.value)}
+                            disabled={isSubmitting || isSuccess || isDisabled}
+                            className={cn(
+                              "flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all",
+                              "border-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/30",
+                              isSelected
+                                ? "bg-primary-600 text-white border-primary-600"
+                                : "bg-white text-neutral-700 border-neutral-300 hover:border-primary-300 hover:bg-primary-50",
+                              isDisabled && !isSelected && "opacity-40 cursor-not-allowed",
+                              (isSubmitting || isSuccess) && "opacity-60 cursor-not-allowed"
+                            )}
+                          >
+                            <span>{category.emoji}</span>
+                            <span>{category.label}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                    {touchedFields.has("categories") && errors.categories && (
+                      <p className="text-sm text-error-600 flex items-center gap-1.5">
+                        <AlertCircle className="size-4 shrink-0" />
+                        {errors.categories}
+                      </p>
+                    )}
+                  </div>
                 )}
 
                 {/* Submit button */}
