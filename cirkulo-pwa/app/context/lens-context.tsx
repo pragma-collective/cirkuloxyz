@@ -73,6 +73,15 @@ export interface LensContextType {
 		appAddress: string,
 		walletClient: any,
 	) => Promise<{ success: boolean; error?: string }>;
+	/**
+	 * Set session externally (e.g., after account creation)
+	 * Used when a new account is created and we already have the session client
+	 */
+	setSession: (
+		sessionClient: SessionClient,
+		account: LensAccount,
+		walletAddress: string,
+	) => void;
 	/** Logout from Lens session */
 	logout: () => Promise<void>;
 }
@@ -386,6 +395,48 @@ export function LensProvider({
 	);
 
 	/**
+	 * Set session externally
+	 *
+	 * Used when we already have a session client (e.g., after creating a new account).
+	 * Directly sets the session client and metadata without going through authentication.
+	 *
+	 * @param sessionClient - The Lens session client
+	 * @param account - The Lens account
+	 * @param walletAddress - The wallet address
+	 */
+	const setSession = useCallback(
+		(
+			sessionClient: SessionClient,
+			account: LensAccount,
+			walletAddress: string,
+		) => {
+			console.log(
+				"[LensContext] Setting session externally for account:",
+				account.address,
+			);
+
+			// Update session client
+			setSessionClient(sessionClient);
+
+			// Update selected account
+			setSelectedAccount(account);
+
+			// Store session metadata for expiration tracking
+			setSessionMetadata(
+				account.address,
+				walletAddress,
+				account.username,
+				// TODO: Get actual session duration from Lens SDK if available
+				// For now, assume 24 hours
+				24 * 60 * 60 * 1000,
+			);
+
+			console.log("[LensContext] Session set successfully");
+		},
+		[],
+	);
+
+	/**
 	 * Logout from Lens session
 	 *
 	 * Clears session client and metadata.
@@ -465,6 +516,7 @@ export function LensProvider({
 			hasAccounts,
 			hasAccountsFetched,
 			authenticate,
+			setSession,
 			logout,
 		}),
 		// Only re-create context value when Lens STATE changes, not when callbacks change
