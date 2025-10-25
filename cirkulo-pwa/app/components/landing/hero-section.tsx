@@ -24,21 +24,21 @@ export function HeroSection() {
             {/* Badge */}
             <div className="inline-flex items-center gap-2 px-4 py-2 bg-primary-100 text-primary-700 rounded-full text-sm font-medium">
               <Sparkles className="size-4" />
-              <span>Powered by Bitcoin for transparent savings</span>
+              <span>Your circle, your bank</span>
             </div>
 
             {/* Headline */}
             <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold text-neutral-900 leading-tight">
-              Save together,
+              Stack together,
               <br />
-              <span className="text-primary-600">celebrate together</span>
+              <span className="text-primary-600">claim sovereignty</span>
             </h1>
 
             {/* Subheadline */}
             <p className="text-lg sm:text-xl text-neutral-700 max-w-2xl mx-auto lg:mx-0">
-              Whether it's a beach trip with friends or an emergency fund with roommates,
-              saving is better when you do it together. Track progress, cheer each other on,
-              and reach your goals faster.
+              Save in Bitcoin with your closest friends. Take control of your money together,
+              access global financial opportunities, and build wealth without traditional banks.
+              Track progress, stay accountable, and reach your goals faster.
             </p>
 
             {/* CTAs */}

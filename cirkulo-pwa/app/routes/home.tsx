@@ -13,29 +13,29 @@ import { Footer } from "app/components/landing/footer";
 
 export function meta({}: Route.MetaArgs) {
   return [
-    { title: "Xersha - Save Together, Celebrate Together" },
+    { title: "Xersha - Your Circle, Your Bank" },
     {
       name: "description",
       content:
-        "Turn your financial goals into shared adventures. Join thousands of friend groups saving together for vacations, house funds, and more with Xersha.",
+        "Save in Bitcoin with your closest friends. Take control of your money together, access global financial opportunities, and build wealth without traditional banks.",
     },
     {
       name: "keywords",
-      content: "group savings, save with friends, social finance, savings circles, group money, collective savings",
+      content: "bitcoin savings, group savings, save with friends, DeFi, social finance, savings circles, your circle your bank, borderless finance",
     },
     // Open Graph tags for social sharing
-    { property: "og:title", content: "Xersha - Save Together, Celebrate Together" },
+    { property: "og:title", content: "Xersha - Your Circle, Your Bank" },
     {
       property: "og:description",
-      content: "Make saving a social adventure. Join friend groups reaching their goals together.",
+      content: "Save in Bitcoin together. Access global finance, your circle is your bank. Reach your goals faster with friends.",
     },
     { property: "og:type", content: "website" },
     // Twitter Card tags
     { name: "twitter:card", content: "summary_large_image" },
-    { name: "twitter:title", content: "Xersha - Save Together, Celebrate Together" },
+    { name: "twitter:title", content: "Xersha - Your Circle, Your Bank" },
     {
       name: "twitter:description",
-      content: "Make saving a social adventure. Join friend groups reaching their goals together.",
+      content: "Save in Bitcoin together. Access global finance, your circle is your bank. Reach your goals faster with friends.",
     },
   ];
 }

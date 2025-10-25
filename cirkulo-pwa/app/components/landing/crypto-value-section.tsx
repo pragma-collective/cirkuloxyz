@@ -6,19 +6,19 @@ export function CryptoValueSection() {
     {
       icon: Eye,
       title: "See everything, always",
-      description: "Every contribution is recorded on Bitcoin's transparent ledger. No hidden fees, no mystery charges—just complete visibility for your entire circle.",
+      description: "Every contribution lives on Bitcoin's transparent blockchain. No hidden fees, no mystery charges—just complete visibility for your entire circle. Full transparency, guaranteed.",
       color: "primary" as const
     },
     {
       icon: Key,
-      title: "Your keys, your money",
-      description: "Only you can access your contributions. Not banks, not us, not anyone. Bitcoin technology gives you true ownership of your savings.",
+      title: "Your circle, your bank",
+      description: "You hold the keys, you control the funds. Not banks, not us, not anyone else. True financial independence powered by Bitcoin—your money, your rules.",
       color: "secondary" as const
     },
     {
       icon: Sparkles,
-      title: "Choose your asset",
-      description: "Start with Bitcoin, try stablecoins (digital dollars that don't fluctuate), or explore other options as you learn. Your circle decides together.",
+      title: "Save without borders",
+      description: "Access the global economy from anywhere. Save in Bitcoin or stablecoins, participate in DeFi opportunities, and grow your wealth beyond traditional banking limits.",
       color: "success" as const
     }
   ];
@@ -43,17 +43,17 @@ export function CryptoValueSection() {
           {/* Badge */}
           <div className="inline-flex items-center gap-2 px-4 py-2 bg-warning-100 text-warning-700 rounded-full text-sm font-medium mb-6">
             <Sparkles className="size-4" />
-            <span>Powered by Bitcoin technology</span>
+            <span>Save in Bitcoin, access global finance</span>
           </div>
 
           {/* Headline */}
           <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-neutral-900 mb-4">
-            Your money, upgraded
+            Financial freedom, powered by Bitcoin
           </h2>
 
           {/* Subheadline */}
           <p className="text-lg text-neutral-600">
-            Xersha uses Bitcoin to give your group savings superpowers that traditional banks can't match.
+            Break free from traditional banking. Xersha gives you and your friends the tools to save, grow, and control your wealth on your own terms.
           </p>
         </div>
 
