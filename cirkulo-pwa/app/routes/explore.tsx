@@ -134,7 +134,7 @@ export default function Explore() {
     <AuthenticatedLayout
       notificationCount={3}
       onNotificationClick={() => console.log("Notifications clicked")}
-      onProfileClick={() => console.log("Profile clicked")}
+      onProfileClick={() => navigate("/profile")}
       onNewContribution={() => console.log("New contribution clicked")}
       navItems={[
         {
