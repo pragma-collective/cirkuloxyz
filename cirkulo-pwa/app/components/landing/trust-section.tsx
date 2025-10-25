@@ -9,8 +9,8 @@ export function TrustSection() {
     },
     {
       icon: Key,
-      title: "You're in control",
-      description: "Only you can access your money. No one else, not even us, can touch your contributions."
+      title: "Your circle, your bank",
+      description: "You hold the keys, you control your funds. True financial independence—no intermediaries, no gatekeepers, just you and your circle."
     },
     {
       icon: Eye,
@@ -78,7 +78,9 @@ export function TrustSection() {
               Trusted by thousands of friend groups
             </p>
             <p className="text-neutral-600">
-              Xersha combines Bitcoin's proven security (protecting over $1 trillion worldwide) with easy-to-use social savings. You get the best of both worlds: cutting-edge protection meets friendly group features.
+              Xersha combines Bitcoin's proven security (protecting over $1 trillion worldwide) with easy-to-use social savings.
+              Save without borders, make your circle your bank, and access global financial opportunities—all while enjoying the accountability
+              and motivation of saving with friends.
             </p>
             <div className="flex items-center justify-center gap-4 pt-4 flex-wrap">
               <div className="flex items-center gap-2 text-sm text-neutral-700">
