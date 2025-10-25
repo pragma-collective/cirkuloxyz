@@ -1,23 +1,25 @@
 import { expect } from "chai";
 import { ethers } from "hardhat";
-import { SavingsPool, MockCUSD } from "../typechain-types";
+import { SavingsPool, MockCUSD, XershaFactory } from "../typechain-types";
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import { time } from "@nomicfoundation/hardhat-network-helpers";
 
 describe("SavingsPool", function () {
   let savingsPool: SavingsPool;
   let mockToken: MockCUSD;
+  let xershaFactory: XershaFactory;
   let circleId: string;
   let creator: SignerWithAddress;
   let member1: SignerWithAddress;
   let member2: SignerWithAddress;
   let member3: SignerWithAddress;
+  let backendManager: SignerWithAddress;
   let nonMember: SignerWithAddress;
 
   const circleName = "Test Savings Circle";
 
   beforeEach(async function () {
-    [creator, member1, member2, member3, nonMember] = await ethers.getSigners();
+    [creator, member1, member2, member3, backendManager, nonMember] = await ethers.getSigners();
 
     // Deploy Mock CUSD token
     const MockCUSDFactory = await ethers.getContractFactory("MockCUSD");
@@ -31,11 +33,34 @@ describe("SavingsPool", function () {
     await mockToken.mint(member3.address, mintAmount);
 
     // Use a simple address as circleId (can be any non-zero address for cross-chain reference)
-    circleId = creator.address;
+    circleId = nonMember.address; // Use nonMember address to avoid conflicts
 
-    // Deploy Savings pool
+    // Deploy implementation contracts
+    const ROSCAPoolFactory = await ethers.getContractFactory("ROSCAPool");
+    const roscaImpl = await ROSCAPoolFactory.deploy();
+
     const SavingsPoolFactory = await ethers.getContractFactory("SavingsPool");
-    savingsPool = await SavingsPoolFactory.deploy(creator.address, circleId, circleName, await mockToken.getAddress());
+    const savingsImpl = await SavingsPoolFactory.deploy();
+
+    const DonationPoolFactory = await ethers.getContractFactory("DonationPool");
+    const donationImpl = await DonationPoolFactory.deploy();
+
+    // Deploy XershaFactory
+    const XershaFactoryFactory = await ethers.getContractFactory("XershaFactory");
+    xershaFactory = await XershaFactoryFactory.deploy(
+      creator.address,
+      backendManager.address,         // backendManager
+      await roscaImpl.getAddress(),
+      await savingsImpl.getAddress(),
+      await donationImpl.getAddress(),
+    );
+
+    // Create Savings pool via factory
+    await xershaFactory.connect(creator).createSavingsPool(circleId, circleName, await mockToken.getAddress(), false);
+
+    // Get the created pool
+    const poolAddress = await xershaFactory.circleToPool(circleId);
+    savingsPool = await ethers.getContractAt("SavingsPool", poolAddress);
   });
 
   describe("Deployment", function () {
@@ -63,6 +88,10 @@ describe("SavingsPool", function () {
     it("Should initialize with zero total saved", async function () {
       expect(await savingsPool.totalSaved()).to.equal(0);
     });
+
+    it("Should set correct backend manager", async function () {
+      expect(await savingsPool.backendManager()).to.equal(backendManager.address);
+    });
   });
 
   describe("Member Management", function () {
@@ -77,9 +106,9 @@ describe("SavingsPool", function () {
         .withArgs(member1.address, creator.address);
     });
 
-    it("Should prevent non-creator from inviting", async function () {
+    it("Should prevent non-creator and non-backend from inviting", async function () {
       await expect(savingsPool.connect(member1).inviteMember(member2.address)).to.be.revertedWith(
-        "Only creator can call this",
+        "Only creator or backend",
       );
     });
 
@@ -94,33 +123,52 @@ describe("SavingsPool", function () {
       );
     });
 
-    it("Should allow invited member to join", async function () {
+    it("Should allow creator to add member", async function () {
       await savingsPool.connect(creator).inviteMember(member1.address);
-      await savingsPool.connect(member1).joinPool();
       expect(await savingsPool.isMember(member1.address)).to.be.true;
       expect(await savingsPool.getMemberCount()).to.equal(2);
     });
 
-    it("Should emit MemberJoined event", async function () {
-      await savingsPool.connect(creator).inviteMember(member1.address);
-      await expect(savingsPool.connect(member1).joinPool()).to.emit(savingsPool, "MemberJoined");
+    it("Should emit MemberJoined event with addedBy parameter", async function () {
+      await expect(savingsPool.connect(creator).inviteMember(member1.address))
+        .to.emit(savingsPool, "MemberJoined")
+        .withArgs(member1.address, creator.address);
     });
 
-    it("Should prevent non-invited from joining", async function () {
-      await expect(savingsPool.connect(member1).joinPool()).to.be.revertedWith("Not invited");
+    it("Should prevent non-creator and non-backend from adding members", async function () {
+      await expect(savingsPool.connect(member1).inviteMember(member2.address))
+        .to.be.revertedWith("Only creator or backend");
     });
 
-    it("Should prevent joining twice", async function () {
+    it("Should prevent adding member twice", async function () {
       await savingsPool.connect(creator).inviteMember(member1.address);
-      await savingsPool.connect(member1).joinPool();
-      await expect(savingsPool.connect(member1).joinPool()).to.be.revertedWith("Already a member");
+      await expect(savingsPool.connect(creator).inviteMember(member1.address))
+        .to.be.revertedWith("Already a member");
+    });
+  });
+
+  describe("Backend Manager Permissions", function () {
+    it("Should allow backend manager to add members", async function () {
+      await savingsPool.connect(backendManager).inviteMember(member1.address);
+      expect(await savingsPool.isMember(member1.address)).to.be.true;
+    });
+
+    it("Should emit MemberJoined event with backend manager as addedBy", async function () {
+      await expect(savingsPool.connect(backendManager).inviteMember(member1.address))
+        .to.emit(savingsPool, "MemberJoined")
+        .withArgs(member1.address, backendManager.address);
+    });
+
+    it("Should prevent non-creator and non-backend from adding members", async function () {
+      await expect(savingsPool.connect(member1).inviteMember(member2.address)).to.be.revertedWith(
+        "Only creator or backend",
+      );
     });
   });
 
   describe("Deposits", function () {
     beforeEach(async function () {
       await savingsPool.connect(creator).inviteMember(member1.address);
-      await savingsPool.connect(member1).joinPool();
     });
 
     it("Should allow member to deposit", async function () {
@@ -188,7 +236,6 @@ describe("SavingsPool", function () {
 
     it("Should track individual member balances separately", async function () {
       await savingsPool.connect(creator).inviteMember(member2.address);
-      await savingsPool.connect(member2).joinPool();
 
       await mockToken.connect(member1).approve(await savingsPool.getAddress(), ethers.parseEther("1.0"));
       await savingsPool.connect(member1).deposit(ethers.parseEther("1.0"));
@@ -204,7 +251,6 @@ describe("SavingsPool", function () {
   describe("Withdrawals", function () {
     beforeEach(async function () {
       await savingsPool.connect(creator).inviteMember(member1.address);
-      await savingsPool.connect(member1).joinPool();
       await mockToken.connect(member1).approve(await savingsPool.getAddress(), ethers.parseEther("2.0"));
       await savingsPool.connect(member1).deposit(ethers.parseEther("2.0"));
     });

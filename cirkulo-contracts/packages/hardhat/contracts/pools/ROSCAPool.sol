@@ -56,9 +56,6 @@ contract ROSCAPool is IXershaPool, ReentrancyGuard, Pausable {
     /// @notice Mapping to check if an address is a member
     mapping(address => bool) public isMember;
 
-    /// @notice Mapping to check if an address has been invited
-    mapping(address => bool) public isInvited;
-
     /// @notice Total amount contributed by each member across all rounds
     mapping(address => uint256) public totalContributed;
 
@@ -95,8 +92,7 @@ contract ROSCAPool is IXershaPool, ReentrancyGuard, Pausable {
     // ========== Events ==========
 
     event ROSCACreated(address indexed circleId, address indexed creator, uint256 contributionAmount);
-    event MemberInvited(address indexed member, address indexed invitedBy);
-    event MemberJoined(address indexed member, uint256 timestamp);
+    event MemberJoined(address indexed member, address indexed addedBy);
     event ROSCAStarted(address[] payoutOrder, uint256 startTime);
     event ContributionMade(address indexed member, uint8 round, uint256 amount);
     event AllMembersContributed(uint8 round);
@@ -121,11 +117,6 @@ contract ROSCAPool is IXershaPool, ReentrancyGuard, Pausable {
 
     modifier onlyMember() {
         require(isMember[msg.sender], "Not a member");
-        _;
-    }
-
-    modifier onlyInvited() {
-        require(isInvited[msg.sender], "Not invited");
         _;
     }
 
@@ -188,40 +179,27 @@ contract ROSCAPool is IXershaPool, ReentrancyGuard, Pausable {
         // Creator automatically becomes a member
         members.push(_creator);
         isMember[_creator] = true;
-        isInvited[_creator] = true;
 
         emit ROSCACreated(_circleId, _creator, _contributionAmount);
-        emit MemberJoined(_creator, block.timestamp);
+        emit MemberJoined(_creator, _creator);
     }
 
     // ========== Member Management ==========
 
     /**
-     * @notice Invites a new member to the ROSCA
-     * @dev Creator or backend manager can invite, only before ROSCA starts
-     * @param member Address of the member to invite
+     * @notice Adds a new member to the ROSCA
+     * @dev Creator or backend manager can add members, only before ROSCA starts
+     * @param member Address of the member to add
      */
     function inviteMember(address member) external onlyCreatorOrBackend whenNotPaused {
         require(!isActive, "Cannot invite after ROSCA starts");
-        require(!isInvited[member], "Already invited");
+        require(!isMember[member], "Already a member");
         require(members.length < MAX_MEMBERS, "Max members reached");
 
-        isInvited[member] = true;
-        emit MemberInvited(member, msg.sender);
-    }
+        members.push(member);
+        isMember[member] = true;
 
-    /**
-     * @notice Allows an invited member to join the pool
-     * @dev Can only join before ROSCA starts
-     */
-    function joinPool() external onlyInvited whenNotPaused {
-        require(!isActive, "Cannot join after ROSCA starts");
-        require(!isMember[msg.sender], "Already a member");
-
-        members.push(msg.sender);
-        isMember[msg.sender] = true;
-
-        emit MemberJoined(msg.sender, block.timestamp);
+        emit MemberJoined(member, msg.sender);
     }
 
     // ========== ROSCA Lifecycle ==========

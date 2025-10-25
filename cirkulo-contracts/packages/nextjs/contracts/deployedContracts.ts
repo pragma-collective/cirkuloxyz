@@ -2158,7 +2158,7 @@ const deployedContracts = {
       deployedOnBlock: 17291756,
     },
     XershaFactory: {
-      address: "0xfE2AD9Af70689a05736ec383Bd7da528a27B5716",
+      address: "0x563b38562dea0b18d270026B10948C3fE459F2e8",
       abi: [
         {
           inputs: [
@@ -2734,7 +2734,7 @@ const deployedContracts = {
         renounceOwnership: "@openzeppelin/contracts/access/Ownable.sol",
         transferOwnership: "@openzeppelin/contracts/access/Ownable.sol",
       },
-      deployedOnBlock: 17291769,
+      deployedOnBlock: 17296172,
     },
   },
 } as const;
