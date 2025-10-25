@@ -1,12 +1,13 @@
 import { expect } from "chai";
 import { ethers } from "hardhat";
-import { ROSCAPool, MockCUSD } from "../typechain-types";
+import { ROSCAPool, MockCUSD, XershaFactory } from "../typechain-types";
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import { time } from "@nomicfoundation/hardhat-network-helpers";
 
 describe("ROSCAPool", function () {
   let roscaPool: ROSCAPool;
   let mockToken: MockCUSD;
+  let xershaFactory: XershaFactory;
   let circleId: string;
   let creator: SignerWithAddress;
   let member1: SignerWithAddress;
@@ -14,13 +15,14 @@ describe("ROSCAPool", function () {
   let member3: SignerWithAddress;
   let member4: SignerWithAddress;
   let member5: SignerWithAddress;
+  let backendManager: SignerWithAddress;
   let nonMember: SignerWithAddress;
 
   const contributionAmount = ethers.parseEther("100"); // 100 CUSD tokens
   const circleName = "Test ROSCA Circle";
 
   beforeEach(async function () {
-    [creator, member1, member2, member3, member4, member5, nonMember] = await ethers.getSigners();
+    [creator, member1, member2, member3, member4, member5, backendManager, nonMember] = await ethers.getSigners();
 
     // Deploy Mock CUSD token
     const MockCUSDFactory = await ethers.getContractFactory("MockCUSD");
@@ -36,17 +38,36 @@ describe("ROSCAPool", function () {
     await mockToken.mint(member5.address, mintAmount);
 
     // Use a simple address as circleId (can be any non-zero address for cross-chain reference)
-    circleId = creator.address;
+    circleId = nonMember.address; // Use nonMember address to avoid conflicts
 
-    // Deploy ROSCA pool
+    // Deploy implementation contracts
     const ROSCAPoolFactory = await ethers.getContractFactory("ROSCAPool");
-    roscaPool = await ROSCAPoolFactory.deploy(
+    const roscaImpl = await ROSCAPoolFactory.deploy();
+
+    const SavingsPoolFactory = await ethers.getContractFactory("SavingsPool");
+    const savingsImpl = await SavingsPoolFactory.deploy();
+
+    const DonationPoolFactory = await ethers.getContractFactory("DonationPool");
+    const donationImpl = await DonationPoolFactory.deploy();
+
+    // Deploy XershaFactory
+    const XershaFactoryFactory = await ethers.getContractFactory("XershaFactory");
+    xershaFactory = await XershaFactoryFactory.deploy(
       creator.address,
-      circleId,
-      circleName,
-      contributionAmount,
-      await mockToken.getAddress(),
+      backendManager.address,         // backendManager
+      await roscaImpl.getAddress(),
+      await savingsImpl.getAddress(),
+      await donationImpl.getAddress(),
     );
+
+    // Create ROSCA pool via factory
+    await xershaFactory
+      .connect(creator)
+      .createROSCA(circleId, circleName, contributionAmount, await mockToken.getAddress(), false);
+
+    // Get the created pool
+    const poolAddress = await xershaFactory.circleToPool(circleId);
+    roscaPool = await ethers.getContractAt("ROSCAPool", poolAddress);
   });
 
   describe("Deployment", function () {
@@ -70,6 +91,10 @@ describe("ROSCAPool", function () {
     it("Should not be active initially", async function () {
       expect(await roscaPool.isActive()).to.be.false;
     });
+
+    it("Should set correct backend manager", async function () {
+      expect(await roscaPool.backendManager()).to.equal(backendManager.address);
+    });
   });
 
   describe("Member Management", function () {
@@ -84,9 +109,9 @@ describe("ROSCAPool", function () {
         .withArgs(member1.address, creator.address);
     });
 
-    it("Should prevent non-creator from inviting", async function () {
+    it("Should prevent non-creator and non-backend from inviting", async function () {
       await expect(roscaPool.connect(member1).inviteMember(member2.address)).to.be.revertedWith(
-        "Only creator can call this",
+        "Only creator or backend",
       );
     });
 
@@ -95,26 +120,27 @@ describe("ROSCAPool", function () {
       await expect(roscaPool.connect(creator).inviteMember(member1.address)).to.be.revertedWith("Already invited");
     });
 
-    it("Should allow invited member to join", async function () {
+    it("Should allow creator to add member", async function () {
       await roscaPool.connect(creator).inviteMember(member1.address);
-      await roscaPool.connect(member1).joinPool();
       expect(await roscaPool.isMember(member1.address)).to.be.true;
       expect(await roscaPool.getMemberCount()).to.equal(2);
     });
 
-    it("Should emit MemberJoined event", async function () {
-      await roscaPool.connect(creator).inviteMember(member1.address);
-      await expect(roscaPool.connect(member1).joinPool()).to.emit(roscaPool, "MemberJoined");
+    it("Should emit MemberJoined event with addedBy parameter", async function () {
+      await expect(roscaPool.connect(creator).inviteMember(member1.address))
+        .to.emit(roscaPool, "MemberJoined")
+        .withArgs(member1.address, creator.address);
     });
 
-    it("Should prevent non-invited from joining", async function () {
-      await expect(roscaPool.connect(member1).joinPool()).to.be.revertedWith("Not invited");
+    it("Should prevent non-creator and non-backend from adding members", async function () {
+      await expect(roscaPool.connect(member1).inviteMember(member2.address))
+        .to.be.revertedWith("Only creator or backend");
     });
 
-    it("Should prevent joining twice", async function () {
+    it("Should prevent adding member twice", async function () {
       await roscaPool.connect(creator).inviteMember(member1.address);
-      await roscaPool.connect(member1).joinPool();
-      await expect(roscaPool.connect(member1).joinPool()).to.be.revertedWith("Already a member");
+      await expect(roscaPool.connect(creator).inviteMember(member1.address))
+        .to.be.revertedWith("Already a member");
     });
 
     it("Should enforce MAX_MEMBERS limit", async function () {
@@ -151,6 +177,40 @@ describe("ROSCAPool", function () {
     });
   });
 
+  describe("Backend Manager Permissions", function () {
+    it("Should allow backend manager to invite members", async function () {
+      await roscaPool.connect(backendManager).inviteMember(member1.address);
+      expect(await roscaPool.isInvited(member1.address)).to.be.true;
+    });
+
+    it("Should emit MemberInvited event with backend manager as inviter", async function () {
+      await expect(roscaPool.connect(backendManager).inviteMember(member1.address))
+        .to.emit(roscaPool, "MemberInvited")
+        .withArgs(member1.address, backendManager.address);
+    });
+
+    it("Should prevent backend manager from inviting after ROSCA starts", async function () {
+      // Invite enough members
+      await roscaPool.connect(creator).inviteMember(member1.address);
+      await roscaPool.connect(member1).joinPool();
+      await roscaPool.connect(creator).inviteMember(member2.address);
+      await roscaPool.connect(member2).joinPool();
+      await roscaPool.connect(creator).inviteMember(member3.address);
+      await roscaPool.connect(member3).joinPool();
+      await roscaPool.connect(creator).inviteMember(member4.address);
+      await roscaPool.connect(member4).joinPool();
+
+      // Start ROSCA
+      const payoutOrder = [creator.address, member1.address, member2.address, member3.address, member4.address];
+      await roscaPool.connect(creator).startROSCA(payoutOrder);
+
+      // Backend manager should not be able to invite after start
+      await expect(roscaPool.connect(backendManager).inviteMember(member5.address)).to.be.revertedWith(
+        "Cannot invite after ROSCA starts",
+      );
+    });
+  });
+
   describe("Starting ROSCA", function () {
     beforeEach(async function () {
       // Setup 5 members
@@ -179,14 +239,12 @@ describe("ROSCAPool", function () {
 
     it("Should fail with less than MIN_MEMBERS", async function () {
       // Create new pool with only 3 members
-      const ROSCAPoolFactory = await ethers.getContractFactory("ROSCAPool");
-      const smallPool = await ROSCAPoolFactory.deploy(
-        creator.address,
-        circleId,
-        circleName,
-        contributionAmount,
-        await mockToken.getAddress(),
-      );
+      const smallCircleId = member4.address; // Use a different circle ID
+      await xershaFactory
+        .connect(creator)
+        .createROSCA(smallCircleId, "Small Circle", contributionAmount, await mockToken.getAddress(), false);
+      const smallPoolAddress = await xershaFactory.circleToPool(smallCircleId);
+      const smallPool = await ethers.getContractAt("ROSCAPool", smallPoolAddress);
 
       await smallPool.connect(creator).inviteMember(member1.address);
       await smallPool.connect(member1).joinPool();
@@ -366,14 +424,12 @@ describe("ROSCAPool", function () {
 
     it("Should prevent payout before everyone contributes", async function () {
       // Create new round scenario
-      const ROSCAPoolFactory = await ethers.getContractFactory("ROSCAPool");
-      const newPool = await ROSCAPoolFactory.deploy(
-        creator.address,
-        circleId,
-        circleName,
-        contributionAmount,
-        await mockToken.getAddress(),
-      );
+      const newCircleId = member5.address; // Use a different circle ID
+      await xershaFactory
+        .connect(creator)
+        .createROSCA(newCircleId, "Payout Test Circle", contributionAmount, await mockToken.getAddress(), false);
+      const newPoolAddress = await xershaFactory.circleToPool(newCircleId);
+      const newPool = await ethers.getContractAt("ROSCAPool", newPoolAddress);
 
       await newPool.connect(creator).inviteMember(member1.address);
       await newPool.connect(member1).joinPool();
@@ -451,14 +507,12 @@ describe("ROSCAPool", function () {
 
     it("Should prevent starting next round before payout", async function () {
       // Start a new test case
-      const ROSCAPoolFactory = await ethers.getContractFactory("ROSCAPool");
-      const newPool = await ROSCAPoolFactory.deploy(
-        creator.address,
-        circleId,
-        circleName,
-        contributionAmount,
-        await mockToken.getAddress(),
-      );
+      const roundCircleId = ethers.Wallet.createRandom().address; // Use a random address for this test
+      await xershaFactory
+        .connect(creator)
+        .createROSCA(roundCircleId, "Round Test Circle", contributionAmount, await mockToken.getAddress(), false);
+      const newPoolAddress = await xershaFactory.circleToPool(roundCircleId);
+      const newPool = await ethers.getContractAt("ROSCAPool", newPoolAddress);
 
       await newPool.connect(creator).inviteMember(member1.address);
       await newPool.connect(member1).joinPool();

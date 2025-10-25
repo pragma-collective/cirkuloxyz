@@ -100,12 +100,12 @@ describe("ROSCAPool", function () {
   describe("Member Management", function () {
     it("Should allow creator to invite members", async function () {
       await roscaPool.connect(creator).inviteMember(member1.address);
-      expect(await roscaPool.isInvited(member1.address)).to.be.true;
+      expect(await roscaPool.isMember(member1.address)).to.be.true;
     });
 
-    it("Should emit MemberInvited event", async function () {
+    it("Should emit MemberJoined event", async function () {
       await expect(roscaPool.connect(creator).inviteMember(member1.address))
-        .to.emit(roscaPool, "MemberInvited")
+        .to.emit(roscaPool, "MemberJoined")
         .withArgs(member1.address, creator.address);
     });
 
@@ -117,29 +117,30 @@ describe("ROSCAPool", function () {
 
     it("Should prevent duplicate invitations", async function () {
       await roscaPool.connect(creator).inviteMember(member1.address);
-      await expect(roscaPool.connect(creator).inviteMember(member1.address)).to.be.revertedWith("Already invited");
+      await expect(roscaPool.connect(creator).inviteMember(member1.address)).to.be.revertedWith("Already a member");
     });
 
-    it("Should allow invited member to join", async function () {
+    it("Should allow creator to add member", async function () {
       await roscaPool.connect(creator).inviteMember(member1.address);
-      await roscaPool.connect(member1).joinPool();
       expect(await roscaPool.isMember(member1.address)).to.be.true;
       expect(await roscaPool.getMemberCount()).to.equal(2);
     });
 
-    it("Should emit MemberJoined event", async function () {
-      await roscaPool.connect(creator).inviteMember(member1.address);
-      await expect(roscaPool.connect(member1).joinPool()).to.emit(roscaPool, "MemberJoined");
+    it("Should emit MemberJoined event with addedBy parameter", async function () {
+      await expect(roscaPool.connect(creator).inviteMember(member1.address))
+        .to.emit(roscaPool, "MemberJoined")
+        .withArgs(member1.address, creator.address);
     });
 
-    it("Should prevent non-invited from joining", async function () {
-      await expect(roscaPool.connect(member1).joinPool()).to.be.revertedWith("Not invited");
+    it("Should prevent non-creator and non-backend from adding members", async function () {
+      await expect(roscaPool.connect(member1).inviteMember(member2.address))
+        .to.be.revertedWith("Only creator or backend");
     });
 
-    it("Should prevent joining twice", async function () {
+    it("Should prevent adding member twice", async function () {
       await roscaPool.connect(creator).inviteMember(member1.address);
-      await roscaPool.connect(member1).joinPool();
-      await expect(roscaPool.connect(member1).joinPool()).to.be.revertedWith("Already a member");
+      await expect(roscaPool.connect(creator).inviteMember(member1.address))
+        .to.be.revertedWith("Already a member");
     });
 
     it("Should enforce MAX_MEMBERS limit", async function () {
@@ -147,7 +148,6 @@ describe("ROSCAPool", function () {
       for (let i = 0; i < 11; i++) {
         const signer = (await ethers.getSigners())[i + 1];
         await roscaPool.connect(creator).inviteMember(signer.address);
-        await roscaPool.connect(signer).joinPool();
       }
 
       const extraMember = (await ethers.getSigners())[12];
@@ -159,13 +159,9 @@ describe("ROSCAPool", function () {
     it("Should prevent inviting after ROSCA starts", async function () {
       // Add minimum members
       await roscaPool.connect(creator).inviteMember(member1.address);
-      await roscaPool.connect(member1).joinPool();
       await roscaPool.connect(creator).inviteMember(member2.address);
-      await roscaPool.connect(member2).joinPool();
       await roscaPool.connect(creator).inviteMember(member3.address);
-      await roscaPool.connect(member3).joinPool();
       await roscaPool.connect(creator).inviteMember(member4.address);
-      await roscaPool.connect(member4).joinPool();
 
       const payoutOrder = [creator.address, member1.address, member2.address, member3.address, member4.address];
       await roscaPool.connect(creator).startROSCA(payoutOrder);
@@ -177,27 +173,23 @@ describe("ROSCAPool", function () {
   });
 
   describe("Backend Manager Permissions", function () {
-    it("Should allow backend manager to invite members", async function () {
+    it("Should allow backend manager to add members", async function () {
       await roscaPool.connect(backendManager).inviteMember(member1.address);
-      expect(await roscaPool.isInvited(member1.address)).to.be.true;
+      expect(await roscaPool.isMember(member1.address)).to.be.true;
     });
 
-    it("Should emit MemberInvited event with backend manager as inviter", async function () {
+    it("Should emit MemberJoined event with backend manager as addedBy", async function () {
       await expect(roscaPool.connect(backendManager).inviteMember(member1.address))
-        .to.emit(roscaPool, "MemberInvited")
+        .to.emit(roscaPool, "MemberJoined")
         .withArgs(member1.address, backendManager.address);
     });
 
     it("Should prevent backend manager from inviting after ROSCA starts", async function () {
       // Invite enough members
       await roscaPool.connect(creator).inviteMember(member1.address);
-      await roscaPool.connect(member1).joinPool();
       await roscaPool.connect(creator).inviteMember(member2.address);
-      await roscaPool.connect(member2).joinPool();
       await roscaPool.connect(creator).inviteMember(member3.address);
-      await roscaPool.connect(member3).joinPool();
       await roscaPool.connect(creator).inviteMember(member4.address);
-      await roscaPool.connect(member4).joinPool();
 
       // Start ROSCA
       const payoutOrder = [creator.address, member1.address, member2.address, member3.address, member4.address];
@@ -214,13 +206,9 @@ describe("ROSCAPool", function () {
     beforeEach(async function () {
       // Setup 5 members
       await roscaPool.connect(creator).inviteMember(member1.address);
-      await roscaPool.connect(member1).joinPool();
       await roscaPool.connect(creator).inviteMember(member2.address);
-      await roscaPool.connect(member2).joinPool();
       await roscaPool.connect(creator).inviteMember(member3.address);
-      await roscaPool.connect(member3).joinPool();
       await roscaPool.connect(creator).inviteMember(member4.address);
-      await roscaPool.connect(member4).joinPool();
     });
 
     it("Should start ROSCA with valid payout order", async function () {
@@ -246,9 +234,7 @@ describe("ROSCAPool", function () {
       const smallPool = await ethers.getContractAt("ROSCAPool", smallPoolAddress);
 
       await smallPool.connect(creator).inviteMember(member1.address);
-      await smallPool.connect(member1).joinPool();
       await smallPool.connect(creator).inviteMember(member2.address);
-      await smallPool.connect(member2).joinPool();
 
       const payoutOrder = [creator.address, member1.address, member2.address];
       await expect(smallPool.connect(creator).startROSCA(payoutOrder)).to.be.revertedWith("Not enough members");
@@ -293,13 +279,9 @@ describe("ROSCAPool", function () {
     beforeEach(async function () {
       // Setup and start ROSCA
       await roscaPool.connect(creator).inviteMember(member1.address);
-      await roscaPool.connect(member1).joinPool();
       await roscaPool.connect(creator).inviteMember(member2.address);
-      await roscaPool.connect(member2).joinPool();
       await roscaPool.connect(creator).inviteMember(member3.address);
-      await roscaPool.connect(member3).joinPool();
       await roscaPool.connect(creator).inviteMember(member4.address);
-      await roscaPool.connect(member4).joinPool();
 
       const payoutOrder = [creator.address, member1.address, member2.address, member3.address, member4.address];
       await roscaPool.connect(creator).startROSCA(payoutOrder);
@@ -376,13 +358,9 @@ describe("ROSCAPool", function () {
     beforeEach(async function () {
       // Setup and start ROSCA
       await roscaPool.connect(creator).inviteMember(member1.address);
-      await roscaPool.connect(member1).joinPool();
       await roscaPool.connect(creator).inviteMember(member2.address);
-      await roscaPool.connect(member2).joinPool();
       await roscaPool.connect(creator).inviteMember(member3.address);
-      await roscaPool.connect(member3).joinPool();
       await roscaPool.connect(creator).inviteMember(member4.address);
-      await roscaPool.connect(member4).joinPool();
 
       const payoutOrder = [creator.address, member1.address, member2.address, member3.address, member4.address];
       await roscaPool.connect(creator).startROSCA(payoutOrder);
@@ -431,13 +409,9 @@ describe("ROSCAPool", function () {
       const newPool = await ethers.getContractAt("ROSCAPool", newPoolAddress);
 
       await newPool.connect(creator).inviteMember(member1.address);
-      await newPool.connect(member1).joinPool();
       await newPool.connect(creator).inviteMember(member2.address);
-      await newPool.connect(member2).joinPool();
       await newPool.connect(creator).inviteMember(member3.address);
-      await newPool.connect(member3).joinPool();
       await newPool.connect(creator).inviteMember(member4.address);
-      await newPool.connect(member4).joinPool();
 
       const payoutOrder = [creator.address, member1.address, member2.address, member3.address, member4.address];
       await newPool.connect(creator).startROSCA(payoutOrder);
@@ -463,13 +437,9 @@ describe("ROSCAPool", function () {
     beforeEach(async function () {
       // Setup and start ROSCA
       await roscaPool.connect(creator).inviteMember(member1.address);
-      await roscaPool.connect(member1).joinPool();
       await roscaPool.connect(creator).inviteMember(member2.address);
-      await roscaPool.connect(member2).joinPool();
       await roscaPool.connect(creator).inviteMember(member3.address);
-      await roscaPool.connect(member3).joinPool();
       await roscaPool.connect(creator).inviteMember(member4.address);
-      await roscaPool.connect(member4).joinPool();
 
       const payoutOrder = [creator.address, member1.address, member2.address, member3.address, member4.address];
       await roscaPool.connect(creator).startROSCA(payoutOrder);
@@ -514,13 +484,9 @@ describe("ROSCAPool", function () {
       const newPool = await ethers.getContractAt("ROSCAPool", newPoolAddress);
 
       await newPool.connect(creator).inviteMember(member1.address);
-      await newPool.connect(member1).joinPool();
       await newPool.connect(creator).inviteMember(member2.address);
-      await newPool.connect(member2).joinPool();
       await newPool.connect(creator).inviteMember(member3.address);
-      await newPool.connect(member3).joinPool();
       await newPool.connect(creator).inviteMember(member4.address);
-      await newPool.connect(member4).joinPool();
 
       const payoutOrder = [creator.address, member1.address, member2.address, member3.address, member4.address];
       await newPool.connect(creator).startROSCA(payoutOrder);
@@ -571,13 +537,9 @@ describe("ROSCAPool", function () {
   describe("View Functions", function () {
     beforeEach(async function () {
       await roscaPool.connect(creator).inviteMember(member1.address);
-      await roscaPool.connect(member1).joinPool();
       await roscaPool.connect(creator).inviteMember(member2.address);
-      await roscaPool.connect(member2).joinPool();
       await roscaPool.connect(creator).inviteMember(member3.address);
-      await roscaPool.connect(member3).joinPool();
       await roscaPool.connect(creator).inviteMember(member4.address);
-      await roscaPool.connect(member4).joinPool();
 
       const payoutOrder = [creator.address, member1.address, member2.address, member3.address, member4.address];
       await roscaPool.connect(creator).startROSCA(payoutOrder);

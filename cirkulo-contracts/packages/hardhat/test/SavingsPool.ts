@@ -97,12 +97,12 @@ describe("SavingsPool", function () {
   describe("Member Management", function () {
     it("Should allow creator to invite members", async function () {
       await savingsPool.connect(creator).inviteMember(member1.address);
-      expect(await savingsPool.isInvited(member1.address)).to.be.true;
+      expect(await savingsPool.isMember(member1.address)).to.be.true;
     });
 
-    it("Should emit MemberInvited event", async function () {
+    it("Should emit MemberJoined event", async function () {
       await expect(savingsPool.connect(creator).inviteMember(member1.address))
-        .to.emit(savingsPool, "MemberInvited")
+        .to.emit(savingsPool, "MemberJoined")
         .withArgs(member1.address, creator.address);
     });
 
@@ -114,7 +114,7 @@ describe("SavingsPool", function () {
 
     it("Should prevent duplicate invitations", async function () {
       await savingsPool.connect(creator).inviteMember(member1.address);
-      await expect(savingsPool.connect(creator).inviteMember(member1.address)).to.be.revertedWith("Already invited");
+      await expect(savingsPool.connect(creator).inviteMember(member1.address)).to.be.revertedWith("Already a member");
     });
 
     it("Should prevent inviting zero address", async function () {
@@ -123,42 +123,43 @@ describe("SavingsPool", function () {
       );
     });
 
-    it("Should allow invited member to join", async function () {
+    it("Should allow creator to add member", async function () {
       await savingsPool.connect(creator).inviteMember(member1.address);
-      await savingsPool.connect(member1).joinPool();
       expect(await savingsPool.isMember(member1.address)).to.be.true;
       expect(await savingsPool.getMemberCount()).to.equal(2);
     });
 
-    it("Should emit MemberJoined event", async function () {
-      await savingsPool.connect(creator).inviteMember(member1.address);
-      await expect(savingsPool.connect(member1).joinPool()).to.emit(savingsPool, "MemberJoined");
+    it("Should emit MemberJoined event with addedBy parameter", async function () {
+      await expect(savingsPool.connect(creator).inviteMember(member1.address))
+        .to.emit(savingsPool, "MemberJoined")
+        .withArgs(member1.address, creator.address);
     });
 
-    it("Should prevent non-invited from joining", async function () {
-      await expect(savingsPool.connect(member1).joinPool()).to.be.revertedWith("Not invited");
+    it("Should prevent non-creator and non-backend from adding members", async function () {
+      await expect(savingsPool.connect(member1).inviteMember(member2.address))
+        .to.be.revertedWith("Only creator or backend");
     });
 
-    it("Should prevent joining twice", async function () {
+    it("Should prevent adding member twice", async function () {
       await savingsPool.connect(creator).inviteMember(member1.address);
-      await savingsPool.connect(member1).joinPool();
-      await expect(savingsPool.connect(member1).joinPool()).to.be.revertedWith("Already a member");
+      await expect(savingsPool.connect(creator).inviteMember(member1.address))
+        .to.be.revertedWith("Already a member");
     });
   });
 
   describe("Backend Manager Permissions", function () {
-    it("Should allow backend manager to invite members", async function () {
+    it("Should allow backend manager to add members", async function () {
       await savingsPool.connect(backendManager).inviteMember(member1.address);
-      expect(await savingsPool.isInvited(member1.address)).to.be.true;
+      expect(await savingsPool.isMember(member1.address)).to.be.true;
     });
 
-    it("Should emit MemberInvited event with backend manager as inviter", async function () {
+    it("Should emit MemberJoined event with backend manager as addedBy", async function () {
       await expect(savingsPool.connect(backendManager).inviteMember(member1.address))
-        .to.emit(savingsPool, "MemberInvited")
+        .to.emit(savingsPool, "MemberJoined")
         .withArgs(member1.address, backendManager.address);
     });
 
-    it("Should prevent non-creator and non-backend from inviting", async function () {
+    it("Should prevent non-creator and non-backend from adding members", async function () {
       await expect(savingsPool.connect(member1).inviteMember(member2.address)).to.be.revertedWith(
         "Only creator or backend",
       );
@@ -168,7 +169,6 @@ describe("SavingsPool", function () {
   describe("Deposits", function () {
     beforeEach(async function () {
       await savingsPool.connect(creator).inviteMember(member1.address);
-      await savingsPool.connect(member1).joinPool();
     });
 
     it("Should allow member to deposit", async function () {
@@ -236,7 +236,6 @@ describe("SavingsPool", function () {
 
     it("Should track individual member balances separately", async function () {
       await savingsPool.connect(creator).inviteMember(member2.address);
-      await savingsPool.connect(member2).joinPool();
 
       await mockToken.connect(member1).approve(await savingsPool.getAddress(), ethers.parseEther("1.0"));
       await savingsPool.connect(member1).deposit(ethers.parseEther("1.0"));
@@ -252,7 +251,6 @@ describe("SavingsPool", function () {
   describe("Withdrawals", function () {
     beforeEach(async function () {
       await savingsPool.connect(creator).inviteMember(member1.address);
-      await savingsPool.connect(member1).joinPool();
       await mockToken.connect(member1).approve(await savingsPool.getAddress(), ethers.parseEther("2.0"));
       await savingsPool.connect(member1).deposit(ethers.parseEther("2.0"));
     });
@@ -363,7 +361,6 @@ describe("SavingsPool", function () {
       await savingsPool.connect(creator).setTarget(targetAmount, targetDate);
 
       await savingsPool.connect(creator).inviteMember(member1.address);
-      await savingsPool.connect(member1).joinPool();
       await mockToken.connect(member1).approve(await savingsPool.getAddress(), ethers.parseEther("3.0"));
       await savingsPool.connect(member1).deposit(ethers.parseEther("3.0"));
 
@@ -380,7 +377,6 @@ describe("SavingsPool", function () {
       expect(await savingsPool.isGoalReached()).to.be.false;
 
       await savingsPool.connect(creator).inviteMember(member1.address);
-      await savingsPool.connect(member1).joinPool();
       await mockToken.connect(member1).approve(await savingsPool.getAddress(), ethers.parseEther("5.0"));
       await savingsPool.connect(member1).deposit(ethers.parseEther("5.0"));
 
@@ -404,7 +400,6 @@ describe("SavingsPool", function () {
 
     it("Should prevent deposits after closure", async function () {
       await savingsPool.connect(creator).inviteMember(member1.address);
-      await savingsPool.connect(member1).joinPool();
 
       await savingsPool.connect(creator).closePool();
 
@@ -416,7 +411,6 @@ describe("SavingsPool", function () {
 
     it("Should still allow withdrawals after closure", async function () {
       await savingsPool.connect(creator).inviteMember(member1.address);
-      await savingsPool.connect(member1).joinPool();
       await mockToken.connect(member1).approve(await savingsPool.getAddress(), ethers.parseEther("1.0"));
       await savingsPool.connect(member1).deposit(ethers.parseEther("1.0"));
 
@@ -429,9 +423,7 @@ describe("SavingsPool", function () {
   describe("View Functions", function () {
     beforeEach(async function () {
       await savingsPool.connect(creator).inviteMember(member1.address);
-      await savingsPool.connect(member1).joinPool();
       await savingsPool.connect(creator).inviteMember(member2.address);
-      await savingsPool.connect(member2).joinPool();
     });
 
     it("Should return member balance", async function () {

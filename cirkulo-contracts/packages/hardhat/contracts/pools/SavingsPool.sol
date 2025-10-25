@@ -47,9 +47,6 @@ contract SavingsPool is IXershaPool, ReentrancyGuard, Pausable {
     /// @notice Mapping to check if an address is a member
     mapping(address => bool) public isMember;
 
-    /// @notice Mapping to check if an address has been invited
-    mapping(address => bool) public isInvited;
-
     /// @notice Optional target savings amount set by creator
     uint256 public targetAmount;
 
@@ -65,8 +62,7 @@ contract SavingsPool is IXershaPool, ReentrancyGuard, Pausable {
     // ========== Events ==========
 
     event PoolCreated(address indexed circleId, address indexed creator);
-    event MemberInvited(address indexed member, address indexed invitedBy);
-    event MemberJoined(address indexed member);
+    event MemberJoined(address indexed member, address indexed addedBy);
     event Deposited(address indexed member, uint256 amount);
     event Withdrawn(address indexed member, uint256 amount);
     event TargetSet(uint256 amount, uint256 date);
@@ -89,11 +85,6 @@ contract SavingsPool is IXershaPool, ReentrancyGuard, Pausable {
 
     modifier onlyMember() {
         require(isMember[msg.sender], "Not a member");
-        _;
-    }
-
-    modifier onlyInvited() {
-        require(isInvited[msg.sender], "Not invited");
         _;
     }
 
@@ -153,37 +144,26 @@ contract SavingsPool is IXershaPool, ReentrancyGuard, Pausable {
         // Creator automatically becomes a member
         members.push(_creator);
         isMember[_creator] = true;
-        isInvited[_creator] = true;
 
         emit PoolCreated(_circleId, _creator);
-        emit MemberJoined(_creator);
+        emit MemberJoined(_creator, _creator);
     }
 
     // ========== Member Management ==========
 
     /**
-     * @notice Invites a new member to the pool
-     * @dev Creator or backend manager can invite members
-     * @param member Address of the member to invite
+     * @notice Adds a new member to the pool
+     * @dev Creator or backend manager can add members directly
+     * @param member Address of the member to add
      */
     function inviteMember(address member) external onlyCreatorOrBackend whenNotPaused {
-        require(!isInvited[member], "Already invited");
+        require(!isMember[member], "Already a member");
         require(member != address(0), "Invalid address");
 
-        isInvited[member] = true;
-        emit MemberInvited(member, msg.sender);
-    }
+        members.push(member);
+        isMember[member] = true;
 
-    /**
-     * @notice Allows an invited member to join the pool
-     */
-    function joinPool() external onlyInvited whenNotPaused {
-        require(!isMember[msg.sender], "Already a member");
-
-        members.push(msg.sender);
-        isMember[msg.sender] = true;
-
-        emit MemberJoined(msg.sender);
+        emit MemberJoined(member, msg.sender);
     }
 
     // ========== Deposits & Withdrawals ==========
