@@ -18,29 +18,29 @@ import { v4 as uuidv4 } from "uuid";
  * - "Summer Vacation Fund" → "summer-vacation-fund"
  */
 function slugifyGroupName(name: string): string {
-  return name
-    .trim()
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')  // Replace non-alphanumeric with hyphens
-    .replace(/^-+|-+$/g, '')       // Remove leading/trailing hyphens
-    .replace(/-{2,}/g, '-')        // Replace multiple consecutive hyphens with single
-    .slice(0, 50);                 // Ensure max 50 chars
+	return name
+		.trim()
+		.toLowerCase()
+		.replace(/[^a-z0-9]+/g, "-") // Replace non-alphanumeric with hyphens
+		.replace(/^-+|-+$/g, "") // Remove leading/trailing hyphens
+		.replace(/-{2,}/g, "-") // Replace multiple consecutive hyphens with single
+		.slice(0, 50); // Ensure max 50 chars
 }
 
 export interface CreateGroupParams {
-  name: string;
-  description: string;
-  ownerAddress: string;
-  sessionClient: SessionClient;
-  walletClient: WalletClient;
-  circleType: "contribution" | "rotating" | "fundraising";
+	name: string;
+	description: string;
+	ownerAddress: string;
+	sessionClient: SessionClient;
+	walletClient: WalletClient;
+	circleType: "contribution" | "rotating" | "fundraising";
 }
 
 export interface CreateGroupResult {
-  success: boolean;
-  groupAddress?: `0x${string}`;
-  transactionHash?: string;
-  error?: string;
+	success: boolean;
+	groupAddress?: `0x${string}`;
+	transactionHash?: string;
+	error?: string;
 }
 
 /**
@@ -49,144 +49,199 @@ export interface CreateGroupResult {
  * @returns Result with group address and transaction hash
  */
 export async function createLensGroup(
-  params: CreateGroupParams
+	params: CreateGroupParams,
 ): Promise<CreateGroupResult> {
-  try {
-    const { name, description, ownerAddress, sessionClient, walletClient, circleType } = params;
+	try {
+		const {
+			name,
+			description,
+			ownerAddress,
+			sessionClient,
+			walletClient,
+			circleType,
+		} = params;
 
-    console.log("[CreateLensGroup] Starting group creation:", { name, description, ownerAddress, circleType });
+		console.log("[CreateLensGroup] Starting group creation:", {
+			name,
+			description,
+			ownerAddress,
+			circleType,
+		});
 
-    // Validate owner address format
-    if (!ownerAddress || !ownerAddress.startsWith('0x') || ownerAddress.length !== 42) {
-      console.error("[CreateLensGroup] Invalid owner address format:", ownerAddress);
-      return {
-        success: false,
-        error: "Invalid owner address format",
-      };
-    }
+		// Validate owner address format
+		if (
+			!ownerAddress ||
+			!ownerAddress.startsWith("0x") ||
+			ownerAddress.length !== 42
+		) {
+			console.error(
+				"[CreateLensGroup] Invalid owner address format:",
+				ownerAddress,
+			);
+			return {
+				success: false,
+				error: "Invalid owner address format",
+			};
+		}
 
-    // Convert name to Lens-compatible format (alphanumeric and hyphens only)
-    const slugifiedName = slugifyGroupName(name);
-    console.log("[CreateLensGroup] Slugified name:", { original: name, slugified: slugifiedName });
+		// Convert name to Lens-compatible format (alphanumeric and hyphens only)
+		const slugifiedName = slugifyGroupName(name);
+		console.log("[CreateLensGroup] Slugified name:", {
+			original: name,
+			slugified: slugifiedName,
+		});
 
-    // Step 1: Create group metadata
-    // Note: The group() helper from @lens-protocol/metadata has intermittent bugs
-    // We try it first, then fall back to manual construction if it fails
-    let metadata;
+		// Step 1: Create group metadata
+		// Note: The group() helper from @lens-protocol/metadata has intermittent bugs
+		// We try it first, then fall back to manual construction if it fails
+		let metadata;
 
-    try {
-      // Attempt to use the group() helper
-      metadata = group({
-        name: slugifiedName,
-        description: String(description).trim(),
-      });
-      console.log("[CreateLensGroup] Metadata created with group() helper");
-    } catch (groupError: any) {
-      // Fallback: Manually construct metadata to bypass SDK bug
-      console.warn("[CreateLensGroup] group() helper failed, using manual construction");
+		try {
+			// Attempt to use the group() helper
+			metadata = group({
+				name: slugifiedName,
+				description: String(description).trim(),
+			});
+			console.log("[CreateLensGroup] Metadata created with group() helper");
+		} catch (groupError: any) {
+			// Fallback: Manually construct metadata to bypass SDK bug
+			console.warn(
+				"[CreateLensGroup] group() helper failed, using manual construction",
+			);
 
-      const manualMetadata: any = {
-        $schema: "https://json-schemas.lens.dev/group/1.0.0.json",
-        lens: {
-          id: uuidv4(),
-          name: slugifiedName,
-          description: String(description).trim(),
-        }
-      };
+			const manualMetadata: any = {
+				$schema: "https://json-schemas.lens.dev/group/1.0.0.json",
+				lens: {
+					id: uuidv4(),
+					name: slugifiedName,
+					description: String(description).trim(),
+				},
+			};
 
-      // Validate manually constructed metadata
-      const validated = GroupMetadataSchema.parse(manualMetadata);
-      metadata = validated;
-      console.log("[CreateLensGroup] Metadata created manually");
-    }
+			// Validate manually constructed metadata
+			const validated = GroupMetadataSchema.parse(manualMetadata);
+			metadata = validated;
+			console.log("[CreateLensGroup] Metadata created manually");
+		}
 
-    // Step 2: Upload metadata to Grove storage
-    console.log("[CreateLensGroup] Uploading metadata to Grove storage...");
-    const { uri: metadataUri } = await storageClient.uploadAsJson(metadata);
+		// Step 2: Upload metadata to Grove storage
+		console.log("[CreateLensGroup] Uploading metadata to Grove storage...");
+		const { uri: metadataUri } = await storageClient.uploadAsJson(metadata);
 
-    console.log("[CreateLensGroup] Metadata uploaded:", metadataUri);
+		console.log("[CreateLensGroup] Metadata uploaded:", metadataUri);
 
-    // Step 3: Configure custom invite rule (only for contribution and rotating circles)
-    const shouldUseCustomRule = circleType === "contribution" || circleType === "rotating";
-    
-    if (shouldUseCustomRule) {
-      const ruleContractAddress = import.meta.env.VITE_LENS_INVITE_RULE_CONTRACT_ADDRESS;
-      
-      if (!ruleContractAddress) {
-        console.error("[CreateLensGroup] VITE_LENS_INVITE_RULE_CONTRACT_ADDRESS not configured");
-        return {
-          success: false,
-          error: "Invite rule contract address not configured",
-        };
-      }
+		// Step 3: Configure custom invite rule (only for contribution and rotating circles)
+		const shouldUseCustomRule =
+			circleType === "contribution" || circleType === "rotating";
 
-      // Validate address format
-      if (!ruleContractAddress.startsWith('0x') || ruleContractAddress.length !== 42) {
-        console.error("[CreateLensGroup] Invalid rule contract address format:", ruleContractAddress);
-        return {
-          success: false,
-          error: "Invalid rule contract address format",
-        };
-      }
+		if (shouldUseCustomRule) {
+			const ruleContractAddress = import.meta.env
+				.VITE_LENS_INVITE_RULE_CONTRACT_ADDRESS;
 
-      console.log("[CreateLensGroup] Using invite rule contract for", circleType, "circle:", ruleContractAddress);
-    } else {
-      console.log("[CreateLensGroup] Skipping custom rule for", circleType, "circle (fundraising circles are open to all)");
-    }
+			if (!ruleContractAddress) {
+				console.error(
+					"[CreateLensGroup] VITE_LENS_INVITE_RULE_CONTRACT_ADDRESS not configured",
+				);
+				return {
+					success: false,
+					error: "Invite rule contract address not configured",
+				};
+			}
 
-    // Step 4: Deploy group contract
-    console.log("[CreateLensGroup] Creating group with", shouldUseCustomRule ? "custom invite rule" : "no custom rule", "...");
-    console.log("[CreateLensGroup] Group creation params:", {
-      metadataUri,
-      ownerAddress,
-      circleType,
-      hasCustomRule: shouldUseCustomRule,
-    });
+			// Validate address format
+			if (
+				!ruleContractAddress.startsWith("0x") ||
+				ruleContractAddress.length !== 42
+			) {
+				console.error(
+					"[CreateLensGroup] Invalid rule contract address format:",
+					ruleContractAddress,
+				);
+				return {
+					success: false,
+					error: "Invalid rule contract address format",
+				};
+			}
 
-    const createResult = await createGroup(sessionClient, {
-      metadataUri: uri(metadataUri),
-      owner: evmAddress(ownerAddress),
-      rules: shouldUseCustomRule ? {
-        required: [
-          {
-            unknownRule: {
-              address: evmAddress(import.meta.env.VITE_LENS_INVITE_RULE_CONTRACT_ADDRESS),
-              executeOn: [GroupRuleExecuteOn.Joining],
-              params: [], // Empty params - configure() doesn't need any parameters
-            },
-          },
-        ],
-        anyOf: [],
-      } : {
-        required: [],
-        anyOf: [],
-      },
-    })
-      .andThen(handleOperationWith(walletClient))
-      .andThen(sessionClient.waitForTransaction)
-      .andThen((txHash) => fetchGroup(sessionClient, { txHash }));
+			console.log(
+				"[CreateLensGroup] Using invite rule contract for",
+				circleType,
+				"circle:",
+				ruleContractAddress,
+			);
+		} else {
+			console.log(
+				"[CreateLensGroup] Skipping custom rule for",
+				circleType,
+				"circle (fundraising circles are open to all)",
+			);
+		}
 
-    if (createResult.isErr()) {
-      console.error("[CreateLensGroup] Group creation failed:", createResult.error);
-      return {
-        success: false,
-        error: createResult.error.message || "Failed to create group",
-      };
-    }
+		// Step 4: Deploy group contract
+		console.log(
+			"[CreateLensGroup] Creating group with",
+			shouldUseCustomRule ? "custom invite rule" : "no custom rule",
+			"...",
+		);
+		console.log("[CreateLensGroup] Group creation params:", {
+			metadataUri,
+			ownerAddress,
+			circleType,
+			hasCustomRule: shouldUseCustomRule,
+		});
 
-    const createdGroup = createResult.value;
-    console.log("[CreateLensGroup] Group created successfully:", {
-      address: createdGroup?.address,
-      owner: createdGroup?.owner,
-    });
+		const createResult = await createGroup(sessionClient, {
+			metadataUri: uri(metadataUri),
+			owner: evmAddress(ownerAddress),
+			rules: shouldUseCustomRule
+				? {
+						required: [
+							{
+								unknownRule: {
+									address: evmAddress(
+										import.meta.env.VITE_LENS_INVITE_RULE_CONTRACT_ADDRESS,
+									),
+									executeOn: [GroupRuleExecuteOn.Joining],
+									params: [], // Empty params - configure() doesn't need any parameters
+								},
+							},
+						],
+						anyOf: [],
+					}
+				: {
+						required: [],
+						anyOf: [],
+					},
+		})
+			.andThen(handleOperationWith(walletClient))
+			.andThen(sessionClient.waitForTransaction)
+			.andThen((txHash) => fetchGroup(sessionClient, { txHash }));
 
-    return {
-      success: true,
-      transactionHash: undefined, // txHash is consumed by fetchGroup
-      groupAddress: createdGroup?.address,
-    };
+		if (createResult.isErr()) {
+			console.error(
+				"[CreateLensGroup] Group creation failed:",
+				createResult.error,
+			);
+			return {
+				success: false,
+				error: createResult.error.message || "Failed to create group",
+			};
+		}
 
-    /* TODO: Re-enable when contract is fixed
+		const createdGroup = createResult.value;
+		console.log("[CreateLensGroup] Group created successfully:", {
+			address: createdGroup?.address,
+			owner: createdGroup?.owner,
+			feed: createdGroup?.feed,
+		});
+
+		return {
+			success: true,
+			transactionHash: undefined, // txHash is consumed by fetchGroup
+			groupAddress: createdGroup?.address,
+		};
+
+		/* TODO: Re-enable when contract is fixed
     // Try with corrected rule structure - empty params since configure() doesn't need them
     const createResult = await createGroup(sessionClient, {
       metadataUri: uri(metadataUri),
@@ -208,52 +263,52 @@ export async function createLensGroup(
       .andThen(sessionClient.waitForTransaction)
       .andThen((txHash) => fetchGroup(sessionClient, { txHash }));
     */
-  } catch (error) {
-    console.error("[CreateLensGroup] Error creating Lens group:", error);
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : "Unknown error occurred",
-    };
-  }
+	} catch (error) {
+		console.error("[CreateLensGroup] Error creating Lens group:", error);
+		return {
+			success: false,
+			error: error instanceof Error ? error.message : "Unknown error occurred",
+		};
+	}
 }
 
 /**
  * Hook for creating a Lens group with loading and error states
  */
 export function useCreateLensGroup() {
-  const [isCreating, setIsCreating] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+	const [isCreating, setIsCreating] = useState(false);
+	const [error, setError] = useState<string | null>(null);
 
-  const createGroup = async (
-    params: CreateGroupParams
-  ): Promise<CreateGroupResult> => {
-    setIsCreating(true);
-    setError(null);
+	const createGroup = async (
+		params: CreateGroupParams,
+	): Promise<CreateGroupResult> => {
+		setIsCreating(true);
+		setError(null);
 
-    try {
-      const result = await createLensGroup(params);
+		try {
+			const result = await createLensGroup(params);
 
-      if (!result.success) {
-        setError(result.error || "Failed to create group");
-      }
+			if (!result.success) {
+				setError(result.error || "Failed to create group");
+			}
 
-      return result;
-    } catch (err) {
-      const errorMessage =
-        err instanceof Error ? err.message : "Unknown error occurred";
-      setError(errorMessage);
-      return {
-        success: false,
-        error: errorMessage,
-      };
-    } finally {
-      setIsCreating(false);
-    }
-  };
+			return result;
+		} catch (err) {
+			const errorMessage =
+				err instanceof Error ? err.message : "Unknown error occurred";
+			setError(errorMessage);
+			return {
+				success: false,
+				error: errorMessage,
+			};
+		} finally {
+			setIsCreating(false);
+		}
+	};
 
-  return {
-    createGroup,
-    isCreating,
-    error,
-  };
+	return {
+		createGroup,
+		isCreating,
+		error,
+	};
 }

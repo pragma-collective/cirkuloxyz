@@ -9,7 +9,7 @@ import { UserAvatar } from "app/components/ui/user-avatar";
 import { Button } from "app/components/ui/button";
 import { mockCircles, mockCircleActivity } from "app/lib/mock-data";
 import type { FeedItem } from "app/types/feed";
-import { Home, Compass, PlusCircle, Bell, User, Loader2, AlertCircle } from "lucide-react";
+import { Home, Compass, PlusCircle, Wallet, User, Loader2, AlertCircle } from "lucide-react";
 import { mapGroupToCircle } from "app/lib/map-group-to-circle";
 import { useFetchCircle } from "~/hooks/use-fetch-circle";
 import { useFetchGroupMembers } from "~/hooks/use-fetch-group-members";
@@ -327,9 +327,9 @@ export default function CircleDetail({ loaderData }: Route.ComponentProps) {
 			onClick: () => navigate("/create-circle"),
 		},
 		{
-			icon: <Bell className="size-6" />,
-			label: "Alerts",
-			badge: 0,
+			icon: <Wallet className="size-6" />,
+			label: "Wallet",
+			to: "/wallet",
 		},
 		{
 			icon: <User className="size-6" />,

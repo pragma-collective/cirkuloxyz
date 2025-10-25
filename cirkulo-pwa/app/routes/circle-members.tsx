@@ -3,7 +3,7 @@ import type { Route } from "./+types/circle-members";
 import { useNavigate, useParams } from "react-router";
 import { AuthenticatedLayout } from "app/components/layouts/authenticated-layout";
 import { CircleMembers } from "app/components/circle/circle-members";
-import { Home, Compass, PlusCircle, Bell, User, ArrowLeft, Loader2 } from "lucide-react";
+import { Home, Compass, PlusCircle, Wallet, User, ArrowLeft, Loader2 } from "lucide-react";
 import { Button } from "app/components/ui/button";
 import { useAuth } from "app/context/auth-context";
 import { useFetchCircle } from "~/hooks/use-fetch-circle";
@@ -123,9 +123,9 @@ export default function CircleMembersPage({ loaderData }: Route.ComponentProps) 
 						onClick: () => navigate("/create-circle"),
 					},
 					{
-						icon: <Bell className="size-6" />,
-						label: "Alerts",
-						badge: 0,
+						icon: <Wallet className="size-6" />,
+						label: "Wallet",
+						to: "/wallet",
 					},
 					{
 						icon: <User className="size-6" />,
@@ -166,9 +166,9 @@ export default function CircleMembersPage({ loaderData }: Route.ComponentProps) 
 						onClick: () => navigate("/create-circle"),
 					},
 					{
-						icon: <Bell className="size-6" />,
-						label: "Alerts",
-						badge: 0,
+						icon: <Wallet className="size-6" />,
+						label: "Wallet",
+						to: "/wallet",
 					},
 					{
 						icon: <User className="size-6" />,
@@ -223,9 +223,9 @@ export default function CircleMembersPage({ loaderData }: Route.ComponentProps) 
 					onClick: () => navigate("/create-circle"),
 				},
 				{
-					icon: <Bell className="size-6" />,
-					label: "Alerts",
-					badge: 0,
+					icon: <Wallet className="size-6" />,
+					label: "Wallet",
+					to: "/wallet",
 				},
 				{
 					icon: <User className="size-6" />,

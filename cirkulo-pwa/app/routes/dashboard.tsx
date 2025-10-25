@@ -7,7 +7,7 @@ import { RightSidebar } from "app/components/dashboard/right-sidebar";
 import { FeedContainer } from "app/components/dashboard/feed-container";
 import { mockUserStats, mockCircles, mockFeedItems } from "app/lib/mock-data";
 import type { FeedFilter } from "app/types/feed";
-import { Home, Compass, PlusCircle, Bell, User } from "lucide-react";
+import { Home, Compass, PlusCircle, Wallet, User } from "lucide-react";
 
 export function meta({}: Route.MetaArgs) {
 	return [
@@ -75,7 +75,7 @@ export default function Dashboard() {
 		<AuthenticatedLayout
 			notificationCount={3}
 			onNotificationClick={() => console.log("Notifications clicked")}
-			onProfileClick={() => console.log("Profile clicked")}
+			onProfileClick={() => navigate("/profile")}
 			onNewContribution={() => console.log("New contribution clicked")}
 			navItems={[
 				{
@@ -95,14 +95,14 @@ export default function Dashboard() {
 					onClick: () => navigate("/create-circle"),
 				},
 				{
-					icon: <Bell className="size-6" />,
-					label: "Alerts",
-					badge: 0,
+					icon: <Wallet className="size-6" />,
+					label: "Wallet",
+					to: "/wallet",
 				},
 				{
 					icon: <User className="size-6" />,
 					label: "Profile",
-					onClick: () => navigate("/profile"),
+					to: "/profile",
 				},
 			]}
 		>
