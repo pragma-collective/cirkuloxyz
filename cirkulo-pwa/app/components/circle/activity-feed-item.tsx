@@ -4,6 +4,7 @@ import type {
   MilestoneFeedItem,
   MemberJoinedFeedItem,
   CelebrationFeedItem,
+  PostFeedItem,
 } from "app/types/feed";
 import { UserAvatar } from "app/components/ui/user-avatar";
 import { Button } from "app/components/ui/button";
@@ -217,6 +218,31 @@ export function ActivityFeedItem({
                     #{tag}
                   </span>
                 ))}
+              </div>
+            )}
+          </div>
+        );
+      }
+      case "post": {
+        const postItem = item as PostFeedItem;
+        return (
+          <div>
+            <p className="text-sm sm:text-base text-neutral-900 mb-2">
+              <span className="font-semibold">{item.actor.name}</span>
+            </p>
+            {postItem.content && (
+              <p className="text-sm text-neutral-700 whitespace-pre-line">
+                {postItem.content}
+              </p>
+            )}
+            {postItem.imageUrl && (
+              <div className="mt-3 rounded-xl overflow-hidden">
+                <img
+                  src={postItem.imageUrl}
+                  alt={postItem.imageAlt || "Post image"}
+                  className="w-full h-auto object-cover"
+                  loading="lazy"
+                />
               </div>
             )}
           </div>

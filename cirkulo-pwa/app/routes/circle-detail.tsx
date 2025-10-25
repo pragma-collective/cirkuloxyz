@@ -2,17 +2,22 @@ import { useState, useMemo, useCallback } from "react";
 import type { Route } from "./+types/circle-detail";
 import { useNavigate, useParams } from "react-router";
 import { AuthenticatedLayout } from "app/components/layouts/authenticated-layout";
-import { CircleHero } from "app/components/circle/circle-hero";
-import { CircleProgress } from "app/components/circle/circle-progress";
+import { CircleHeaderCompact } from "app/components/circle/circle-header-compact";
+import { CircleStatsDrawer } from "app/components/circle/circle-stats-drawer";
+import { CircleActionsBar } from "app/components/circle/circle-actions-bar";
+import { CircleMembersBar } from "app/components/circle/circle-members-bar";
+import { CircleFAB } from "app/components/circle/circle-fab";
+import { PostComposerSheet } from "app/components/circle/post-composer-sheet";
 import { CircleActivityFeed } from "app/components/circle/circle-activity-feed";
-import { UserAvatar } from "app/components/ui/user-avatar";
-import { Button } from "app/components/ui/button";
-import { mockCircles, mockCircleActivity } from "app/lib/mock-data";
+import { mockCircles } from "app/lib/mock-data";
 import type { FeedItem } from "app/types/feed";
+import { Button } from "~/components/ui/button";
 import { Home, Compass, PlusCircle, Wallet, User, Loader2, AlertCircle } from "lucide-react";
 import { mapGroupToCircle } from "app/lib/map-group-to-circle";
 import { useFetchCircle } from "~/hooks/use-fetch-circle";
 import { useFetchGroupMembers } from "~/hooks/use-fetch-group-members";
+import { useFetchGroupPosts } from "~/hooks/use-fetch-group-posts";
+import { useCreatePost } from "~/hooks/use-create-post";
 import { fetchGroup } from "@lens-protocol/client/actions";
 import { evmAddress } from "@lens-protocol/client";
 import { lensClient } from "app/lib/lens";
@@ -21,6 +26,9 @@ import { formatEther, type Address } from "viem";
 import { savingsPoolAbi, donationPoolAbi, roscaPoolAbi } from "app/lib/pool-abis";
 import { citreaTestnet } from "app/lib/wagmi";
 import { useAuth } from "~/context/auth-context";
+import { useLensSession } from "~/context/lens-context";
+import { useDynamicContext } from "@dynamic-labs/sdk-react-core";
+import type { PostFormData } from "~/schemas/post-schema";
 
 // Client-side loader to fetch group data (runs in browser, SPA-compatible)
 export async function clientLoader({ params }: Route.ClientLoaderArgs) {
@@ -73,11 +81,21 @@ export default function CircleDetail({ loaderData }: Route.ComponentProps) {
 	const { data: circleData, isLoading: isLoadingCircle, error: circleError } = useFetchCircle(circleId);
 
 	// Fetch group members from Lens Protocol
-	const { memberCount, loading: isLoadingMembers } = useFetchGroupMembers({ groupAddress: circleId });
+	const { members, memberCount, loading: isLoadingMembers } = useFetchGroupMembers({ groupAddress: circleId });
+
+	// Fetch group posts from Lens Protocol
+	const { posts: groupPosts, loading: isLoadingPosts, error: postsError, refetch: refetchPosts } = useFetchGroupPosts({ groupAddress: circleId });
 
 	// State management
-	const [activityItems, setActivityItems] =
-		useState<FeedItem[]>(mockCircleActivity);
+	const [isStatsOpen, setIsStatsOpen] = useState(false);
+	const [isComposerOpen, setIsComposerOpen] = useState(false);
+
+	// Post creation hook
+	const { createPost, isCreating } = useCreatePost();
+
+	// Lens session and wallet for post creation
+	const { sessionClient } = useLensSession();
+	const { primaryWallet } = useDynamicContext();
 
 	// Convert Lens group to Circle format, merging with API data and member count
 	const circle = useMemo(() => {
@@ -268,17 +286,9 @@ export default function CircleDetail({ loaderData }: Route.ComponentProps) {
 
 	// Handle like action
 	const handleLike = useCallback((itemId: string) => {
-		setActivityItems((items) =>
-			items.map((item) =>
-				item.id === itemId
-					? {
-							...item,
-							isLiked: !item.isLiked,
-							likeCount: item.isLiked ? item.likeCount - 1 : item.likeCount + 1,
-						}
-					: item,
-			),
-		);
+		console.log("Like item:", itemId);
+		// TODO: Implement like functionality with Lens Protocol
+		// For now, likes are view-only from the feed
 	}, []);
 
 	// Handle comment action (placeholder)
@@ -297,6 +307,11 @@ export default function CircleDetail({ loaderData }: Route.ComponentProps) {
 		navigate(`/circle/${circleId}/invites`);
 	}, [navigate, circleId]);
 
+	// Handle members action - navigate to members page
+	const handleMembers = useCallback(() => {
+		navigate(`/circle/${circleId}/members`);
+	}, [navigate, circleId]);
+
 	// Handle share action
 	const handleShare = useCallback(() => {
 		console.log("Share circle:", circleId);
@@ -308,6 +323,54 @@ export default function CircleDetail({ loaderData }: Route.ComponentProps) {
 		console.log("Join circle:", circleId);
 		// TODO: Implement join functionality
 	}, [circleId]);
+
+	// Handle create post action
+	const handleCreatePost = useCallback(() => {
+		setIsComposerOpen(true);
+	}, []);
+
+	// Handle post submission
+	const handlePostSubmit = useCallback(
+		async (data: PostFormData) => {
+			if (!sessionClient || !primaryWallet || !circleId) {
+				console.error("[CircleDetail] Missing required clients for post creation");
+				return;
+			}
+
+			try {
+				// @ts-expect-error - getWalletClient exists at runtime but not in type definition
+				const walletClient = await primaryWallet.getWalletClient();
+
+				const result = await createPost({
+					content: data.content,
+					image: data.image || undefined,
+					groupAddress: circleId,
+					sessionClient,
+					walletClient,
+				});
+
+				if (result.success) {
+					console.log("[CircleDetail] Post created successfully:", result);
+
+					// Close composer
+					setIsComposerOpen(false);
+
+					// Refetch feed after a short delay to allow Lens Protocol to index the new post
+					setTimeout(() => {
+						console.log("[CircleDetail] Refetching feed to show new post");
+						refetchPosts();
+					}, 1500); // 1.5 second delay for indexing
+				} else {
+					console.error("[CircleDetail] Post creation failed:", result.error);
+					// TODO: Show error toast
+				}
+			} catch (error) {
+				console.error("[CircleDetail] Error submitting post:", error);
+				// TODO: Show error toast
+			}
+		},
+		[createPost, sessionClient, primaryWallet, circleId, auth.user, circleWithBalance, refetchPosts]
+	);
 
 	// Navigation items for layout
 	const navItems = [
@@ -510,6 +573,11 @@ export default function CircleDetail({ loaderData }: Route.ComponentProps) {
 		);
 	}
 
+	// Check if user is owner
+	const isOwner = auth.user?.walletAddress && group?.owner
+		? auth.user.walletAddress.toLowerCase() === group.owner.toLowerCase()
+		: false;
+
 	return (
 		<AuthenticatedLayout
 			notificationCount={3}
@@ -518,73 +586,57 @@ export default function CircleDetail({ loaderData }: Route.ComponentProps) {
 			onNewContribution={handleContribute}
 			navItems={navItems}
 		>
-			{/* Hero Section */}
-			<CircleHero
+			{/* Compact Header - Sticky */}
+			<CircleHeaderCompact
 				circle={circleWithBalance}
-				onContribute={handleContribute}
-				onInvite={handleInvite}
-				onShare={handleShare}
-				onJoin={handleJoin}
-				isMember={isMember}
-				groupOwner={group?.owner}
+				onExpand={() => setIsStatsOpen(true)}
 			/>
 
-			{/* Main Content */}
-			<div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
-				<div className="max-w-6xl mx-auto space-y-6 sm:space-y-8">
-					{/* Progress Section */}
-					<div className="card-enter">
-						<CircleProgress circle={circleWithBalance} />
-					</div>
+			{/* Stats Drawer - Expandable */}
+			<CircleStatsDrawer
+				circle={circleWithBalance}
+				isOpen={isStatsOpen}
+				onClose={() => setIsStatsOpen(false)}
+			/>
 
-					{/* Members Preview */}
-					<button
-						onClick={() => navigate(`/circle/${circleId}/members`)}
-						className="flex items-center gap-3 p-4 bg-white rounded-xl border border-neutral-200 hover:border-primary-300 hover:shadow-sm transition-all"
-					>
-						<div className="flex -space-x-2">
-							{circleWithBalance.members.slice(0, 4).map((member) => (
-								<UserAvatar
-									key={member.id}
-									user={member}
-									size="md"
-									className="size-10 ring-2 ring-white"
-								/>
-							))}
-						</div>
-						<div className="flex-1 text-left">
-							<p className="text-sm font-semibold text-neutral-900">
-								{circleWithBalance.memberCount} Members
-							</p>
-							{circleWithBalance.memberCount > 4 && (
-								<p className="text-xs text-neutral-600">
-									and {circleWithBalance.memberCount - 4} others
-								</p>
-							)}
-						</div>
-						<svg
-							className="size-5 text-neutral-400"
-							fill="none"
-							viewBox="0 0 24 24"
-							stroke="currentColor"
-						>
-							<path
-								strokeLinecap="round"
-								strokeLinejoin="round"
-								strokeWidth={2}
-								d="M9 5l7 7-7 7"
-							/>
-						</svg>
-					</button>
+			{/* Members Bar - Avatar Stack */}
+			<CircleMembersBar
+				circle={circleWithBalance}
+				members={members}
+				loading={isLoadingMembers}
+				onMembersClick={handleMembers}
+			/>
 
-					{/* Activity Feed */}
-					<CircleActivityFeed
-						items={activityItems}
-						onLike={handleLike}
-						onComment={handleComment}
-					/>
-				</div>
-			</div>
+			{/* Quick Actions Bar */}
+			<CircleActionsBar
+				circle={circleWithBalance}
+				onInvite={handleInvite}
+				onShare={handleShare}
+				isOwner={isOwner}
+			/>
+
+			{/* Activity Feed - Starts Immediately */}
+			<CircleActivityFeed
+				items={groupPosts}
+				onLike={handleLike}
+				onComment={handleComment}
+			/>
+
+			{/* Multi-Action Floating Action Button */}
+			<CircleFAB
+				circle={circleWithBalance}
+				onContribute={handleContribute}
+				onCreatePost={handleCreatePost}
+			/>
+
+			{/* Post Composer Modal */}
+			<PostComposerSheet
+				isOpen={isComposerOpen}
+				onClose={() => setIsComposerOpen(false)}
+				onSubmit={handlePostSubmit}
+				isSubmitting={isCreating}
+				circleName={circleWithBalance.name}
+			/>
 		</AuthenticatedLayout>
 	);
 }
