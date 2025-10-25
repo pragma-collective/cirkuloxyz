@@ -1,6 +1,6 @@
 # 🌊 Xersha
 
-> **Save Together, Grow Together** - Built on Citrea, Bitcoin's First ZK Rollup
+> **Your Circle, Your Bank** - Stack Together, Claim Sovereignty on Bitcoin's First ZK Rollup
 
 [![Built with React Router 7](https://img.shields.io/badge/React%20Router-7-blue?logo=react-router)](https://reactrouter.com)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.9-blue?logo=typescript)](https://www.typescriptlang.org/)
@@ -13,18 +13,20 @@
 
 ## The Problem
 
-Traditional savings and community fundraising face critical challenges:
+Traditional banking and savings face critical challenges:
 
+- **Banks Control Your Money** - You need permission to access, send, or save your own funds
+- **Geographic Barriers** - Savings tools aren't available everywhere, exclude billions globally
+- **Lack of Sovereignty** - Third parties can freeze, seize, or restrict your wealth
 - **Isolated Savings** - Saving alone lacks accountability and motivation
-- **Fragmented Fundraising** - Community causes scattered across multiple platforms
-- **Lack of Transparency** - No clear visibility into group savings progress
-- **Trust Issues** - Centralized platforms control your money
-- **Limited Flexibility** - Restricted payment methods and geographic barriers
-- **Technology Barriers** - New financial technology like Bitcoin can feel intimidating and complex to adopt alone
+- **No Transparency** - Hidden fees, opaque terms, and unclear savings progress
+- **Technology Barriers** - Bitcoin and DeFi can feel intimidating and complex to adopt alone
 
 ## Our Solution
 
-**Xersha** is a Bitcoin-powered social savings platform that brings people together to achieve shared financial goals. Think of it as a social network for saving money with friends, family, and communities.
+**Your circle, your bank.** Xersha empowers you to stack Bitcoin with friends, claim financial sovereignty, and access borderless finance—all without traditional banks.
+
+Built on Citrea (Bitcoin's first ZK Rollup), Xersha combines the security of Bitcoin with the accountability of saving together. Take control of your wealth, save without borders, and reach your goals faster with your closest circle.
 
 ### How It Works
 
@@ -52,13 +54,13 @@ Built on **[Citrea](https://citrea.xyz)** - Bitcoin's first zero-knowledge rollu
 
 ### Why Bitcoin + Citrea?
 
-- ✅ **Full Transparency** - All contributions visible on-chain
-- ✅ **True Ownership** - You control your funds, not a centralized platform
-- ✅ **Global Access** - No banks, no borders, no discrimination
-- ✅ **Censorship-Resistant** - No one can freeze or block your savings
-- ✅ **Smart Contract Automation** - Programmable rules for circle distributions
-- ✅ **Zero-Knowledge Proofs** - Privacy-preserving transactions when needed
-- ✅ **Easy Together** - Bitcoin might be new to you, but learning with friends makes it simple and fun
+- ✅ **Your Circle, Your Bank** - You hold the keys, you control the funds—not banks, not us, not anyone
+- ✅ **Financial Sovereignty** - True ownership and control over your wealth
+- ✅ **Save Without Borders** - Access global finance from anywhere, no geographic restrictions
+- ✅ **Full Transparency** - Every contribution recorded on Bitcoin's immutable blockchain
+- ✅ **Censorship-Resistant** - No one can freeze, seize, or block your savings
+- ✅ **Smart Contract Automation** - Programmable savings circles with transparent rules
+- ✅ **Stack Together** - Bitcoin adoption is easier and more fun with friends by your side
 
 ---
 
@@ -320,4 +322,4 @@ View all logos at `/logo-showcase` route.
 
 **Made with ❤️ by Pragma Collective**
 
-*Empowering communities to save together, transparently and securely on Bitcoin.*
+*Your circle, your bank. Stack together, claim sovereignty. Save without borders on Bitcoin.*
