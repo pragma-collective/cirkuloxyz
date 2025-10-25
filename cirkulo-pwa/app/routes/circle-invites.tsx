@@ -13,7 +13,7 @@ import { useCancelInvite } from "~/hooks/use-cancel-invite";
 import { useResendInvite } from "~/hooks/use-resend-invite";
 import { toast } from "~/lib/toast";
 import { useQueryClient } from "@tanstack/react-query";
-import { Home, Compass, PlusCircle, Bell, User, ArrowLeft } from "lucide-react";
+import { Home, Compass, PlusCircle, Wallet, User, ArrowLeft } from "lucide-react";
 
 // Client-side loader to fetch group data
 export async function clientLoader({ params }: Route.ClientLoaderArgs) {
@@ -171,9 +171,9 @@ export default function CircleInvites({ loaderData }: Route.ComponentProps) {
 			onClick: () => navigate("/create-circle"),
 		},
 		{
-			icon: <Bell className="size-6" />,
-			label: "Alerts",
-			badge: 0,
+			icon: <Wallet className="size-6" />,
+			label: "Wallet",
+			to: "/wallet",
 		},
 		{
 			icon: <User className="size-6" />,

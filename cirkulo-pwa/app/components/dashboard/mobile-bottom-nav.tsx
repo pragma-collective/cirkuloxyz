@@ -1,5 +1,5 @@
 import { Link } from "react-router";
-import { Home, Compass, PlusCircle, Bell, User } from "lucide-react";
+import { Home, Compass, PlusCircle, Wallet, User } from "lucide-react";
 import { cn } from "app/lib/utils";
 
 export interface NavItem {
@@ -19,8 +19,8 @@ const defaultItems: NavItem[] = [
   { icon: <Home className="size-6" />, label: "Home", active: true, to: "/dashboard" },
   { icon: <Compass className="size-6" />, label: "Explore", to: "/explore" },
   { icon: <PlusCircle className="size-6" />, label: "Add" },
-  { icon: <Bell className="size-6" />, label: "Alerts", badge: 0 },
-  { icon: <User className="size-6" />, label: "Profile" },
+  { icon: <Wallet className="size-6" />, label: "Wallet", to: "/wallet" },
+  { icon: <User className="size-6" />, label: "Profile", to: "/profile" },
 ];
 
 export function MobileBottomNav({ items = defaultItems }: MobileBottomNavProps) {

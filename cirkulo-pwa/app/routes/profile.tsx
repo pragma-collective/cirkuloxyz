@@ -20,7 +20,7 @@ import {
   Home,
   Compass,
   PlusCircle,
-  Bell,
+  Wallet,
   User,
   Edit3,
   Camera,
@@ -120,9 +120,9 @@ export default function Profile() {
           onClick: () => navigate("/create-circle"),
         },
         {
-          icon: <Bell className="size-6" />,
-          label: "Alerts",
-          badge: 0,
+          icon: <Wallet className="size-6" />,
+          label: "Wallet",
+          to: "/wallet",
         },
         {
           icon: <User className="size-6" />,

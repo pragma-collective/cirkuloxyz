@@ -9,7 +9,7 @@ import { EmptyState } from "app/components/explore/empty-state";
 import { CreateCircleCTA } from "app/components/explore/create-circle-cta";
 import { mockPublicCircles } from "app/lib/mock-data";
 import type { Circle, CircleCategory } from "app/types/feed";
-import { Home, Compass, PlusCircle, Bell, User } from "lucide-react";
+import { Home, Compass, PlusCircle, Wallet, User } from "lucide-react";
 
 export function meta({}: Route.MetaArgs) {
   return [
@@ -155,9 +155,9 @@ export default function Explore() {
           onClick: handleCreateCircle,
         },
         {
-          icon: <Bell className="size-6" />,
-          label: "Alerts",
-          badge: 0,
+          icon: <Wallet className="size-6" />,
+          label: "Wallet",
+          to: "/wallet",
         },
         {
           icon: <User className="size-6" />,

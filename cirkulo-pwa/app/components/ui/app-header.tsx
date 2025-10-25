@@ -35,11 +35,11 @@ export function AppHeader({
 
           {/* Right: Actions */}
           <div className="flex items-center gap-3">
-            {/* Notifications - Hidden on mobile */}
+            {/* Notifications - Now visible on all screens */}
             <Button
               variant="ghost"
               size="icon"
-              className="relative hidden md:inline-flex"
+              className="relative inline-flex"
               onClick={onNotificationClick}
               aria-label={
                 notificationCount > 0
