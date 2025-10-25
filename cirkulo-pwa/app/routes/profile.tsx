@@ -10,7 +10,6 @@ import {
 } from "app/components/ui/card";
 import { CircleCard } from "app/components/circles/circle-card";
 import {
-  mockCurrentUser,
   mockUserStats,
   mockCircles,
   mockStreak,
@@ -47,7 +46,7 @@ export function meta({}: Route.MetaArgs) {
 
 export default function Profile() {
   const navigate = useNavigate();
-  const { sessionClient } = useAuth();
+  const { sessionClient, user } = useAuth();
 
   // Fetch user's circles from API
   const {
@@ -89,13 +88,13 @@ export default function Profile() {
     const uniqueUserIds = new Set<string>();
     mockCircles.forEach((circle) => {
       circle.members.forEach((member) => {
-        if (member.id !== mockCurrentUser.id) {
+        if (member.id !== user?.id) {
           uniqueUserIds.add(member.id);
         }
       });
     });
     return uniqueUserIds.size;
-  }, []);
+  }, [user?.id]);
 
   return (
     <AuthenticatedLayout
@@ -171,7 +170,7 @@ export default function Profile() {
                 {/* Avatar */}
                 <div className="relative bg-white rounded-full p-1.5">
                   <UserAvatar
-                    user={mockCurrentUser}
+                    user={user || { id: '', name: 'Anonymous', lensUsername: 'username' }}
                     size="md"
                     className="size-24 sm:size-30 ring-4 ring-white"
                   />
@@ -205,10 +204,10 @@ export default function Profile() {
                 <div className="flex items-center justify-center sm:justify-between">
                   <div>
                     <h1 className="text-2xl sm:text-3xl font-bold text-neutral-900">
-                      {mockCurrentUser.name}
+                      {user?.name || 'Anonymous User'}
                     </h1>
                     <p className="text-base sm:text-lg text-neutral-600 mt-1">
-                      @{mockCurrentUser.lensUsername}
+                      @{user?.lensUsername || 'username'}
                     </p>
                   </div>
 
@@ -227,9 +226,9 @@ export default function Profile() {
                   </div>
                 </div>
 
-                {mockCurrentUser.bio && (
+                {user?.bio && (
                   <p className="text-sm sm:text-base text-neutral-700 max-w-2xl">
-                    {mockCurrentUser.bio}
+                    {user.bio}
                   </p>
                 )}
               </div>
