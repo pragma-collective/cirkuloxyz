@@ -33,6 +33,9 @@ contract XershaFactory is Ownable {
     /// @notice Implementation contract for Donation pools
     address public donationImplementation;
 
+    /// @notice Address of the backend manager for all pools
+    address public backendManager;
+
     /// @notice Mapping from circle contract address to pool address
     mapping(address => address) public circleToPool;
 
@@ -68,25 +71,36 @@ contract XershaFactory is Ownable {
      */
     event ImplementationUpdated(string poolType, address indexed newImplementation);
 
+    /**
+     * @notice Emitted when the backend manager address is updated
+     * @param oldManager The previous backend manager address
+     * @param newManager The new backend manager address
+     */
+    event BackendManagerUpdated(address indexed oldManager, address indexed newManager);
+
     // ========== Constructor ==========
 
     /**
      * @notice Initializes the factory with implementation addresses
      * @param initialOwner Address that will own the factory
+     * @param _backendManager Address of the backend manager for all pools
      * @param _roscaImpl Address of the ROSCA pool implementation
      * @param _savingsImpl Address of the Savings pool implementation
      * @param _donationImpl Address of the Donation pool implementation
      */
     constructor(
         address initialOwner,
+        address _backendManager,
         address _roscaImpl,
         address _savingsImpl,
         address _donationImpl
     ) Ownable(initialOwner) {
+        require(_backendManager != address(0), "Invalid backend manager");
         require(_roscaImpl != address(0), "Invalid ROSCA implementation");
         require(_savingsImpl != address(0), "Invalid Savings implementation");
         require(_donationImpl != address(0), "Invalid Donation implementation");
 
+        backendManager = _backendManager;
         roscaImplementation = _roscaImpl;
         savingsImplementation = _savingsImpl;
         donationImplementation = _donationImpl;
@@ -124,6 +138,7 @@ contract XershaFactory is Ownable {
             msg.sender,
             circleId,
             circleName,
+            backendManager,
             contributionAmount,
             tokenAddress,
             isNativeToken
@@ -162,6 +177,7 @@ contract XershaFactory is Ownable {
             msg.sender,
             circleId,
             circleName,
+            backendManager,
             tokenAddress,
             isNativeToken
         );
@@ -208,6 +224,7 @@ contract XershaFactory is Ownable {
             msg.sender,
             circleId,
             circleName,
+            backendManager,
             beneficiary,
             goalAmount,
             deadline,
@@ -280,6 +297,18 @@ contract XershaFactory is Ownable {
             donationImplementation = _donationImpl;
             emit ImplementationUpdated("DONATION", _donationImpl);
         }
+    }
+
+    /**
+     * @notice Updates the backend manager address for all future pools
+     * @dev Only owner can update. Existing pools are not affected.
+     * @param _backendManager New backend manager address
+     */
+    function setBackendManager(address _backendManager) external onlyOwner {
+        require(_backendManager != address(0), "Invalid address");
+        address oldManager = backendManager;
+        backendManager = _backendManager;
+        emit BackendManagerUpdated(oldManager, _backendManager);
     }
 
     // ========== Internal Functions ==========

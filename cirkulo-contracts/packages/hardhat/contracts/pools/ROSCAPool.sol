@@ -32,6 +32,9 @@ contract ROSCAPool is IXershaPool, ReentrancyGuard, Pausable {
     /// @notice Address of the user who created this pool
     address public creator;
 
+    /// @notice Address of the backend manager (can invite members)
+    address public backendManager;
+
     /// @notice Address of the Lens.xyz circle contract
     address public circleId;
 
@@ -108,6 +111,14 @@ contract ROSCAPool is IXershaPool, ReentrancyGuard, Pausable {
         _;
     }
 
+    modifier onlyCreatorOrBackend() {
+        require(
+            msg.sender == creator || msg.sender == backendManager,
+            "Only creator or backend"
+        );
+        _;
+    }
+
     modifier onlyMember() {
         require(isMember[msg.sender], "Not a member");
         _;
@@ -139,6 +150,7 @@ contract ROSCAPool is IXershaPool, ReentrancyGuard, Pausable {
      * @param _creator Address of the user creating the pool
      * @param _circleId Address of the Lens.xyz circle contract
      * @param _circleName Name of the circle
+     * @param _backendManager Address of the backend manager (can invite members)
      * @param _contributionAmount Fixed contribution amount per round
      * @param _tokenAddress Address of the ERC20 token to use for contributions (zero address if native)
      * @param _isNativeToken Whether this pool uses native token (cBTC) or ERC20 token
@@ -147,6 +159,7 @@ contract ROSCAPool is IXershaPool, ReentrancyGuard, Pausable {
         address _creator,
         address _circleId,
         string memory _circleName,
+        address _backendManager,
         uint256 _contributionAmount,
         address _tokenAddress,
         bool _isNativeToken
@@ -155,6 +168,7 @@ contract ROSCAPool is IXershaPool, ReentrancyGuard, Pausable {
         initialized = true;
 
         require(_contributionAmount > 0, "Invalid contribution amount");
+        require(_backendManager != address(0), "Invalid backend manager");
 
         // Validate token address based on token type
         if (_isNativeToken) {
@@ -164,6 +178,7 @@ contract ROSCAPool is IXershaPool, ReentrancyGuard, Pausable {
         }
 
         creator = _creator;
+        backendManager = _backendManager;
         circleId = _circleId;
         circleName = _circleName;
         contributionAmount = _contributionAmount;
@@ -183,16 +198,16 @@ contract ROSCAPool is IXershaPool, ReentrancyGuard, Pausable {
 
     /**
      * @notice Invites a new member to the ROSCA
-     * @dev Only creator can invite, only before ROSCA starts
+     * @dev Creator or backend manager can invite, only before ROSCA starts
      * @param member Address of the member to invite
      */
-    function inviteMember(address member) external onlyCreator whenNotPaused {
+    function inviteMember(address member) external onlyCreatorOrBackend whenNotPaused {
         require(!isActive, "Cannot invite after ROSCA starts");
         require(!isInvited[member], "Already invited");
         require(members.length < MAX_MEMBERS, "Max members reached");
 
         isInvited[member] = true;
-        emit MemberInvited(member, creator);
+        emit MemberInvited(member, msg.sender);
     }
 
     /**

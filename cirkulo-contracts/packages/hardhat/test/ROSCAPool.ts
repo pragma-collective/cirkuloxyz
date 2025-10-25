@@ -15,13 +15,14 @@ describe("ROSCAPool", function () {
   let member3: SignerWithAddress;
   let member4: SignerWithAddress;
   let member5: SignerWithAddress;
+  let backendManager: SignerWithAddress;
   let nonMember: SignerWithAddress;
 
   const contributionAmount = ethers.parseEther("100"); // 100 CUSD tokens
   const circleName = "Test ROSCA Circle";
 
   beforeEach(async function () {
-    [creator, member1, member2, member3, member4, member5, nonMember] = await ethers.getSigners();
+    [creator, member1, member2, member3, member4, member5, backendManager, nonMember] = await ethers.getSigners();
 
     // Deploy Mock CUSD token
     const MockCUSDFactory = await ethers.getContractFactory("MockCUSD");
@@ -53,6 +54,7 @@ describe("ROSCAPool", function () {
     const XershaFactoryFactory = await ethers.getContractFactory("XershaFactory");
     xershaFactory = await XershaFactoryFactory.deploy(
       creator.address,
+      backendManager.address,         // backendManager
       await roscaImpl.getAddress(),
       await savingsImpl.getAddress(),
       await donationImpl.getAddress(),
@@ -89,6 +91,10 @@ describe("ROSCAPool", function () {
     it("Should not be active initially", async function () {
       expect(await roscaPool.isActive()).to.be.false;
     });
+
+    it("Should set correct backend manager", async function () {
+      expect(await roscaPool.backendManager()).to.equal(backendManager.address);
+    });
   });
 
   describe("Member Management", function () {
@@ -103,9 +109,9 @@ describe("ROSCAPool", function () {
         .withArgs(member1.address, creator.address);
     });
 
-    it("Should prevent non-creator from inviting", async function () {
+    it("Should prevent non-creator and non-backend from inviting", async function () {
       await expect(roscaPool.connect(member1).inviteMember(member2.address)).to.be.revertedWith(
-        "Only creator can call this",
+        "Only creator or backend",
       );
     });
 
@@ -165,6 +171,40 @@ describe("ROSCAPool", function () {
       await roscaPool.connect(creator).startROSCA(payoutOrder);
 
       await expect(roscaPool.connect(creator).inviteMember(member5.address)).to.be.revertedWith(
+        "Cannot invite after ROSCA starts",
+      );
+    });
+  });
+
+  describe("Backend Manager Permissions", function () {
+    it("Should allow backend manager to invite members", async function () {
+      await roscaPool.connect(backendManager).inviteMember(member1.address);
+      expect(await roscaPool.isInvited(member1.address)).to.be.true;
+    });
+
+    it("Should emit MemberInvited event with backend manager as inviter", async function () {
+      await expect(roscaPool.connect(backendManager).inviteMember(member1.address))
+        .to.emit(roscaPool, "MemberInvited")
+        .withArgs(member1.address, backendManager.address);
+    });
+
+    it("Should prevent backend manager from inviting after ROSCA starts", async function () {
+      // Invite enough members
+      await roscaPool.connect(creator).inviteMember(member1.address);
+      await roscaPool.connect(member1).joinPool();
+      await roscaPool.connect(creator).inviteMember(member2.address);
+      await roscaPool.connect(member2).joinPool();
+      await roscaPool.connect(creator).inviteMember(member3.address);
+      await roscaPool.connect(member3).joinPool();
+      await roscaPool.connect(creator).inviteMember(member4.address);
+      await roscaPool.connect(member4).joinPool();
+
+      // Start ROSCA
+      const payoutOrder = [creator.address, member1.address, member2.address, member3.address, member4.address];
+      await roscaPool.connect(creator).startROSCA(payoutOrder);
+
+      // Backend manager should not be able to invite after start
+      await expect(roscaPool.connect(backendManager).inviteMember(member5.address)).to.be.revertedWith(
         "Cannot invite after ROSCA starts",
       );
     });

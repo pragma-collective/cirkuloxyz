@@ -1,13 +1,15 @@
 import { OpenAPIHono } from "@hono/zod-openapi";
 import { and, desc, eq } from "drizzle-orm";
 import { db } from "../db";
-import { invites as invitesTable } from "../db/schema";
+import { circles as circlesTable, invites as invitesTable } from "../db/schema";
 import { cancelInviteOnChain, registerInvite } from "../lib/blockchain";
+import { inviteMemberToPool } from "../lib/citrea-blockchain";
 import { sendInviteEmail } from "../lib/email";
 import { fetchGroup, getLensUsername, isGroupOwner } from "../lib/lens";
 import type { AuthContext } from "../lib/middleware";
 import { authMiddleware } from "../lib/middleware";
 import {
+	addMemberToPoolRoute,
 	cancelInviteRoute,
 	getInvitesRoute,
 	inviteUserRoute,
@@ -653,6 +655,112 @@ invites.openapi(markAcceptedRoute, async (c) => {
 		return c.json(
 			{
 				error: "Failed to mark invite as accepted",
+				details: error instanceof Error ? error.message : "Unknown error",
+			},
+			500,
+		);
+	}
+});
+
+// Add Member to Pool endpoint - syncs pool membership after Lens Group join
+invites.openapi(addMemberToPoolRoute, async (c) => {
+	try {
+		const body = c.req.valid("json");
+		const { groupAddress, memberAddress } = body;
+
+		console.log(
+			`[AddToPool] Syncing pool membership for ${memberAddress} in group ${groupAddress}`,
+		);
+
+		// 1. Find circle by Lens Group address
+		const [circle] = await db
+			.select()
+			.from(circlesTable)
+			.where(eq(circlesTable.lensGroupAddress, groupAddress))
+			.limit(1);
+
+		if (!circle) {
+			return c.json(
+				{
+					error: "Circle not found",
+					details: `No circle found for group address: ${groupAddress}`,
+				},
+				400,
+			);
+		}
+
+		console.log(
+			`[AddToPool] Found circle: ${circle.circleName} (${circle.circleType})`,
+		);
+
+		// 2. Verify pool is deployed
+		if (!circle.poolAddress) {
+			return c.json(
+				{
+					error: "Pool not deployed",
+					details: `Circle ${circle.circleName} does not have a deployed pool contract yet`,
+				},
+				400,
+			);
+		}
+
+		console.log(`[AddToPool] Pool address: ${circle.poolAddress}`);
+
+		// 3. Call inviteMember() on the pool contract via backend signer
+		let txHash: string;
+		try {
+			txHash = await inviteMemberToPool(circle.poolAddress, memberAddress);
+			console.log(`[AddToPool] ✅ Member invited to pool. Tx: ${txHash}`);
+		} catch (blockchainError) {
+			console.error("[AddToPool] ❌ Blockchain error:", blockchainError);
+
+			// Check for specific error cases
+			const errorMessage =
+				blockchainError instanceof Error ? blockchainError.message : String(blockchainError);
+
+			if (errorMessage.includes("Already invited")) {
+				// Non-critical error - member already in pool
+				console.log(
+					`[AddToPool] Member ${memberAddress} already invited to pool`,
+				);
+				return c.json(
+					{
+						error: "Member already invited",
+						details: "This member has already been invited to the pool",
+					},
+					400,
+				);
+			}
+
+			// Critical blockchain error
+			return c.json(
+				{
+					error: "Failed to add member to pool",
+					details: errorMessage,
+				},
+				500,
+			);
+		}
+
+		// 4. Return success response
+		return c.json(
+			{
+				poolAddress: circle.poolAddress,
+				circleType: circle.circleType as
+					| "contribution"
+					| "rotating"
+					| "fundraising",
+				txHash,
+				memberAddress,
+			},
+			200,
+		);
+	} catch (error) {
+		console.error("[AddToPool] Error:", error);
+
+		return c.json(
+			{
+				error: "Failed to sync pool membership",
 				details: error instanceof Error ? error.message : "Unknown error",
 			},
 			500,
