@@ -1,10 +1,13 @@
 import { expect } from "chai";
 import { ethers } from "hardhat";
-import { SavingsPool, MockCUSD, XershaFactory } from "../typechain-types";
+import { SavingsPool, MockCUSD, XershaFactory, MockYieldVault, YieldSavingsPool } from "../typechain-types";
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import { time } from "@nomicfoundation/hardhat-network-helpers";
 
-describe("SavingsPool", function () {
+// NOTE: SavingsPool has been replaced by YieldSavingsPool in the factory
+// These tests are kept for reference but skipped since the factory now only creates YieldSavingsPool
+// See YieldSavingsPool.ts for current tests
+describe.skip("SavingsPool", function () {
   let savingsPool: SavingsPool;
   let mockToken: MockCUSD;
   let xershaFactory: XershaFactory;
@@ -35,6 +38,11 @@ describe("SavingsPool", function () {
     // Use a simple address as circleId (can be any non-zero address for cross-chain reference)
     circleId = nonMember.address; // Use nonMember address to avoid conflicts
 
+    // Deploy yield vaults (required for factory)
+    const MockYieldVaultFactory = await ethers.getContractFactory("MockYieldVault");
+    const cbtcVault = await MockYieldVaultFactory.deploy(ethers.ZeroAddress, true, 300);
+    const cusdVault = await MockYieldVaultFactory.deploy(await mockToken.getAddress(), false, 500);
+
     // Deploy implementation contracts
     const ROSCAPoolFactory = await ethers.getContractFactory("ROSCAPool");
     const roscaImpl = await ROSCAPoolFactory.deploy();
@@ -45,14 +53,16 @@ describe("SavingsPool", function () {
     const DonationPoolFactory = await ethers.getContractFactory("DonationPool");
     const donationImpl = await DonationPoolFactory.deploy();
 
-    // Deploy XershaFactory
+    // Deploy XershaFactory with vault addresses
     const XershaFactoryFactory = await ethers.getContractFactory("XershaFactory");
     xershaFactory = await XershaFactoryFactory.deploy(
       creator.address,
-      backendManager.address,         // backendManager
+      backendManager.address,
       await roscaImpl.getAddress(),
       await savingsImpl.getAddress(),
       await donationImpl.getAddress(),
+      await cbtcVault.getAddress(),
+      await cusdVault.getAddress(),
     );
 
     // Create Savings pool via factory

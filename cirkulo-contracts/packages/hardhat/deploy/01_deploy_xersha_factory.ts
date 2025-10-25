@@ -12,11 +12,66 @@ const deployXershaFactory: DeployFunction = async function (hre: HardhatRuntimeE
   const { deployer } = await hre.getNamedAccounts();
   const { deploy } = hre.deployments;
 
-  console.log("\n🚀 Deploying Xersha Factory with Minimal Proxy Pattern...");
+  console.log("\n🚀 Deploying Xersha Factory with Yield-Enabled Savings Pools...");
   console.log("Deployer address:", deployer);
 
-  // Step 1: Deploy Implementation Contracts
-  console.log("\n📋 Step 1: Deploying Pool Implementation Contracts...");
+  // Step 1: Get existing CUSD Token or deploy new one
+  console.log("\n📋 Step 1: Getting CUSD Token...");
+
+  let mockCUSD;
+  const existingCUSDAddress = process.env.CUSD_TOKEN_ADDRESS;
+
+  if (existingCUSDAddress) {
+    console.log("✅ Using existing CUSDToken at:", existingCUSDAddress);
+    mockCUSD = { address: existingCUSDAddress };
+  } else {
+    console.log("⚠️  CUSD_TOKEN_ADDRESS not set in .env, deploying new MockCUSD...");
+    mockCUSD = await deploy("MockCUSD", {
+      from: deployer,
+      args: [],
+      log: true,
+      autoMine: true,
+      waitConfirmations: hre.network.name === "hardhat" || hre.network.name === "localhost" ? 1 : 5,
+    });
+    console.log("✅ MockCUSD deployed to:", mockCUSD.address);
+  }
+
+  // Step 2: Deploy Yield Vaults
+  console.log("\n📋 Step 2: Deploying Yield Vaults...");
+
+  const CUSD_APY = 500; // 5.00%
+  const CBTC_APY = 300; // 3.00%
+
+  const cusdVault = await deploy("MockYieldVault", {
+    from: deployer,
+    contract: "MockYieldVault",
+    args: [
+      mockCUSD.address,  // tokenAddress
+      false,             // isNativeToken
+      CUSD_APY           // 5% APY
+    ],
+    log: true,
+    autoMine: true,
+    waitConfirmations: hre.network.name === "hardhat" || hre.network.name === "localhost" ? 1 : 5,
+  });
+  console.log("✅ CUSD Yield Vault deployed to:", cusdVault.address, "(5% APY)");
+
+  const cbtcVault = await deploy("MockYieldVault_cBTC", {
+    from: deployer,
+    contract: "MockYieldVault",
+    args: [
+      hre.ethers.ZeroAddress,  // tokenAddress (native)
+      true,                     // isNativeToken
+      CBTC_APY                  // 3% APY
+    ],
+    log: true,
+    autoMine: true,
+    waitConfirmations: hre.network.name === "hardhat" || hre.network.name === "localhost" ? 1 : 5,
+  });
+  console.log("✅ cBTC Yield Vault deployed to:", cbtcVault.address, "(3% APY)");
+
+  // Step 3: Deploy Pool Implementation Contracts
+  console.log("\n📋 Step 3: Deploying Pool Implementation Contracts...");
 
   const roscaImpl = await deploy("ROSCAPool", {
     from: deployer,
@@ -27,14 +82,14 @@ const deployXershaFactory: DeployFunction = async function (hre: HardhatRuntimeE
   });
   console.log("✅ ROSCA Implementation deployed to:", roscaImpl.address);
 
-  const savingsImpl = await deploy("SavingsPool", {
+  const savingsImpl = await deploy("YieldSavingsPool", {
     from: deployer,
     args: [],
     log: true,
     autoMine: true,
     waitConfirmations: hre.network.name === "hardhat" || hre.network.name === "localhost" ? 1 : 5,
   });
-  console.log("✅ Savings Implementation deployed to:", savingsImpl.address);
+  console.log("✅ YieldSavingsPool Implementation deployed to:", savingsImpl.address);
 
   const donationImpl = await deploy("DonationPool", {
     from: deployer,
@@ -45,8 +100,8 @@ const deployXershaFactory: DeployFunction = async function (hre: HardhatRuntimeE
   });
   console.log("✅ Donation Implementation deployed to:", donationImpl.address);
 
-  // Step 2: Deploy XershaFactory with implementation addresses
-  console.log("\n📋 Step 2: Deploying XershaFactory...");
+  // Step 4: Deploy XershaFactory with yield vaults
+  console.log("\n📋 Step 4: Deploying XershaFactory...");
 
   // Get backend manager from environment variable
   // This should match the wallet address derived from BACKEND_SIGNER_PRIVATE_KEY in your API
@@ -64,8 +119,10 @@ const deployXershaFactory: DeployFunction = async function (hre: HardhatRuntimeE
       deployer,              // initialOwner
       backendManager,        // backendManager (API wallet that can invite members to pools)
       roscaImpl.address,     // ROSCA implementation
-      savingsImpl.address,   // Savings implementation
+      savingsImpl.address,   // YieldSavingsPool implementation
       donationImpl.address,  // Donation implementation
+      cbtcVault.address,     // cBTC Yield Vault (3% APY)
+      cusdVault.address,     // CUSD Yield Vault (5% APY)
     ],
     log: true,
     autoMine: true,
@@ -82,10 +139,33 @@ const deployXershaFactory: DeployFunction = async function (hre: HardhatRuntimeE
   console.log("Factory Address:", await xershaFactoryContract.getAddress());
   console.log("Owner:", await xershaFactoryContract.owner());
   console.log("Backend Manager:", await xershaFactoryContract.backendManager());
-  console.log("ROSCA Implementation:", await xershaFactoryContract.roscaImplementation());
-  console.log("Savings Implementation:", await xershaFactoryContract.savingsImplementation());
-  console.log("Donation Implementation:", await xershaFactoryContract.donationImplementation());
+  console.log("\nPool Implementations:");
+  console.log("  ROSCA:", await xershaFactoryContract.roscaImplementation());
+  console.log("  YieldSavingsPool:", await xershaFactoryContract.savingsImplementation());
+  console.log("  Donation:", await xershaFactoryContract.donationImplementation());
+  console.log("\nYield Vaults:");
+  console.log("  cBTC Vault (3% APY):", await xershaFactoryContract.cBTCYieldVault());
+  console.log("  CUSD Vault (5% APY):", await xershaFactoryContract.cusdYieldVault());
+  console.log("\n💰 All savings pools now earn yield automatically!");
+  console.log("   cBTC pools: 3% APY");
+  console.log("   CUSD pools: 5% APY");
   console.log("=====================================\n");
+
+  // Whitelist CUSD Vault as minter (for existing CUSD token)
+  if (existingCUSDAddress) {
+    console.log("📋 Whitelisting CUSD Vault as minter...");
+    const cusdTokenContract = await hre.ethers.getContractAt("MockCUSD", existingCUSDAddress, deployer);
+
+    try {
+      const tx = await cusdTokenContract.setMinterStatus(cusdVault.address, true);
+      await tx.wait();
+      console.log("✅ CUSD Vault whitelisted as minter!");
+    } catch (error: any) {
+      console.log("❌ Failed to whitelist vault:", error.message);
+      console.log("⚠️  You may need to manually whitelist the vault:");
+      console.log(`   await cusdToken.setMinterStatus("${cusdVault.address}", true)\n`);
+    }
+  }
 
   // Verification instructions for non-local networks
   if (hre.network.name !== "hardhat" && hre.network.name !== "localhost") {

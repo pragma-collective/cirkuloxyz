@@ -1,6 +1,6 @@
 import { expect } from "chai";
 import { ethers } from "hardhat";
-import { DonationPool, MockCUSD, XershaFactory } from "../typechain-types";
+import { DonationPool, MockCUSD, XershaFactory, MockYieldVault, YieldSavingsPool } from "../typechain-types";
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import { time } from "@nomicfoundation/hardhat-network-helpers";
 
@@ -41,24 +41,31 @@ describe("DonationPool", function () {
     // Use a simple address as circleId (can be any non-zero address for cross-chain reference)
     circleId = nonMember.address; // Use nonMember address to avoid conflicts
 
+    // Deploy yield vaults (required for factory)
+    const MockYieldVaultFactory = await ethers.getContractFactory("MockYieldVault");
+    const cbtcVault = await MockYieldVaultFactory.deploy(ethers.ZeroAddress, true, 300);
+    const cusdVault = await MockYieldVaultFactory.deploy(await mockToken.getAddress(), false, 500);
+
     // Deploy implementation contracts
     const ROSCAPoolFactory = await ethers.getContractFactory("ROSCAPool");
     const roscaImpl = await ROSCAPoolFactory.deploy();
 
-    const SavingsPoolFactory = await ethers.getContractFactory("SavingsPool");
-    const savingsImpl = await SavingsPoolFactory.deploy();
+    const YieldSavingsPoolFactory = await ethers.getContractFactory("YieldSavingsPool");
+    const savingsImpl = await YieldSavingsPoolFactory.deploy();
 
     const DonationPoolFactory = await ethers.getContractFactory("DonationPool");
     const donationImpl = await DonationPoolFactory.deploy();
 
-    // Deploy XershaFactory
+    // Deploy XershaFactory with vault addresses
     const XershaFactoryFactory = await ethers.getContractFactory("XershaFactory");
     xershaFactory = await XershaFactoryFactory.deploy(
       creator.address,
-      backendManager.address,         // backendManager
+      backendManager.address,
       await roscaImpl.getAddress(),
       await savingsImpl.getAddress(),
       await donationImpl.getAddress(),
+      await cbtcVault.getAddress(),
+      await cusdVault.getAddress(),
     );
 
     // Create Donation pool via factory

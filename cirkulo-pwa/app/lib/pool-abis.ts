@@ -1,11 +1,11 @@
 /**
  * Pool Contract ABIs
  *
- * ABIs for the three pool types: SavingsPool, ROSCAPool, DonationPool
- * Contains only the functions needed for contributions
+ * ABIs for the three pool types: YieldSavingsPool, ROSCAPool, DonationPool
+ * Contains only the functions needed for contributions and yield tracking
  */
 
-// SavingsPool ABI - deposit function
+// YieldSavingsPool ABI - deposit function and yield tracking
 export const savingsPoolAbi = [
   {
     inputs: [
@@ -29,6 +29,99 @@ export const savingsPoolAbi = [
       },
     ],
     name: "balances",
+    outputs: [
+      {
+        internalType: "uint256",
+        name: "",
+        type: "uint256",
+      },
+    ],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [
+      {
+        internalType: "address",
+        name: "",
+        type: "address",
+      },
+    ],
+    name: "principalBalances",
+    outputs: [
+      {
+        internalType: "uint256",
+        name: "",
+        type: "uint256",
+      },
+    ],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [
+      {
+        internalType: "address",
+        name: "member",
+        type: "address",
+      },
+    ],
+    name: "getBalanceWithYield",
+    outputs: [
+      {
+        internalType: "uint256",
+        name: "",
+        type: "uint256",
+      },
+    ],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [
+      {
+        internalType: "address",
+        name: "member",
+        type: "address",
+      },
+    ],
+    name: "getYieldEarned",
+    outputs: [
+      {
+        internalType: "uint256",
+        name: "",
+        type: "uint256",
+      },
+    ],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [],
+    name: "getPoolStats",
+    outputs: [
+      {
+        internalType: "uint256",
+        name: "totalPrincipal",
+        type: "uint256",
+      },
+      {
+        internalType: "uint256",
+        name: "totalYield",
+        type: "uint256",
+      },
+      {
+        internalType: "uint256",
+        name: "totalValue",
+        type: "uint256",
+      },
+    ],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [],
+    name: "getAPY",
     outputs: [
       {
         internalType: "uint256",

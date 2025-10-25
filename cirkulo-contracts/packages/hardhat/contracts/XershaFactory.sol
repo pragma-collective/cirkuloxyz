@@ -4,7 +4,7 @@ pragma solidity ^0.8.20;
 import "@openzeppelin/contracts/proxy/Clones.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "./pools/ROSCAPool.sol";
-import "./pools/SavingsPool.sol";
+import "./pools/YieldSavingsPool.sol";
 import "./pools/DonationPool.sol";
 
 /**
@@ -27,7 +27,7 @@ contract XershaFactory is Ownable {
     /// @notice Implementation contract for ROSCA pools
     address public roscaImplementation;
 
-    /// @notice Implementation contract for Savings pools
+    /// @notice Implementation contract for Savings pools (yield-enabled)
     address public savingsImplementation;
 
     /// @notice Implementation contract for Donation pools
@@ -35,6 +35,12 @@ contract XershaFactory is Ownable {
 
     /// @notice Address of the backend manager for all pools
     address public backendManager;
+
+    /// @notice Yield vault for cBTC pools (3% APY)
+    address public cBTCYieldVault;
+
+    /// @notice Yield vault for CUSD pools (5% APY)
+    address public cusdYieldVault;
 
     /// @notice Mapping from circle contract address to pool address
     mapping(address => address) public circleToPool;
@@ -85,25 +91,33 @@ contract XershaFactory is Ownable {
      * @param initialOwner Address that will own the factory
      * @param _backendManager Address of the backend manager for all pools
      * @param _roscaImpl Address of the ROSCA pool implementation
-     * @param _savingsImpl Address of the Savings pool implementation
+     * @param _savingsImpl Address of the YieldSavingsPool implementation
      * @param _donationImpl Address of the Donation pool implementation
+     * @param _cBTCYieldVault Address of the cBTC yield vault (3% APY)
+     * @param _cusdYieldVault Address of the CUSD yield vault (5% APY)
      */
     constructor(
         address initialOwner,
         address _backendManager,
         address _roscaImpl,
         address _savingsImpl,
-        address _donationImpl
+        address _donationImpl,
+        address _cBTCYieldVault,
+        address _cusdYieldVault
     ) Ownable(initialOwner) {
         require(_backendManager != address(0), "Invalid backend manager");
         require(_roscaImpl != address(0), "Invalid ROSCA implementation");
         require(_savingsImpl != address(0), "Invalid Savings implementation");
         require(_donationImpl != address(0), "Invalid Donation implementation");
+        require(_cBTCYieldVault != address(0), "Invalid cBTC vault");
+        require(_cusdYieldVault != address(0), "Invalid CUSD vault");
 
         backendManager = _backendManager;
         roscaImplementation = _roscaImpl;
         savingsImplementation = _savingsImpl;
         donationImplementation = _donationImpl;
+        cBTCYieldVault = _cBTCYieldVault;
+        cusdYieldVault = _cusdYieldVault;
     }
 
     // ========== Pool Creation Functions ==========
@@ -151,14 +165,15 @@ contract XershaFactory is Ownable {
     }
 
     /**
-     * @notice Creates a new Savings pool for collective savings
-     * @dev Validates circle ID and ensures no duplicate pools for the same circle
+     * @notice Creates a new yield-enabled Savings pool for collective savings
+     * @dev All savings pools automatically earn yield (cBTC: 3% APY, CUSD: 5% APY)
+     *      Validates circle ID and ensures no duplicate pools for the same circle
      *      Uses EIP-1167 minimal proxy pattern for gas-efficient deployment
      * @param circleId The Lens.xyz circle contract address
      * @param circleName The name of the circle
      * @param tokenAddress Address of the ERC20 token (zero address if native)
      * @param isNativeToken Whether to use native token or ERC20
-     * @return The address of the newly created Savings pool clone
+     * @return The address of the newly created YieldSavingsPool clone
      */
     function createSavingsPool(
         address circleId,
@@ -169,17 +184,21 @@ contract XershaFactory is Ownable {
         _validateCircleId(circleId);
         require(circleToPool[circleId] == address(0), "Circle already has pool");
 
-        // Clone the Savings implementation
+        // Clone the YieldSavingsPool implementation
         address clone = Clones.clone(savingsImplementation);
 
-        // Initialize the clone
-        SavingsPool(clone).initialize(
+        // Select appropriate yield vault based on token type
+        address vaultAddress = isNativeToken ? cBTCYieldVault : cusdYieldVault;
+
+        // Initialize the clone with yield vault
+        YieldSavingsPool(payable(clone)).initialize(
             msg.sender,
             circleId,
             circleName,
             backendManager,
             tokenAddress,
-            isNativeToken
+            isNativeToken,
+            vaultAddress
         );
 
         _registerPool(circleId, clone, PoolType.SAVINGS);
