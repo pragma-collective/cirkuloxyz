@@ -13,11 +13,12 @@ describe("XershaFactory", function () {
   let deployer: SignerWithAddress;
   let user1: SignerWithAddress;
   let user2: SignerWithAddress;
+  let backendManager: SignerWithAddress;
   let circleId: string;
   let tokenAddress: string;
 
   before(async function () {
-    [deployer, user1, user2] = await ethers.getSigners();
+    [deployer, user1, user2, backendManager] = await ethers.getSigners();
   });
 
   beforeEach(async function () {
@@ -39,14 +40,15 @@ describe("XershaFactory", function () {
     // Deploy XershaFactory with implementation addresses
     const XershaFactoryFactory = await ethers.getContractFactory("XershaFactory");
     xershaFactory = await XershaFactoryFactory.deploy(
-      deployer.address,
+      deployer.address,               // owner
+      backendManager.address,         // backendManager
       await roscaImpl.getAddress(),
       await savingsImpl.getAddress(),
       await donationImpl.getAddress(),
     );
 
     // Use a simple address as circleId (can be any non-zero address for cross-chain reference)
-    circleId = user2.address; // Changed to user2 to avoid conflicts
+    circleId = user2.address; // Use user2 for circleId
   });
 
   describe("Deployment", function () {
@@ -275,14 +277,30 @@ describe("XershaFactory", function () {
 
       // Attempt to initialize again should fail
       await expect(
-        pool.initialize(deployer.address, circleId, "New Name", ethers.parseEther("0.2"), tokenAddress, false),
+        pool.initialize(
+          deployer.address,
+          circleId,
+          "New Name",
+          user2.address, // backendManager
+          ethers.parseEther("0.2"),
+          tokenAddress,
+          false,
+        ),
       ).to.be.revertedWith("Already initialized");
     });
 
     it("Should prevent initialization of implementation contracts", async function () {
       // Attempt to initialize the implementation directly should fail
       await expect(
-        roscaImpl.initialize(deployer.address, circleId, "Test", ethers.parseEther("0.1"), tokenAddress, false),
+        roscaImpl.initialize(
+          deployer.address,
+          circleId,
+          "Test",
+          user2.address, // backendManager
+          ethers.parseEther("0.1"),
+          tokenAddress,
+          false,
+        ),
       ).to.be.revertedWith("Already initialized");
     });
 
@@ -382,6 +400,41 @@ describe("XershaFactory", function () {
       // Verify pool works correctly
       const pool = await ethers.getContractAt("ROSCAPool", poolAddress);
       expect(await pool.creator()).to.equal(user1.address);
+    });
+  });
+
+  describe("Backend Manager", function () {
+    it("Should set correct backend manager on deployment", async function () {
+      expect(await xershaFactory.backendManager()).to.equal(backendManager.address);
+    });
+
+    it("Should allow owner to update backend manager", async function () {
+      const newBackendManager = user1.address;
+
+      await expect(xershaFactory.connect(deployer).setBackendManager(newBackendManager))
+        .to.emit(xershaFactory, "BackendManagerUpdated")
+        .withArgs(backendManager.address, newBackendManager);
+
+      expect(await xershaFactory.backendManager()).to.equal(newBackendManager);
+    });
+
+    it("Should prevent non-owner from updating backend manager", async function () {
+      await expect(xershaFactory.connect(user1).setBackendManager(user1.address)).to.be.reverted;
+    });
+
+    it("Should prevent setting zero address as backend manager", async function () {
+      await expect(xershaFactory.connect(deployer).setBackendManager(ethers.ZeroAddress)).to.be.revertedWith(
+        "Invalid address",
+      );
+    });
+
+    it("Should pass backend manager to created pools", async function () {
+      await xershaFactory.connect(user1).createROSCA(circleId, "Test Circle", ethers.parseEther("0.1"), tokenAddress, false);
+
+      const poolAddress = await xershaFactory.circleToPool(circleId);
+      const pool = await ethers.getContractAt("ROSCAPool", poolAddress);
+
+      expect(await pool.backendManager()).to.equal(backendManager.address);
     });
   });
 });

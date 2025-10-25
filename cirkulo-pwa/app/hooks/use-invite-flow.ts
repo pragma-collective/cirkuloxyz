@@ -14,6 +14,7 @@ import {
 	storePendingInvite,
 	type PendingInvite,
 } from "~/lib/invite-storage";
+import { addMemberToPool } from "./use-add-member-to-pool";
 
 /**
  * Hook for managing the invite acceptance flow
@@ -96,13 +97,39 @@ export function useInviteFlow() {
 					throw new Error("Could not access wallet client");
 				}
 
-				// Join group
+				// Step 1: Join Lens Group
 				const result = await joinGroup({
 					groupAddress: invite.groupAddress,
 					inviteCode: invite.code,
 					sessionClient,
 					walletClient,
 				});
+
+				console.log("[InviteFlow] Successfully joined Lens Group");
+
+				// Step 2: Sync pool membership (cross-chain sync via backend)
+				try {
+					const poolSyncResult = await addMemberToPool(
+						{
+							groupAddress: invite.groupAddress,
+							memberAddress: primaryWallet.address,
+						},
+						sessionClient,
+					);
+
+					console.log(
+						`[InviteFlow] ✅ Pool sync successful. Tx: ${poolSyncResult.txHash}`,
+					);
+				} catch (poolError) {
+					// Log pool sync error but don't block user flow
+					// User is already in Lens Group, pool membership is secondary
+					console.error(
+						"[InviteFlow] ⚠️ Pool sync failed (non-critical):",
+						poolError,
+					);
+					// Could show a toast notification here that pool sync failed
+					// but user can still access the circle via Lens Group
+				}
 
 				console.log("[InviteFlow] Successfully processed invite");
 

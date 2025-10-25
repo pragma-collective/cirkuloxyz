@@ -20,6 +20,9 @@ contract SavingsPool is IXershaPool, ReentrancyGuard, Pausable {
     /// @notice Address of the user who created this pool
     address public creator;
 
+    /// @notice Address of the backend manager (can invite members)
+    address public backendManager;
+
     /// @notice Address of the Lens.xyz circle contract
     address public circleId;
 
@@ -76,6 +79,14 @@ contract SavingsPool is IXershaPool, ReentrancyGuard, Pausable {
         _;
     }
 
+    modifier onlyCreatorOrBackend() {
+        require(
+            msg.sender == creator || msg.sender == backendManager,
+            "Only creator or backend"
+        );
+        _;
+    }
+
     modifier onlyMember() {
         require(isMember[msg.sender], "Not a member");
         _;
@@ -107,6 +118,7 @@ contract SavingsPool is IXershaPool, ReentrancyGuard, Pausable {
      * @param _creator Address of the user creating the pool
      * @param _circleId Address of the Lens.xyz circle contract
      * @param _circleName Name of the circle
+     * @param _backendManager Address of the backend manager (can invite members)
      * @param _tokenAddress Address of the ERC20 token to use for savings (zero address if native)
      * @param _isNativeToken Whether this pool uses native token (cBTC) or ERC20 token
      */
@@ -114,6 +126,7 @@ contract SavingsPool is IXershaPool, ReentrancyGuard, Pausable {
         address _creator,
         address _circleId,
         string memory _circleName,
+        address _backendManager,
         address _tokenAddress,
         bool _isNativeToken
     ) external {
@@ -127,7 +140,10 @@ contract SavingsPool is IXershaPool, ReentrancyGuard, Pausable {
             require(_tokenAddress != address(0), "Invalid token address for ERC20");
         }
 
+        require(_backendManager != address(0), "Invalid backend manager");
+
         creator = _creator;
+        backendManager = _backendManager;
         circleId = _circleId;
         circleName = _circleName;
         tokenAddress = _tokenAddress;
@@ -147,15 +163,15 @@ contract SavingsPool is IXershaPool, ReentrancyGuard, Pausable {
 
     /**
      * @notice Invites a new member to the pool
-     * @dev Only creator can invite members
+     * @dev Creator or backend manager can invite members
      * @param member Address of the member to invite
      */
-    function inviteMember(address member) external onlyCreator whenNotPaused {
+    function inviteMember(address member) external onlyCreatorOrBackend whenNotPaused {
         require(!isInvited[member], "Already invited");
         require(member != address(0), "Invalid address");
 
         isInvited[member] = true;
-        emit MemberInvited(member, creator);
+        emit MemberInvited(member, msg.sender);
     }
 
     /**

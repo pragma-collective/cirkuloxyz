@@ -14,6 +14,7 @@ describe("DonationPool", function () {
   let member1: SignerWithAddress;
   let member2: SignerWithAddress;
   let member3: SignerWithAddress;
+  let backendManager: SignerWithAddress;
   let nonMember: SignerWithAddress;
 
   const circleName = "Test Charity Circle";
@@ -21,7 +22,7 @@ describe("DonationPool", function () {
   let deadline: number;
 
   beforeEach(async function () {
-    [creator, beneficiary, member1, member2, member3, nonMember] = await ethers.getSigners();
+    [creator, beneficiary, member1, member2, member3, backendManager, nonMember] = await ethers.getSigners();
 
     // Deploy Mock CUSD token
     const MockCUSDFactory = await ethers.getContractFactory("MockCUSD");
@@ -54,6 +55,7 @@ describe("DonationPool", function () {
     const XershaFactoryFactory = await ethers.getContractFactory("XershaFactory");
     xershaFactory = await XershaFactoryFactory.deploy(
       creator.address,
+      backendManager.address,         // backendManager
       await roscaImpl.getAddress(),
       await savingsImpl.getAddress(),
       await donationImpl.getAddress(),
@@ -98,6 +100,10 @@ describe("DonationPool", function () {
     it("Should initialize with zero funds raised", async function () {
       expect(await donationPool.totalRaised()).to.equal(0);
     });
+
+    it("Should set correct backend manager", async function () {
+      expect(await donationPool.backendManager()).to.equal(backendManager.address);
+    });
   });
 
   describe("Member Management", function () {
@@ -112,9 +118,9 @@ describe("DonationPool", function () {
         .withArgs(member1.address, creator.address);
     });
 
-    it("Should prevent non-creator from inviting", async function () {
+    it("Should prevent non-creator and non-backend from inviting", async function () {
       await expect(donationPool.connect(member1).inviteMember(member2.address)).to.be.revertedWith(
-        "Only creator can call this",
+        "Only creator or backend",
       );
     });
 
@@ -149,6 +155,19 @@ describe("DonationPool", function () {
       await donationPool.connect(creator).inviteMember(member1.address);
       await donationPool.connect(member1).joinPool();
       await expect(donationPool.connect(member1).joinPool()).to.be.revertedWith("Already a member");
+    });
+  });
+
+  describe("Backend Manager Permissions", function () {
+    it("Should allow backend manager to invite members", async function () {
+      await donationPool.connect(backendManager).inviteMember(member1.address);
+      expect(await donationPool.isInvited(member1.address)).to.be.true;
+    });
+
+    it("Should emit MemberInvited event with backend manager as inviter", async function () {
+      await expect(donationPool.connect(backendManager).inviteMember(member1.address))
+        .to.emit(donationPool, "MemberInvited")
+        .withArgs(member1.address, backendManager.address);
     });
   });
 
@@ -233,11 +252,25 @@ describe("DonationPool", function () {
       await expect(donationPool.connect(member1).donate(0)).to.be.revertedWith("Must donate something");
     });
 
-    it("Should prevent non-members from donating", async function () {
+    it("Should allow non-members to donate (public donations)", async function () {
+      await mockToken.mint(nonMember.address, ethers.parseEther("10000"));
       await mockToken.connect(nonMember).approve(await donationPool.getAddress(), ethers.parseEther("1000"));
-      await expect(donationPool.connect(nonMember).donate(ethers.parseEther("1000"))).to.be.revertedWith(
-        "Not a member",
+
+      // Check token balance change
+      await expect(donationPool.connect(nonMember).donate(ethers.parseEther("1000"))).to.changeTokenBalance(
+        mockToken,
+        nonMember,
+        ethers.parseEther("-1000"),
       );
+
+      // Check event emission (need to donate again since transaction was consumed)
+      await mockToken.connect(nonMember).approve(await donationPool.getAddress(), ethers.parseEther("1000"));
+      await expect(donationPool.connect(nonMember).donate(ethers.parseEther("1000")))
+        .to.emit(donationPool, "DonationMade")
+        .withArgs(nonMember.address, ethers.parseEther("1000"));
+
+      expect(await donationPool.totalRaised()).to.equal(ethers.parseEther("2000"));
+      expect(await donationPool.donations(nonMember.address)).to.equal(ethers.parseEther("2000"));
     });
 
     it("Should prevent donations after deadline", async function () {
@@ -258,6 +291,48 @@ describe("DonationPool", function () {
       await mockToken.connect(member2).approve(await donationPool.getAddress(), ethers.parseEther("1000"));
       await expect(donationPool.connect(member2).donate(ethers.parseEther("1000"))).to.be.revertedWith(
         "Funds already released",
+      );
+    });
+  });
+
+  describe("Public Donations", function () {
+    it("Should track non-member donors separately", async function () {
+      await mockToken.mint(nonMember.address, ethers.parseEther("10000"));
+      await mockToken.connect(nonMember).approve(await donationPool.getAddress(), ethers.parseEther("1000"));
+
+      await donationPool.connect(nonMember).donate(ethers.parseEther("1000"));
+
+      expect(await donationPool.getDonorCount()).to.equal(1);
+      const donors = await donationPool.getDonors();
+      expect(donors[0]).to.equal(nonMember.address);
+    });
+
+    it("Should allow non-members to donate multiple times", async function () {
+      await mockToken.mint(nonMember.address, ethers.parseEther("10000"));
+      await mockToken.connect(nonMember).approve(await donationPool.getAddress(), ethers.parseEther("3000"));
+
+      await donationPool.connect(nonMember).donate(ethers.parseEther("1000"));
+      await donationPool.connect(nonMember).donate(ethers.parseEther("2000"));
+
+      expect(await donationPool.donations(nonMember.address)).to.equal(ethers.parseEther("3000"));
+    });
+
+    it("Should allow non-members to claim refunds if goal not met", async function () {
+      await mockToken.mint(nonMember.address, ethers.parseEther("10000"));
+      await mockToken.connect(nonMember).approve(await donationPool.getAddress(), ethers.parseEther("1000"));
+      await donationPool.connect(nonMember).donate(ethers.parseEther("1000"));
+
+      // Move past deadline without reaching goal
+      await time.increaseTo(deadline + 1);
+
+      // Enable refunds
+      await donationPool.connect(creator).enableRefunds();
+
+      // Non-member can claim refund
+      await expect(donationPool.connect(nonMember).claimRefund()).to.changeTokenBalance(
+        mockToken,
+        nonMember,
+        ethers.parseEther("1000"),
       );
     });
   });

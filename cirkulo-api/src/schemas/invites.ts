@@ -451,3 +451,85 @@ export const validateInviteRoute = createRoute({
 	},
 	tags: ["Invites"],
 });
+
+// ============= ADD MEMBER TO POOL ROUTE =============
+
+/**
+ * Add Member to Pool Route - Called after user joins Lens Group
+ * Syncs pool contract membership with Lens Group membership
+ */
+export const AddMemberToPoolSchema = z.object({
+	groupAddress: z
+		.string()
+		.regex(/^0x[a-fA-F0-9]{40}$/, "Invalid Ethereum address")
+		.describe("Ethereum address of the Lens Group (circle)")
+		.openapi({ example: "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb0" }),
+	memberAddress: z
+		.string()
+		.regex(/^0x[a-fA-F0-9]{40}$/, "Invalid Ethereum address")
+		.describe("Ethereum address of the member to add to pool")
+		.openapi({ example: "0x1234567890123456789012345678901234567890" }),
+});
+
+export const AddMemberToPoolResponseSchema = z.object({
+	poolAddress: z.string().describe("Address of the pool contract"),
+	circleType: z
+		.enum(["contribution", "rotating", "fundraising"])
+		.describe("Type of pool (contribution=SavingsPool, rotating=ROSCAPool, fundraising=DonationPool)"),
+	txHash: z.string().describe("Transaction hash of the inviteMember call"),
+	memberAddress: z.string().describe("Address of the member that was added"),
+});
+
+export const addMemberToPoolRoute = createRoute({
+	method: "post",
+	path: "/add-to-pool",
+	tags: ["Invites"],
+	summary: "Add member to pool contract",
+	description:
+		"Syncs pool contract membership after user joins Lens Group. Backend wallet calls inviteMember() on the pool contract. Requires authentication.",
+	security: [{ bearerAuth: [] }],
+	request: {
+		body: {
+			content: {
+				"application/json": {
+					schema: AddMemberToPoolSchema,
+				},
+			},
+		},
+	},
+	responses: {
+		200: {
+			description: "Member added to pool successfully",
+			content: {
+				"application/json": {
+					schema: AddMemberToPoolResponseSchema,
+				},
+			},
+		},
+		400: {
+			description:
+				"Invalid request - circle not found, pool not deployed, or member already invited",
+			content: {
+				"application/json": {
+					schema: ErrorSchema,
+				},
+			},
+		},
+		401: {
+			description: "Unauthorized - Invalid or missing authentication token",
+			content: {
+				"application/json": {
+					schema: ErrorSchema,
+				},
+			},
+		},
+		500: {
+			description: "Internal server error or blockchain transaction failed",
+			content: {
+				"application/json": {
+					schema: ErrorSchema,
+				},
+			},
+		},
+	},
+});

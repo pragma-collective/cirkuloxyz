@@ -7,7 +7,7 @@ import { GenericContractsDeclaration } from "~~/utils/scaffold-eth/contract";
 const deployedContracts = {
   5115: {
     DonationPool: {
-      address: "0x4E0469c34ba2EC35fAD096e730efCB6293c96608",
+      address: "0x152C02DCcB50369983602fd50050498a478a3568",
       abi: [
         {
           inputs: [],
@@ -206,6 +206,19 @@ const deployedContracts = {
           ],
           name: "Unpaused",
           type: "event",
+        },
+        {
+          inputs: [],
+          name: "backendManager",
+          outputs: [
+            {
+              internalType: "address",
+              name: "",
+              type: "address",
+            },
+          ],
+          stateMutability: "view",
+          type: "function",
         },
         {
           inputs: [],
@@ -497,6 +510,11 @@ const deployedContracts = {
             },
             {
               internalType: "address",
+              name: "_backendManager",
+              type: "address",
+            },
+            {
+              internalType: "address",
               name: "_beneficiary",
               type: "address",
             },
@@ -725,10 +743,10 @@ const deployedContracts = {
         isActive: "contracts/interfaces/IXershaPool.sol",
         paused: "@openzeppelin/contracts/utils/Pausable.sol",
       },
-      deployedOnBlock: 17211653,
+      deployedOnBlock: 17291762,
     },
     ROSCAPool: {
-      address: "0xB86F87384442d9fAE87769c46126fAe912dB5632",
+      address: "0xB587Ad251D1A953854670e6ecB0F78100D24138A",
       abi: [
         {
           inputs: [],
@@ -994,6 +1012,19 @@ const deployedContracts = {
         },
         {
           inputs: [],
+          name: "backendManager",
+          outputs: [
+            {
+              internalType: "address",
+              name: "",
+              type: "address",
+            },
+          ],
+          stateMutability: "view",
+          type: "function",
+        },
+        {
+          inputs: [],
           name: "circleId",
           outputs: [
             {
@@ -1240,6 +1271,11 @@ const deployedContracts = {
               internalType: "string",
               name: "_circleName",
               type: "string",
+            },
+            {
+              internalType: "address",
+              name: "_backendManager",
+              type: "address",
             },
             {
               internalType: "uint256",
@@ -1506,10 +1542,10 @@ const deployedContracts = {
         isActive: "contracts/interfaces/IXershaPool.sol",
         paused: "@openzeppelin/contracts/utils/Pausable.sol",
       },
-      deployedOnBlock: 17211639,
+      deployedOnBlock: 17291749,
     },
     SavingsPool: {
-      address: "0x05E6C6eb7A257A15b37b6cC3787121014B71E299",
+      address: "0xf273c742F156ba7a0C945768beB9c7C2e332F92f",
       abi: [
         {
           inputs: [],
@@ -1677,6 +1713,19 @@ const deployedContracts = {
           ],
           name: "Withdrawn",
           type: "event",
+        },
+        {
+          inputs: [],
+          name: "backendManager",
+          outputs: [
+            {
+              internalType: "address",
+              name: "",
+              type: "address",
+            },
+          ],
+          stateMutability: "view",
+          type: "function",
         },
         {
           inputs: [
@@ -1848,6 +1897,11 @@ const deployedContracts = {
               internalType: "string",
               name: "_circleName",
               type: "string",
+            },
+            {
+              internalType: "address",
+              name: "_backendManager",
+              type: "address",
             },
             {
               internalType: "address",
@@ -2101,16 +2155,21 @@ const deployedContracts = {
         isActive: "contracts/interfaces/IXershaPool.sol",
         paused: "@openzeppelin/contracts/utils/Pausable.sol",
       },
-      deployedOnBlock: 17211646,
+      deployedOnBlock: 17291756,
     },
     XershaFactory: {
-      address: "0x2b3Bf926948E5ff1742239130028Bdb6FD2B4614",
+      address: "0xfE2AD9Af70689a05736ec383Bd7da528a27B5716",
       abi: [
         {
           inputs: [
             {
               internalType: "address",
               name: "initialOwner",
+              type: "address",
+            },
+            {
+              internalType: "address",
+              name: "_backendManager",
               type: "address",
             },
             {
@@ -2158,6 +2217,25 @@ const deployedContracts = {
           ],
           name: "OwnableUnauthorizedAccount",
           type: "error",
+        },
+        {
+          anonymous: false,
+          inputs: [
+            {
+              indexed: true,
+              internalType: "address",
+              name: "oldManager",
+              type: "address",
+            },
+            {
+              indexed: true,
+              internalType: "address",
+              name: "newManager",
+              type: "address",
+            },
+          ],
+          name: "BackendManagerUpdated",
+          type: "event",
         },
         {
           anonymous: false,
@@ -2237,6 +2315,19 @@ const deployedContracts = {
             },
           ],
           name: "allPools",
+          outputs: [
+            {
+              internalType: "address",
+              name: "",
+              type: "address",
+            },
+          ],
+          stateMutability: "view",
+          type: "function",
+        },
+        {
+          inputs: [],
+          name: "backendManager",
           outputs: [
             {
               internalType: "address",
@@ -2553,6 +2644,19 @@ const deployedContracts = {
           inputs: [
             {
               internalType: "address",
+              name: "_backendManager",
+              type: "address",
+            },
+          ],
+          name: "setBackendManager",
+          outputs: [],
+          stateMutability: "nonpayable",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "address",
               name: "newImplementation",
               type: "address",
             },
@@ -2630,7 +2734,7 @@ const deployedContracts = {
         renounceOwnership: "@openzeppelin/contracts/access/Ownable.sol",
         transferOwnership: "@openzeppelin/contracts/access/Ownable.sol",
       },
-      deployedOnBlock: 17211660,
+      deployedOnBlock: 17291769,
     },
   },
 } as const;
