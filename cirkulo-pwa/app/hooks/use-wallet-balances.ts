@@ -1,5 +1,9 @@
 import { useState, useEffect } from "react";
+import { getBalance, readContract } from "wagmi/actions";
+import { formatUnits } from "viem";
 import { useAuth } from "~/context/auth-context";
+import { wagmiConfig, citreaTestnet } from "~/lib/wagmi";
+import { erc20Abi, getMockCUSDAddress } from "~/lib/abi";
 
 export interface AssetBalance {
   amount: string;
@@ -14,7 +18,8 @@ export interface WalletBalances {
 
 /**
  * Hook to fetch wallet balances for CBTC and CUSD
- * Currently uses mock data. Future: integrate with wagmi/viem to read from contracts
+ * - CBTC: Fetches actual balance from Citrea testnet
+ * - CUSD: Fetches actual balance from ERC20 contract on Citrea testnet
  *
  * @returns Wallet balances, loading state, and error state
  */
@@ -37,38 +42,68 @@ export function useWalletBalances() {
         setIsLoading(true);
         setError(null);
 
-        // TODO: Replace with actual blockchain calls
-        // - Read CBTC balance (native token on Citrea)
-        // - Read CUSD balance (ERC20 contract)
-        // - Fetch current prices from API or oracle
-        // Example using wagmi:
-        // const { data: cbtcBalance } = useBalance({ address: walletAddress })
-        // const { data: cusdBalance } = useReadContract({
-        //   address: CUSD_CONTRACT_ADDRESS,
-        //   abi: erc20Abi,
-        //   functionName: 'balanceOf',
-        //   args: [walletAddress]
-        // })
+        console.log("[useWalletBalances] Fetching balance for:", walletAddress);
 
-        // Mock data for now
-        await new Promise((resolve) => setTimeout(resolve, 500)); // Simulate network delay
+        // Fetch actual cBTC balance from Citrea testnet
+        const cbtcBalance = await getBalance(wagmiConfig, {
+          address: walletAddress as `0x${string}`,
+          chainId: citreaTestnet.id,
+        });
 
-        const mockBalances: WalletBalances = {
+        // Convert from Wei (18 decimals) to cBTC
+        const cbtcAmount = formatUnits(cbtcBalance.value, 18);
+
+        console.log("[useWalletBalances] cBTC balance:", cbtcAmount);
+
+        // BTC price (updated to current market price)
+        const btcPriceUSD = 111652.80;
+        const cbtcUsdValue = (parseFloat(cbtcAmount) * btcPriceUSD).toFixed(2);
+
+        // Fetch actual CUSD balance from ERC20 contract
+        const cusdContractAddress = getMockCUSDAddress();
+        const cusdBalance = await readContract(wagmiConfig, {
+          address: cusdContractAddress,
+          abi: erc20Abi,
+          functionName: "balanceOf",
+          args: [walletAddress as `0x${string}`],
+          chainId: citreaTestnet.id,
+        });
+
+        // Convert from Wei (18 decimals) to CUSD
+        const cusdAmount = formatUnits(cusdBalance, 18);
+
+        console.log("[useWalletBalances] CUSD balance:", cusdAmount);
+
+        // CUSD is a stablecoin pegged 1:1 with USD
+        const cusdUsdValue = parseFloat(cusdAmount).toFixed(2);
+
+        const totalUsdValue = (
+          parseFloat(cbtcUsdValue) + parseFloat(cusdUsdValue)
+        ).toFixed(2);
+
+        const fetchedBalances: WalletBalances = {
           cbtc: {
-            amount: "0.0024",
-            usdValue: "145.80",
+            amount: parseFloat(cbtcAmount).toFixed(8), // Show 8 decimals for Bitcoin
+            usdValue: cbtcUsdValue,
           },
           cusd: {
-            amount: "50.00",
-            usdValue: "50.00",
+            amount: parseFloat(cusdAmount).toFixed(2), // Show 2 decimals for stablecoin
+            usdValue: cusdUsdValue,
           },
-          total: "195.80",
+          total: totalUsdValue,
         };
 
-        setBalances(mockBalances);
+        setBalances(fetchedBalances);
       } catch (err) {
         console.error("[useWalletBalances] Error:", err);
         setError(err instanceof Error ? err.message : "Failed to fetch balances");
+
+        // Set zero balances on error to show something to user
+        setBalances({
+          cbtc: { amount: "0.00000000", usdValue: "0.00" },
+          cusd: { amount: "0.00", usdValue: "0.00" },
+          total: "0.00",
+        });
       } finally {
         setIsLoading(false);
       }
