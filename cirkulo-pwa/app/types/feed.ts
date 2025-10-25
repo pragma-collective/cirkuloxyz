@@ -42,7 +42,8 @@ export type FeedItemType =
   | "member-joined"
   | "goal-completed"
   | "celebration"
-  | "comment";
+  | "comment"
+  | "post";
 
 // Base feed item structure
 export interface BaseFeedItem {
@@ -107,6 +108,14 @@ export interface CommentFeedItem extends BaseFeedItem {
   comments: Comment[];
 }
 
+// Post feed item (user-created posts with optional images)
+export interface PostFeedItem extends BaseFeedItem {
+  type: "post";
+  content: string;
+  imageUrl?: string;
+  imageAlt?: string;
+}
+
 // Union type for all feed items
 export type FeedItem =
   | ContributionFeedItem
@@ -114,7 +123,8 @@ export type FeedItem =
   | MemberJoinedFeedItem
   | GoalCompletedFeedItem
   | CelebrationFeedItem
-  | CommentFeedItem;
+  | CommentFeedItem
+  | PostFeedItem;
 
 // Reaction type
 export interface Reaction {
