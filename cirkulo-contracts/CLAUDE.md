@@ -35,6 +35,12 @@ yarn deploy                 # Deploy contracts (auto-generates TypeScript ABIs)
 yarn deploy --network <network>       # Deploy to specific network
 yarn deploy --tags <TagName>          # Deploy specific contract by tag
 yarn verify --network <network>       # Verify contracts on Etherscan
+
+# Lens Network Deployments
+yarn deploy --network lensTestnet      # Deploy to Lens Testnet (Chain ID: 37111)
+yarn deploy --network lensMainnet      # Deploy to Lens Mainnet (Chain ID: 232)
+yarn verify --network lensTestnet      # Verify on Lens Testnet Explorer
+yarn verify --network lensMainnet      # Verify on Lens Mainnet Explorer
 ```
 
 ### Account Management
@@ -144,8 +150,18 @@ Pre-built components for common web3 use cases:
 
 **Hardhat**: `packages/hardhat/hardhat.config.ts`
 - Configured with multiple networks (mainnet, sepolia, arbitrum, optimism, polygon, base, etc.)
+- Includes Lens Network support (testnet and mainnet)
 - Uses environment variables for API keys and deployer private key
 - Solidity compiler set to v0.8.20 with optimizer enabled (200 runs)
+
+**Lens Network Configuration**:
+- **Lens Testnet**: Chain ID 37111, RPC: https://rpc.testnet.lens.dev, Currency: GRASS
+- **Lens Mainnet**: Chain ID 232, RPC: https://rpc.lens.xyz, Currency: GHO
+- Environment variables (optional, defaults provided):
+  - `LENS_TESTNET_RPC_URL`: Custom RPC URL for Lens testnet
+  - `LENS_MAINNET_RPC_URL`: Custom RPC URL for Lens mainnet
+  - `LENS_TESTNET_API_KEY`: API key for testnet explorer (not required)
+  - `LENS_MAINNET_API_KEY`: API key for mainnet explorer (not required)
 
 **Next.js**: `packages/nextjs/scaffold.config.ts`
 - Configure target networks (currently set to `hardhat` local network)
@@ -168,6 +184,21 @@ Pre-built components for common web3 use cases:
 7. Update `scaffold.config.ts` to point to target network
 8. Deploy to live network: `yarn deploy --network <network>`
 9. Verify contracts: `yarn verify --network <network>`
+
+**Deploying to Lens Networks**:
+```bash
+# Deploy to Lens Testnet
+yarn deploy --network lensTestnet
+
+# Deploy to Lens Mainnet
+yarn deploy --network lensMainnet
+
+# Verify on Lens Testnet
+yarn verify --network lensTestnet
+
+# Verify on Lens Mainnet
+yarn verify --network lensMainnet
+```
 
 ## Key Features
 

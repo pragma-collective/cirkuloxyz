@@ -134,13 +134,25 @@ const config: HardhatUserConfig = {
     },
     // Lens Chain Testnet for Lens Protocol custom group rules (HACKATHON TARGET)
     lensTestnet: {
-      url: process.env.LENS_RPC_URL || "https://rpc.testnet.lens.xyz",
+      url: process.env.LENS_TESTNET_RPC_URL || "https://rpc.testnet.lens.dev",
       chainId: 37111, // Lens Testnet chain ID
       accounts: [deployerPrivateKey],
       gasPrice: "auto",
       verify: {
         etherscan: {
-          apiUrl: "https://explorer.testnet.lens.xyz/api",
+          apiUrl: "https://block-explorer.testnet.lens.dev/api",
+        },
+      },
+    },
+    // Lens Chain Mainnet
+    lensMainnet: {
+      url: process.env.LENS_MAINNET_RPC_URL || "https://rpc.lens.xyz",
+      chainId: 232, // Lens Mainnet chain ID
+      accounts: [deployerPrivateKey],
+      gasPrice: "auto",
+      verify: {
+        etherscan: {
+          apiUrl: "https://explorer.lens.xyz/api",
         },
       },
     },
@@ -149,7 +161,8 @@ const config: HardhatUserConfig = {
   etherscan: {
     apiKey: {
       citreaTestnet: process.env.CITREA_API_KEY || "dummy-api-key-not-needed",
-      lensTestnet: process.env.LENS_API_KEY || "dummy-api-key-not-needed",
+      lensTestnet: process.env.LENS_TESTNET_API_KEY || "dummy-api-key-not-needed",
+      lensMainnet: process.env.LENS_MAINNET_API_KEY || "dummy-api-key-not-needed",
       mainnet: etherscanApiKey,
       sepolia: etherscanApiKey,
       arbitrum: etherscanApiKey,
@@ -174,8 +187,16 @@ const config: HardhatUserConfig = {
         network: "lensTestnet",
         chainId: 37111,
         urls: {
-          apiURL: "https://explorer-api.testnet.lens.xyz/api",
-          browserURL: "https://explorer.testnet.lens.xyz",
+          apiURL: "https://block-explorer.testnet.lens.dev/api",
+          browserURL: "https://block-explorer.testnet.lens.dev",
+        },
+      },
+      {
+        network: "lensMainnet",
+        chainId: 232,
+        urls: {
+          apiURL: "https://explorer.lens.xyz/api",
+          browserURL: "https://explorer.lens.xyz",
         },
       },
     ],
