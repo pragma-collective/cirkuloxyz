@@ -322,3 +322,28 @@ export async function markInviteAccepted(params: {
 
 	return await response.json();
 }
+
+/**
+ * Fund the authenticated user's wallet with CBTC and CUSD from the backend faucet
+ * Requires authentication - uses the wallet address from JWT token
+ * 
+ * @param sessionClient - Lens session client for authentication
+ * @returns Transaction details for both CBTC and CUSD transfers
+ */
+export async function fundWallet(
+	sessionClient: SessionClient
+) {
+	return await apiRequest<{
+		success: boolean;
+		cbtcTransactionHash: string;
+		cusdTransactionHash: string;
+		recipientAddress: string;
+		cbtcAmount: string;
+		cusdAmount: string;
+	}>("/onramp/fund", {
+		method: "POST",
+		requiresAuth: true,
+		sessionClient,
+		body: JSON.stringify({}),
+	});
+}
