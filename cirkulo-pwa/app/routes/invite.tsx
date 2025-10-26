@@ -245,7 +245,8 @@ export default function InvitePage() {
 					</div>
 					<CardTitle>You're Invited!</CardTitle>
 					<CardDescription>
-						<strong>{validatedInvite.inviterName}</strong> invited you to join
+						{/* @TODO: wallet address is being return ATM */}
+						<strong>{validatedInvite.inviterName.slice(0, 6)}</strong> invited you to join
 					</CardDescription>
 				</CardHeader>
 
