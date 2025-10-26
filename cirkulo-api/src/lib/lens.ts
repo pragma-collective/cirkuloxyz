@@ -1,4 +1,9 @@
-import { evmAddress, PublicClient, testnet } from "@lens-protocol/client";
+import {
+	evmAddress,
+	mainnet,
+	PublicClient,
+	testnet,
+} from "@lens-protocol/client";
 import {
 	fetchAccount,
 	fetchGroupMembers,
@@ -6,17 +11,22 @@ import {
 	fetchGroup as lensProtocolFetchGroup,
 } from "@lens-protocol/client/actions";
 
+const lensEnvironment = process.env.LENS_ENVIRONMENT || "testnet";
+const isLensMainnet = lensEnvironment === "mainnet";
+
 /**
  * Get JWKS URI for Lens testnet
  * @returns JWKS URI for Lens testnet
  */
 export const getJwksUri = () => {
-	return "https://api.testnet.lens.xyz/.well-known/jwks.json";
+	return isLensMainnet
+		? "https://api.lens.xyz/.well-known/jwks.json"
+		: "https://api.testnet.lens.xyz/.well-known/jwks.json";
 };
 
 // Initialize Lens Protocol client for testnet
 export const lensClient = PublicClient.create({
-	environment: testnet,
+	environment: isLensMainnet ? mainnet : testnet,
 });
 
 /**

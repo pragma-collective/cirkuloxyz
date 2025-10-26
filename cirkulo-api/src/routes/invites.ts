@@ -722,7 +722,9 @@ invites.openapi(addMemberToPoolRoute, async (c) => {
 
 			// Check for specific error cases
 			const errorMessage =
-				blockchainError instanceof Error ? blockchainError.message : String(blockchainError);
+				blockchainError instanceof Error
+					? blockchainError.message
+					: String(blockchainError);
 
 			if (errorMessage.includes("Already invited")) {
 				// Non-critical error - member already in pool

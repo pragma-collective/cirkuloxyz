@@ -1,5 +1,10 @@
 import { ethers } from "ethers";
 
+const lensEnvironment = process.env.LENS_ENVIRONMENT || "testnet";
+const isLensMainnet = lensEnvironment === "mainnet";
+
+console.log("is what: ", isLensMainnet);
+
 /**
  * Blockchain Service for InviteOnlyGroupRule contract interaction
  *
@@ -9,7 +14,7 @@ import { ethers } from "ethers";
 
 // Initialize Lens Chain provider
 const provider = new ethers.JsonRpcProvider(
-	process.env.LENS_CHAIN_RPC_URL || "https://rpc.testnet.lens.xyz",
+	isLensMainnet ? "https://rpc.lens.xyz" : "https://rpc.testnet.lens.xyz",
 );
 
 // Create backend signer from private key
