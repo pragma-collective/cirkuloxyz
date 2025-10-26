@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
-import { fetchGroup, fetchPosts } from "@lens-protocol/client/actions";
-import { evmAddress } from "@lens-protocol/client";
+import { fetchGroup, fetchPosts, fetchPostReactions } from "@lens-protocol/client/actions";
+import { evmAddress, postId } from "@lens-protocol/client";
 import type { AnyPost } from "@lens-protocol/client";
 import { lensClient } from "../lib/lens";
 import type { PostFeedItem, FeedItem } from "../types/feed";
@@ -8,6 +8,7 @@ import type { User } from "../context/auth-context";
 
 export interface UseFetchGroupPostsOptions {
   groupAddress: string | undefined;
+  currentUserAddress?: string; // Wallet address to check for likes
 }
 
 export interface UseFetchGroupPostsResult {
@@ -20,7 +21,11 @@ export interface UseFetchGroupPostsResult {
 /**
  * Transform a Lens Protocol Post to a PostFeedItem
  */
-function transformLensPostToFeedItem(anyPost: AnyPost, groupInfo: { id: string; name: string }): PostFeedItem {
+async function transformLensPostToFeedItem(
+  anyPost: AnyPost,
+  groupInfo: { id: string; name: string },
+  currentUserAddress?: string
+): Promise<PostFeedItem> {
   // AnyPost can be Post or Repost - we only handle Post for now
   if (anyPost.__typename !== "Post") {
     throw new Error("Reposts are not yet supported in feed transformation");
@@ -50,6 +55,47 @@ function transformLensPostToFeedItem(anyPost: AnyPost, groupInfo: { id: string; 
     hasLensAccount: true,
   };
 
+  // Check if current user has liked this post and get accurate like count
+  let isLiked = false;
+  let actualLikeCount = post.stats?.upvotes || 0;
+
+  try {
+    const reactionsResult = await fetchPostReactions(lensClient, {
+      post: postId(post.id),
+    });
+
+    if (!reactionsResult.isErr() && reactionsResult.value) {
+      console.log("[transformLensPostToFeedItem] Reactions for post:", post.id, reactionsResult.value.items);
+
+      // Count total upvotes from reactions (more accurate than stats)
+      let upvoteCount = 0;
+
+      reactionsResult.value.items.forEach((reaction) => {
+        const hasUpvote = reaction.reactions.some((r) => r.reaction === "UPVOTE");
+        if (hasUpvote) {
+          upvoteCount++;
+        }
+
+        // Check if current user has liked
+        if (currentUserAddress) {
+          const isCurrentUser = reaction.account.address.toLowerCase() === currentUserAddress.toLowerCase();
+          console.log(`[transformLensPostToFeedItem] Checking reaction - User: ${reaction.account.address}, HasUpvote: ${hasUpvote}, IsCurrentUser: ${isCurrentUser}`);
+          if (isCurrentUser && hasUpvote) {
+            isLiked = true;
+          }
+        }
+      });
+
+      // Use the actual count from reactions, which is more up-to-date
+      actualLikeCount = upvoteCount;
+
+      console.log(`[transformLensPostToFeedItem] Post ${post.id} - Stats upvotes: ${post.stats?.upvotes}, Actual upvotes: ${upvoteCount}, User liked: ${isLiked}`);
+    }
+  } catch (err) {
+    console.warn("[transformLensPostToFeedItem] Failed to fetch reactions:", err);
+    // Continue with stats count if reaction fetch fails
+  }
+
   return {
     id: post.id,
     type: "post",
@@ -70,9 +116,9 @@ function transformLensPostToFeedItem(anyPost: AnyPost, groupInfo: { id: string; 
     content: content || "",
     imageUrl,
     imageAlt: imageUrl ? "Post image" : undefined,
-    likeCount: post.stats?.upvotes || 0,
+    likeCount: actualLikeCount,
     commentCount: post.stats?.comments || 0,
-    isLiked: false, // TODO: Check if current user has liked
+    isLiked,
   };
 }
 
@@ -82,26 +128,32 @@ function transformLensPostToFeedItem(anyPost: AnyPost, groupInfo: { id: string; 
  * @returns Posts data, loading state, and error
  */
 export function useFetchGroupPosts({
-  groupAddress
+  groupAddress,
+  currentUserAddress
 }: UseFetchGroupPostsOptions): UseFetchGroupPostsResult {
   const [posts, setPosts] = useState<PostFeedItem[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<Error | null>(null);
   const [refetchKey, setRefetchKey] = useState(0);
+  const [isRefetching, setIsRefetching] = useState(false);
 
   // Refetch function to manually trigger a new fetch
   const refetch = useCallback(() => {
+    setIsRefetching(true);
     setRefetchKey(prev => prev + 1);
   }, []);
 
   useEffect(() => {
-    // Reset state when groupAddress changes
-    setPosts([]);
+    // Only show loading and clear posts on initial load, not on refetch
+    // This prevents the "No activity" flash during background refetches
     setError(null);
-    setLoading(true);
+    if (!isRefetching) {
+      setLoading(true);
+    }
 
     // Skip if no address provided
     if (!groupAddress) {
+      setPosts([]);
       setLoading(false);
       return;
     }
@@ -204,26 +256,42 @@ export function useFetchGroupPosts({
 
         if (!isMounted) return;
 
-        // Step 3: Transform posts to FeedItem format (filter out Reposts for now)
-        const transformedPosts = allPosts
-          .filter((p) => p.__typename === "Post")
-          .map((lensPost) =>
-            transformLensPostToFeedItem(lensPost, {
-              id: group?.address || groupAddress,
-              name: group?.metadata?.name || "Group",
-            })
-          );
+        // Step 3: Transform posts to FeedItem format (filter out Reposts and Comments)
+        const postsToTransform = allPosts.filter((p) => {
+          // Only include Posts (not Reposts)
+          if (p.__typename !== "Post") return false;
+
+          // Exclude comments - comments have a commentOn field
+          if ((p as any).commentOn) return false;
+
+          return true;
+        });
+
+        const transformedPosts = await Promise.all(
+          postsToTransform.map((lensPost) =>
+            transformLensPostToFeedItem(
+              lensPost,
+              {
+                id: group?.address || groupAddress,
+                name: group?.metadata?.name || "Group",
+              },
+              currentUserAddress
+            )
+          )
+        );
 
         console.log("[useFetchGroupPosts] Transformed posts:", transformedPosts);
         setPosts(transformedPosts);
         setError(null);
         setLoading(false);
+        setIsRefetching(false);
       } catch (err) {
         console.error("[useFetchGroupPosts] Exception while fetching posts:", err);
         if (isMounted) {
           setError(err instanceof Error ? err : new Error("Unknown error occurred"));
           setPosts([]);
           setLoading(false);
+          setIsRefetching(false);
         }
       }
     }
@@ -234,7 +302,7 @@ export function useFetchGroupPosts({
     return () => {
       isMounted = false;
     };
-  }, [groupAddress, refetchKey]);
+  }, [groupAddress, currentUserAddress, refetchKey, isRefetching]);
 
   return { posts, loading, error, refetch };
 }

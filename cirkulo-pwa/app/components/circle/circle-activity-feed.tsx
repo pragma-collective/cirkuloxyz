@@ -7,6 +7,7 @@ export interface CircleActivityFeedProps {
   items: FeedItem[];
   onLike: (id: string) => void;
   onComment: (id: string) => void;
+  isLoading?: boolean;
   className?: string;
 }
 
@@ -14,6 +15,7 @@ export function CircleActivityFeed({
   items,
   onLike,
   onComment,
+  isLoading = false,
   className,
 }: CircleActivityFeedProps) {
   return (
@@ -29,7 +31,29 @@ export function CircleActivityFeed({
 
       {/* Feed Content */}
       <div className="bg-white">
-        {items.length === 0 ? (
+        {isLoading ? (
+          // Loading skeleton
+          <div className="divide-y divide-neutral-100">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="flex items-start gap-3 sm:gap-4 p-4 animate-pulse">
+                {/* Avatar skeleton */}
+                <div className="flex-shrink-0 w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-neutral-200" />
+
+                {/* Content skeleton */}
+                <div className="flex-1 space-y-3">
+                  <div className="h-4 bg-neutral-200 rounded w-3/4" />
+                  <div className="h-3 bg-neutral-200 rounded w-full" />
+                  <div className="h-3 bg-neutral-200 rounded w-5/6" />
+                  <div className="flex gap-4 mt-3">
+                    <div className="h-8 bg-neutral-200 rounded w-16" />
+                    <div className="h-8 bg-neutral-200 rounded w-16" />
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : items.length === 0 ? (
+          // Empty state
           <div className="py-12 text-center px-4">
             <div className="text-4xl mb-3">📭</div>
             <h3 className="text-lg font-semibold text-neutral-900 mb-2">
@@ -40,6 +64,7 @@ export function CircleActivityFeed({
             </p>
           </div>
         ) : (
+          // Posts list
           <div className="divide-y divide-neutral-100">
             {items.map((item) => (
               <ActivityFeedItem

@@ -9,6 +9,7 @@ import { CircleMembersBar } from "app/components/circle/circle-members-bar";
 import { CircleFAB } from "app/components/circle/circle-fab";
 import { PostComposerSheet } from "app/components/circle/post-composer-sheet";
 import { CircleActivityFeed } from "app/components/circle/circle-activity-feed";
+import { CommentModal } from "app/components/circle/comment-modal";
 import { UserAvatar } from "app/components/ui/user-avatar";
 import { Button } from "app/components/ui/button";
 import { mockCircles, mockCircleActivity } from "app/lib/mock-data";
@@ -19,6 +20,7 @@ import { useFetchCircle } from "~/hooks/use-fetch-circle";
 import { useFetchGroupMembers } from "~/hooks/use-fetch-group-members";
 import { useFetchGroupPosts } from "~/hooks/use-fetch-group-posts";
 import { useCreatePost } from "~/hooks/use-create-post";
+import { usePostReactions } from "~/hooks/use-post-reactions";
 import { fetchGroup } from "@lens-protocol/client/actions";
 import { evmAddress } from "@lens-protocol/client";
 import { lensClient } from "app/lib/lens";
@@ -84,19 +86,62 @@ export default function CircleDetail({ loaderData }: Route.ComponentProps) {
 	// Fetch group members from Lens Protocol
 	const { members, memberCount, loading: isLoadingMembers } = useFetchGroupMembers({ groupAddress: circleId });
 
+	// Lens session and wallet for post creation and reactions
+	const { sessionClient, selectedAccount } = useLensSession();
+	const { primaryWallet } = useDynamicContext();
+
 	// Fetch group posts from Lens Protocol
-	const { posts: groupPosts, loading: isLoadingPosts, error: postsError, refetch: refetchPosts } = useFetchGroupPosts({ groupAddress: circleId });
+	const { posts: fetchedPosts, loading: isLoadingPosts, error: postsError, refetch: refetchPosts } = useFetchGroupPosts({
+		groupAddress: circleId,
+		currentUserAddress: selectedAccount?.address // Use Lens account address, not wallet address
+	});
 
 	// State management
 	const [isStatsOpen, setIsStatsOpen] = useState(false);
 	const [isComposerOpen, setIsComposerOpen] = useState(false);
+	const [commentModalState, setCommentModalState] = useState<{
+		isOpen: boolean;
+		postId: string | null;
+		postContent: string;
+		postAuthor: { name: string };
+		commentCount: number;
+	}>({
+		isOpen: false,
+		postId: null,
+		postContent: "",
+		postAuthor: { name: "" },
+		commentCount: 0,
+	});
+
+	// Local state for optimistic updates (so we can update UI immediately)
+	const [localPosts, setLocalPosts] = useState(fetchedPosts);
+
+	// Sync local posts with fetched posts when they change
+	useEffect(() => {
+		setLocalPosts(fetchedPosts);
+	}, [fetchedPosts]);
 
 	// Post creation hook
 	const { createPost, isCreating } = useCreatePost();
 
-	// Lens session and wallet for post creation
-	const { sessionClient } = useLensSession();
-	const { primaryWallet } = useDynamicContext();
+	// Post reactions hook
+	const { addLike, removeLike, isLoading: isReactionLoading } = usePostReactions({
+		sessionClient,
+		onSuccess: () => {
+			// Success! The optimistic update already handled the UI.
+			// Schedule a background sync after 10 seconds to ensure eventual consistency
+			// This is long enough that the user won't notice any disruption
+			setTimeout(() => {
+				console.log("[CircleDetail] Background sync: silently refetching posts");
+				refetchPosts();
+			}, 10000); // 10 seconds - enough time for Lens to index and user to move on
+		},
+		onError: (error) => {
+			console.error("[CircleDetail] Reaction error:", error);
+			// Error is handled in handleLike by reverting the optimistic update
+			// TODO: Show error toast to user
+		},
+	});
 
 	// Convert Lens group to Circle format, merging with API data and member count
 	const circle = useMemo(() => {
@@ -309,18 +354,81 @@ export default function CircleDetail({ loaderData }: Route.ComponentProps) {
 		roscaContributionAmount
 	]);
 
-	// Handle like action
-	const handleLike = useCallback((itemId: string) => {
-		console.log("Like item:", itemId);
-		// TODO: Implement like functionality with Lens Protocol
-		// For now, likes are view-only from the feed
-	}, []);
+	// Handle like action with optimistic updates
+	const handleLike = useCallback(async (itemId: string) => {
+		console.log("[CircleDetail] Like button clicked for post:", itemId);
 
-	// Handle comment action (placeholder)
+		// Find the post to check current like status
+		const post = localPosts.find((p) => p.id === itemId);
+		if (!post) {
+			console.error("[CircleDetail] Post not found:", itemId);
+			return;
+		}
+
+		// Optimistic UI update - toggle like state immediately
+		const optimisticPosts = localPosts.map((p) => {
+			if (p.id === itemId) {
+				return {
+					...p,
+					isLiked: !p.isLiked,
+					likeCount: p.isLiked ? p.likeCount - 1 : p.likeCount + 1,
+				};
+			}
+			return p;
+		});
+
+		// Update UI immediately (optimistic update)
+		setLocalPosts(optimisticPosts);
+		console.log("[CircleDetail] Optimistic update applied");
+
+		try {
+			// Call appropriate reaction function based on current like status
+			if (post.isLiked) {
+				console.log("[CircleDetail] Removing like from post:", itemId);
+				const success = await removeLike(itemId);
+				if (!success) {
+					// Revert optimistic update on failure
+					setLocalPosts(localPosts);
+					console.error("[CircleDetail] Failed to remove like, reverted");
+				}
+			} else {
+				console.log("[CircleDetail] Adding like to post:", itemId);
+				const success = await addLike(itemId);
+				if (!success) {
+					// Revert optimistic update on failure
+					setLocalPosts(localPosts);
+					console.error("[CircleDetail] Failed to add like, reverted");
+				}
+			}
+
+			// Success case is handled by the refetch in usePostReactions onSuccess callback
+		} catch (error) {
+			console.error("[CircleDetail] Error toggling like:", error);
+			// Revert optimistic update on error
+			setLocalPosts(localPosts);
+		}
+	}, [localPosts, addLike, removeLike]);
+
+	// Handle comment action - open comment modal
 	const handleComment = useCallback((itemId: string) => {
-		console.log("Comment on item:", itemId);
-		// TODO: Implement comment functionality
-	}, []);
+		console.log("[CircleDetail] Comment button clicked for post:", itemId);
+
+		// Find the post to get its details
+		const post = localPosts.find((p) => p.id === itemId);
+		if (!post) {
+			console.error("[CircleDetail] Post not found:", itemId);
+			return;
+		}
+
+		// Open comment modal with post details
+		setCommentModalState({
+			isOpen: true,
+			postId: itemId,
+			postContent: post.type === "post" ? post.content : "",
+			postAuthor: { name: post.actor.name },
+			commentCount: post.commentCount || 0,
+		});
+	}, [localPosts]);
 
 	// Handle contribute action
 	const handleContribute = useCallback(() => {
@@ -643,7 +751,8 @@ export default function CircleDetail({ loaderData }: Route.ComponentProps) {
 
 			{/* Activity Feed - Starts Immediately */}
 			<CircleActivityFeed
-				items={groupPosts}
+				items={localPosts}
+				isLoading={isLoadingPosts}
 				onLike={handleLike}
 				onComment={handleComment}
 			/>
@@ -662,6 +771,16 @@ export default function CircleDetail({ loaderData }: Route.ComponentProps) {
 				onSubmit={handlePostSubmit}
 				isSubmitting={isCreating}
 				circleName={circleWithBalance.name}
+			/>
+
+			{/* Comment Modal */}
+			<CommentModal
+				isOpen={commentModalState.isOpen}
+				onClose={() => setCommentModalState((prev) => ({ ...prev, isOpen: false }))}
+				postId={commentModalState.postId || ""}
+				postContent={commentModalState.postContent}
+				postAuthor={commentModalState.postAuthor}
+				initialCommentCount={commentModalState.commentCount}
 			/>
 		</AuthenticatedLayout>
 	);
