@@ -633,46 +633,6 @@ export default function CircleDetail({ loaderData }: Route.ComponentProps) {
 				onMembersClick={handleMembers}
 			/>
 
-			{/* Members Preview */}
-					<button
-						onClick={() => navigate(`/circle/${circleId}/members`)}
-						className="flex items-center gap-3 p-4 bg-white rounded-xl border border-neutral-200 hover:border-primary-300 hover:shadow-sm transition-all"
-					>
-						<div className="flex -space-x-2">
-							{circleWithBalance.members.slice(0, 4).map((member) => (
-								<UserAvatar
-									key={member.id}
-									user={member}
-									size="md"
-									className="size-10 ring-2 ring-white"
-								/>
-							))}
-						</div>
-						<div className="flex-1 text-left">
-							<p className="text-sm font-semibold text-neutral-900">
-								{circleWithBalance.memberCount} Members
-							</p>
-							{circleWithBalance.memberCount > 4 && (
-								<p className="text-xs text-neutral-600">
-									and {circleWithBalance.memberCount - 4} others
-								</p>
-							)}
-						</div>
-						<svg
-							className="size-5 text-neutral-400"
-							fill="none"
-							viewBox="0 0 24 24"
-							stroke="currentColor"
-						>
-							<path
-								strokeLinecap="round"
-								strokeLinejoin="round"
-								strokeWidth={2}
-								d="M9 5l7 7-7 7"
-							/>
-						</svg>
-					</button>
-
 			{/* Quick Actions Bar */}
 			<CircleActionsBar
 				circle={circleWithBalance}
