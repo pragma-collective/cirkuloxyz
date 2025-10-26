@@ -87,8 +87,7 @@ export default function CircleMembersPage({ loaderData }: Route.ComponentProps) 
 
 	// Handle invite action
 	const handleInvite = useCallback(() => {
-		console.log("Invite friends to circle:", circleId);
-		// TODO: Implement invite modal/flow
+		navigate(`/circle/${circleId}/invites`);
 	}, [circleId]);
 
 	// Handle member click
