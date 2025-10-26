@@ -42,7 +42,6 @@ export async function fetchCircle(
  * No authentication required - public endpoint
  */
 export function useFetchCircle(lensGroupAddress: string | undefined) {
-	console.log(lensGroupAddress);
 	return useQuery({
 		queryKey: ["circle", lensGroupAddress],
 		queryFn: () => fetchCircle(lensGroupAddress!),

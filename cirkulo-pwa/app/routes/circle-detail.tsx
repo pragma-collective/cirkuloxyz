@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
 import type { Route } from "./+types/circle-detail";
 import { useNavigate, useParams } from "react-router";
 import { AuthenticatedLayout } from "app/components/layouts/authenticated-layout";
@@ -24,7 +24,7 @@ import { evmAddress } from "@lens-protocol/client";
 import { lensClient } from "app/lib/lens";
 import { useReadContract } from "wagmi";
 import { formatEther, type Address } from "viem";
-import { savingsPoolAbi, donationPoolAbi, roscaPoolAbi } from "app/lib/pool-abis";
+import { savingsPoolAbi, donationPoolAbi, roscaPoolAbi, erc20Abi } from "app/lib/pool-abis";
 import { citreaTestnet } from "app/lib/wagmi";
 import { useAuth } from "~/context/auth-context";
 import { useLensSession } from "~/context/lens-context";
@@ -198,6 +198,30 @@ export default function CircleDetail({ loaderData }: Route.ComponentProps) {
 		},
 		chainId: citreaTestnet.id,
 	});
+
+	// Read receipt token address from pool contract
+	const { data: receiptTokenAddress } = useReadContract({
+		address: circle?.poolAddress as Address,
+		abi: savingsPoolAbi,
+		functionName: "receiptToken",
+		query: {
+			enabled: !!circle && circle.circleType === "contribution",
+		},
+		chainId: citreaTestnet.id,
+	});
+
+	// Read user's receipt token balance (xshCUSD or xshCBTC)
+	const { data: receiptTokenBalance } = useReadContract({
+		address: receiptTokenAddress as Address,
+		abi: erc20Abi,
+		functionName: "balanceOf",
+		args: auth.user?.walletAddress ? [auth.user.walletAddress as Address] : undefined,
+		query: {
+			enabled: !!receiptTokenAddress && !!auth.user?.walletAddress,
+		},
+		chainId: citreaTestnet.id,
+	});
+
 
 	// Update circle with on-chain balance data
 	const circleWithBalance = useMemo(() => {
@@ -596,7 +620,7 @@ export default function CircleDetail({ loaderData }: Route.ComponentProps) {
 			{/* Stats Drawer - Expandable */}
 			<CircleStatsDrawer
 				circle={circleWithBalance}
-				memberAddress={auth.address as `0x${string}` | undefined}
+				memberAddress={auth.user?.walletAddress as `0x${string}` | undefined}
 				isOpen={isStatsOpen}
 				onClose={() => setIsStatsOpen(false)}
 			/>

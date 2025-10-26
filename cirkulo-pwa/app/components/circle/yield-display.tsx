@@ -86,8 +86,8 @@ export function YieldDisplay({
     );
   }
 
-  // Don't show if no balance
-  if (principal === 0n && yieldEarned === 0n) {
+  // Only hide if member has never deposited (no principal)
+  if (principal === 0n) {
     return null;
   }
 

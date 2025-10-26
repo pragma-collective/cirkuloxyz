@@ -55,18 +55,16 @@ export function CircleProgress({ circle, memberAddress, className }: CircleProgr
         <CardHeader>
           <div className="flex items-center justify-between">
             <CardTitle className="text-xl sm:text-2xl">Collective Savings</CardTitle>
-            {/* APY Badge */}
-            {hasYieldData && (
-              <div className={cn(
-                "px-3 py-1.5 rounded-full border-2 flex items-center gap-1.5",
-                circle.currency === "cbtc"
-                  ? "bg-warning-50 border-warning-300 text-warning-900"
-                  : "bg-success-50 border-success-300 text-success-900"
-              )}>
-                <TrendingUp className="size-4" />
-                <span className="text-sm font-bold">{apy}% APY</span>
-              </div>
-            )}
+            {/* APY Badge - Always show for contribution circles */}
+            <div className={cn(
+              "px-3 py-1.5 rounded-full border-2 flex items-center gap-1.5",
+              circle.currency === "cbtc"
+                ? "bg-warning-50 border-warning-300 text-warning-900"
+                : "bg-success-50 border-success-300 text-success-900"
+            )}>
+              <TrendingUp className="size-4" />
+              <span className="text-sm font-bold">{apy}% APY</span>
+            </div>
           </div>
         </CardHeader>
         <CardContent className="space-y-6">
@@ -80,8 +78,8 @@ export function CircleProgress({ circle, memberAddress, className }: CircleProgr
             </p>
           </div>
 
-          {/* Principal vs Yield Breakdown - Only show if we have yield data */}
-          {hasYieldData && displayYield > 0 && (
+          {/* Principal vs Yield Breakdown - Always show if pool has any deposits */}
+          {hasYieldData && (
             <div className="grid grid-cols-2 gap-3">
               <div className="bg-neutral-50 rounded-xl p-4 text-center">
                 <p className="text-xs text-neutral-600 mb-1">Principal</p>
