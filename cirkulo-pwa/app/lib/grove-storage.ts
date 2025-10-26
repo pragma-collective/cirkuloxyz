@@ -7,7 +7,7 @@
  * @see https://docs.lens.xyz/docs/storage
  */
 
-import { StorageClient, production } from "@lens-chain/storage-client";
+import { StorageClient } from "@lens-chain/storage-client";
 
 /**
  * Shared Grove storage client instance
@@ -15,4 +15,4 @@ import { StorageClient, production } from "@lens-chain/storage-client";
  * Configured for Lens production environment.
  * This works with both testnet and mainnet Lens accounts.
  */
-export const storageClient = StorageClient.create(production);
+export const storageClient = StorageClient.create();

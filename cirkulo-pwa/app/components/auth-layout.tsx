@@ -14,24 +14,24 @@ import { wagmiConfig } from "app/lib/wagmi";
 import { authEvents } from "app/lib/auth-events";
 
 /**
- * Lens Testnet custom network configuration
- * Chain ID: 37111 (Lens Network Sepolia Testnet)
+ * Lens Mainnet custom network configuration
+ * Chain ID: 232 (Lens Network Mainnet)
  */
-const lensTestnet = [
+const lensMainnet = [
 	{
-		blockExplorerUrls: ["https://testnet.lenscan.io/"],
-		chainId: 37111,
-		chainName: "Lens Chain Testnet",
+		blockExplorerUrls: ["https://lenscan.io/"],
+		chainId: 232,
+		chainName: "Lens Chain",
 		iconUrls: ["https://www.lens.xyz/favicon.ico"],
-		name: "Lens Testnet",
+		name: "Lens Mainnet",
 		nativeCurrency: {
-			name: "GRASS",
-			symbol: "GRASS",
+			name: "GHO",
+			symbol: "GHO",
 			decimals: 18,
 		},
-		networkId: 37111,
-		rpcUrls: ["https://rpc.testnet.lens.dev"],
-		vanityName: "Lens Testnet",
+		networkId: 232,
+		rpcUrls: ["https://rpc.lens.dev"],
+		vanityName: "Lens Mainnet",
 	},
 ];
 
@@ -103,7 +103,7 @@ export default function AuthLayout() {
 				environmentId: import.meta.env.VITE_DYNAMIC_ENVIRONMENT_ID,
 				walletConnectors: [EthereumWalletConnectors],
 				overrides: {
-					evmNetworks: (networks) => mergeNetworks(lensTestnet, networks),
+					evmNetworks: (networks) => mergeNetworks(lensMainnet, networks),
 				},
 				events: {
 					onAuthSuccess: () => {
