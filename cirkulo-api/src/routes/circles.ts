@@ -2,7 +2,7 @@ import { OpenAPIHono } from "@hono/zod-openapi";
 import { and, arrayContains, eq, or } from "drizzle-orm";
 import { db } from "../db";
 import { circles as circlesTable } from "../db/schema";
-import { getGroupsByMember } from "../lib/lens";
+import { getGroupMembers, getGroupsByMember } from "../lib/lens";
 import type { AuthContext } from "../lib/middleware";
 import { authMiddleware } from "../lib/middleware";
 import {
@@ -317,37 +317,53 @@ circles.openapi(getMyCirclesRoute, async (c) => {
 
 		console.log(`Found ${matchingCircles.length} matching circles in database`);
 
-		// Cross-match circles with lens groups
-		const enrichedCircles = matchingCircles.map((circle) => {
-			const lensGroup = lensGroups.find(
-				(group) =>
-					group.address.toLowerCase() === circle.lensGroupAddress.toLowerCase(),
-			);
+		// Cross-match circles with lens groups and fetch members for each
+		const enrichedCircles = await Promise.all(
+			matchingCircles.map(async (circle) => {
+				const lensGroup = lensGroups.find(
+					(group) =>
+						group.address.toLowerCase() ===
+						circle.lensGroupAddress.toLowerCase(),
+				);
 
-			return {
-				// Circle data from database
-				id: circle.id,
-				circleName: circle.circleName,
-				poolAddress: circle.poolAddress,
-				lensGroupAddress: circle.lensGroupAddress,
-				poolDeploymentTxHash: circle.poolDeploymentTxHash,
-				circleType: circle.circleType as
-					| "contribution"
-					| "rotating"
-					| "fundraising",
-				currency: circle.currency as "cusd" | "cbtc",
-				creatorAddress: circle.creatorAddress,
-				createdAt: circle.createdAt.toISOString(),
-				updatedAt: circle.updatedAt.toISOString(),
-				// Lens group data
-				lensGroup: {
-					address: lensGroup?.address,
-					owner: lensGroup?.owner,
-					metadata: lensGroup?.metadata,
-					timestamp: lensGroup?.timestamp,
-				},
-			};
-		});
+				// Fetch group members
+				const groupMembers = await getGroupMembers(circle.lensGroupAddress);
+
+				return {
+					// Circle data from database
+					id: circle.id,
+					circleName: circle.circleName,
+					poolAddress: circle.poolAddress,
+					lensGroupAddress: circle.lensGroupAddress,
+					poolDeploymentTxHash: circle.poolDeploymentTxHash,
+					circleType: circle.circleType as
+						| "contribution"
+						| "rotating"
+						| "fundraising",
+					currency: circle.currency as "cusd" | "cbtc",
+					creatorAddress: circle.creatorAddress,
+					createdAt: circle.createdAt.toISOString(),
+					updatedAt: circle.updatedAt.toISOString(),
+					// Lens group data
+					lensGroup: {
+						address: lensGroup?.address,
+						owner: lensGroup?.owner,
+						metadata: lensGroup?.metadata,
+						timestamp: lensGroup?.timestamp,
+					},
+					// Group members data
+					members: groupMembers
+						? groupMembers.map((member) => ({
+								address: member.account.address,
+								username: member.account.username
+									? `@${member.account.username.localName}`
+									: null,
+								metadata: member.account.metadata,
+							}))
+						: [],
+				};
+			}),
+		);
 
 		console.log(`✅ Returning ${enrichedCircles.length} enriched circles`);
 

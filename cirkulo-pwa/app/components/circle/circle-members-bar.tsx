@@ -133,13 +133,15 @@ export function CircleMembersBar({
               </>
             )}
           </div>
-
+          
           {/* Center: Member Count Text */}
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-semibold text-neutral-900 truncate sm:text-left">
-              {members.length} {members.length === 1 ? "friend" : "friends"} saving together
-            </p>
-          </div>
+          {members.length > 1 && (
+            <div className="hidden md:flex items-center gap-1.5 px-2.5 py-1 bg-neutral-100 border border-neutral-200 rounded-full">
+              <span className="text-xs font-medium text-neutral-700">
+                {members.length} {members.length === 1 ? "friend" : "friends"} saving together
+              </span>
+            </div>
+          )}
 
           {/* Right: Chevron */}
           <ChevronRight className="size-5 text-neutral-400 flex-shrink-0" />

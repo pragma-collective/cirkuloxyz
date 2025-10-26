@@ -6,8 +6,6 @@ import {
   CardHeader,
   CardTitle,
 } from "app/components/ui/card";
-import { UserAvatar } from "app/components/ui/user-avatar";
-import { mockUsers } from "app/lib/mock-data";
 import { DollarSign, MessageCircle, Share2 } from "lucide-react";
 import type { EnrichedCircle } from "app/hooks/use-fetch-my-circles";
 
@@ -28,17 +26,18 @@ function getCircleEmoji(circleType: string): string {
 }
 
 /**
- * Circle card component for displaying individual circles with mock data
+ * Circle card component for displaying individual circles
+ * 
+ * REAL DATA USED:
+ * - Member avatars from Lens Protocol (circle.members)
+ * - Member count (circle.members.length)
  * 
  * MOCK DATA USED:
- * - Member avatars (mockUsers)
- * - Member count (12)
  * - Progress bar (35% with $3,500 / $10,000)
  * - Latest activity
  * - Contribution schedule
  * 
- * TODO: Replace with real data from:
- * - Member list API
+ * TODO: Replace remaining mock data with real data from:
  * - Pool contract reads (on-chain)
  * - Activity feed API
  */
@@ -68,9 +67,13 @@ export function CircleCard({ circle }: CircleCardProps) {
   // Get emoji for circle type
   const emoji = getCircleEmoji(circle.circleType);
 
+  // REAL DATA - Members from API
+  const members = circle.members || [];
+  const memberCount = members.length;
+  const displayMembers = members.slice(0, 5); // Show max 5 avatars
+  const remainingMembersCount = Math.max(0, memberCount - 5);
+
   // MOCK DATA - To be replaced with real data from APIs
-  const mockMembers = mockUsers.slice(0, 5); // Get first 5 mock users
-  const mockMemberCount: number = 12;
   const mockCurrentAmount = 3500;
   const mockGoalAmount = 10000;
   const mockProgress = Math.round((mockCurrentAmount / mockGoalAmount) * 100);
@@ -93,27 +96,40 @@ export function CircleCard({ circle }: CircleCardProps) {
                 {circle.circleName}
               </CardTitle>
               <p className="text-xs text-neutral-600 mt-1">
-                {mockMemberCount} {mockMemberCount === 1 ? "member" : "members"}
+                {memberCount} {memberCount === 1 ? "member" : "members"}
               </p>
             </div>
           </div>
         </div>
 
-        {/* Member Avatar Row - MOCKED */}
+        {/* Member Avatar Row - REAL DATA */}
         <div className="space-y-2">
           <div className="flex items-center gap-2">
             <div className="flex -space-x-3">
-              {mockMembers.map((member, idx) => (
-                <UserAvatar
-                  key={member.id}
-                  user={member}
-                  size="sm"
-                  className="size-8 ring-2 ring-white"
-                />
+              {displayMembers.map((member, idx) => (
+                <div
+                  key={member.address}
+                  className="size-8 rounded-full ring-2 ring-white overflow-hidden bg-neutral-200 flex items-center justify-center"
+                  title={member.username || member.address}
+                >
+                  {member.metadata?.picture ? (
+                    <img
+                      src={member.metadata.picture}
+                      alt={member.username || member.address}
+                      className="size-full object-cover"
+                    />
+                  ) : (
+                    <div className="size-full flex items-center justify-center bg-linear-to-br from-primary-400 to-secondary-500 text-white text-xs font-semibold">
+                      {member.username
+                        ? member.username.charAt(1).toUpperCase()
+                        : member.address.slice(2, 4).toUpperCase()}
+                    </div>
+                  )}
+                </div>
               ))}
-              {mockMemberCount > 5 && (
+              {remainingMembersCount > 0 && (
                 <div className="size-8 rounded-full bg-neutral-200 ring-2 ring-white flex items-center justify-center text-xs font-medium text-neutral-700">
-                  +{mockMemberCount - 5}
+                  +{remainingMembersCount}
                 </div>
               )}
             </div>
@@ -122,9 +138,11 @@ export function CircleCard({ circle }: CircleCardProps) {
               <span className="text-xs text-neutral-600">Active now</span>
             </div>
           </div>
-          <p className="text-xs text-neutral-500">
-            {Math.min(mockMemberCount, 5)} {mockMemberCount === 1 ? "friend" : "friends"} saving together
-          </p>
+          {memberCount > 1 && (
+            <p className="text-xs text-neutral-500">
+              {Math.min(memberCount, 5)} {memberCount === 1 ? "friend" : "friends"} saving together
+            </p>
+          )}
         </div>
 
         {/* Progress Bar with Shimmer - MOCKED */}
@@ -153,18 +171,34 @@ export function CircleCard({ circle }: CircleCardProps) {
           </div>
         </div>
 
-        {/* Latest Activity - MOCKED */}
-        {mockMembers.length > 0 && (
+        {/* Latest Activity - MOCKED (TODO: Use real activity data) */}
+        {members.length > 0 && (
           <div className="bg-neutral-50 rounded-lg p-3 space-y-2">
             <div className="flex items-center gap-2">
-              <UserAvatar
-                user={mockMembers[0]}
-                size="sm"
-                className="size-6"
-              />
+              {/* Member avatar */}
+              <div
+                className="size-6 rounded-full ring-2 ring-white overflow-hidden bg-neutral-200 flex items-center justify-center shrink-0"
+                title={members[0].username || members[0].address}
+              >
+                {members[0].metadata?.picture ? (
+                  <img
+                    src={members[0].metadata.picture}
+                    alt={members[0].username || members[0].address}
+                    className="size-full object-cover"
+                  />
+                ) : (
+                  <div className="size-full flex items-center justify-center bg-linear-to-br from-primary-400 to-secondary-500 text-white text-[10px] font-semibold">
+                    {members[0].username
+                      ? members[0].username.charAt(1).toUpperCase()
+                      : members[0].address.slice(2, 4).toUpperCase()}
+                  </div>
+                )}
+              </div>
               <div className="flex-1 min-w-0">
                 <p className="text-xs text-neutral-900">
-                  <span className="font-semibold">{mockMembers[0].name}</span>
+                  <span className="font-semibold">
+                    {members[0].username || `${members[0].address.slice(0, 6)}...${members[0].address.slice(-4)}`}
+                  </span>
                   {" "}contributed
                 </p>
               </div>
