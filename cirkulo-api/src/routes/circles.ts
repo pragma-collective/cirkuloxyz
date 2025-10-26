@@ -165,9 +165,7 @@ circles.openapi(getPublicCirclesRoute, async (c) => {
 			const userGroups = await getGroupsByMember(targetUser!);
 			if (userGroups && userGroups.length > 0) {
 				userGroupAddresses = userGroups.map((group) => group.address);
-				console.log(
-					`User is member of ${userGroupAddresses.length} groups`,
-				);
+				console.log(`User is member of ${userGroupAddresses.length} groups`);
 			}
 		}
 

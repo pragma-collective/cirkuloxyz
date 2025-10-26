@@ -475,7 +475,9 @@ export const AddMemberToPoolResponseSchema = z.object({
 	poolAddress: z.string().describe("Address of the pool contract"),
 	circleType: z
 		.enum(["contribution", "rotating", "fundraising"])
-		.describe("Type of pool (contribution=SavingsPool, rotating=ROSCAPool, fundraising=DonationPool)"),
+		.describe(
+			"Type of pool (contribution=SavingsPool, rotating=ROSCAPool, fundraising=DonationPool)",
+		),
 	txHash: z.string().describe("Transaction hash of the inviteMember call"),
 	memberAddress: z.string().describe("Address of the member that was added"),
 });
