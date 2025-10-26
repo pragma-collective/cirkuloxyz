@@ -87,6 +87,30 @@ app.get("/swagger", swaggerUI({ url: "/doc" }));
 // Get port from environment variable or use default
 const port = process.env.PORT ? Number.parseInt(process.env.PORT, 10) : 8000;
 
+// Check environment configuration on startup
+console.log("\n=== Cirkulo API Configuration ===");
+console.log(`Port: ${port}`);
+console.log(`Lens Environment: ${process.env.LENS_ENVIRONMENT || "testnet"}`);
+console.log(
+	`Citrea RPC: ${process.env.CITREA_RPC_URL || "https://rpc.testnet.citrea.xyz"}`,
+);
+
+// Check on-ramp configuration
+if (
+	!process.env.BACKEND_FAUCET_PRIVATE_KEY ||
+	process.env.BACKEND_FAUCET_PRIVATE_KEY.trim() === ""
+) {
+	console.log(
+		"⚠️  On-ramp feature: DISABLED (BACKEND_FAUCET_PRIVATE_KEY not set)",
+	);
+	console.log(
+		"   To enable on-ramp, add BACKEND_FAUCET_PRIVATE_KEY to your .env file",
+	);
+} else {
+	console.log("✅ On-ramp feature: ENABLED");
+}
+console.log("================================\n");
+
 export default {
 	port,
 	fetch: app.fetch,
