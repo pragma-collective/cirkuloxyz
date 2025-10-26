@@ -11,6 +11,7 @@ export interface CircleCardProps {
   onShare?: (circleId: string) => void;
   onClick?: (circleId: string) => void;
   badge?: "trending" | "new" | "nearly-complete";
+  isUserMember?: boolean;
 }
 
 const formatMoney = (amount: number): string => {
@@ -26,6 +27,7 @@ export function CircleCard({
   onShare,
   onClick,
   badge,
+  isUserMember = false,
 }: CircleCardProps) {
   const badgeConfig = {
     trending: {
@@ -46,7 +48,8 @@ export function CircleCard({
   };
 
   const handleClick = () => {
-    onClick?.(circle.id);
+    // Pass lensGroupAddress for navigation, fallback to id
+    onClick?.(circle.lensGroupAddress || circle.id);
   };
 
   const handleJoinClick = (e: React.MouseEvent) => {
@@ -178,23 +181,36 @@ export function CircleCard({
                 </div>
               )}
             </div>
-            <span className="text-sm text-neutral-600 truncate">
-              and {circle.memberCount - 1} others
-            </span>
+            {circle.memberCount > 1 && (
+              <span className="text-sm text-neutral-600 truncate">
+                and {circle.memberCount - 1} {circle.memberCount - 1 === 1 ? "other" : "others"}
+              </span>
+            )}
           </div>
         )}
 
         {/* Actions */}
         <div className="space-y-2 pt-2">
-          <Button
-            className="w-full"
-            size="default"
-            onClick={handleJoinClick}
-            aria-label={`Join ${circle.name}`}
-          >
-            <Plus className="size-4" />
-            Join Circle
-          </Button>
+          {isUserMember ? (
+            <Button
+              className="w-full"
+              size="default"
+              onClick={handleClick}
+              aria-label={`View ${circle.name}`}
+            >
+              View Circle
+            </Button>
+          ) : (
+            <Button
+              className="w-full"
+              size="default"
+              onClick={handleJoinClick}
+              aria-label={`Join ${circle.name}`}
+            >
+              <Plus className="size-4" />
+              Join Circle
+            </Button>
+          )}
 
           <button
             className="w-full text-sm text-neutral-600 hover:text-neutral-900 py-2 transition-colors flex items-center justify-center gap-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/30 rounded"

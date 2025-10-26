@@ -2,13 +2,14 @@ import { cn } from "app/lib/utils";
 import type { CircleCategory } from "app/types/feed";
 
 export interface CategoryFilterProps {
-  activeCategory: CircleCategory | "all";
-  onCategoryChange: (category: CircleCategory | "all") => void;
+  activeCategory: CircleCategory | "all" | "my-circles";
+  onCategoryChange: (category: CircleCategory | "all" | "my-circles") => void;
   categoryCounts?: Record<string, number>;
 }
 
 const categories = [
   { value: "all" as const, label: "All Circles", emoji: undefined },
+  { value: "my-circles" as const, label: "My Circles", emoji: "👤" },
   { value: "vacation" as const, label: "Vacation & Travel", emoji: "✈️" },
   { value: "home" as const, label: "Home & Real Estate", emoji: "🏠" },
   { value: "technology" as const, label: "Technology", emoji: "💻" },

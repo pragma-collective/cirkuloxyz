@@ -4,10 +4,11 @@ import { useNavigate } from "react-router";
 import { AuthenticatedLayout } from "app/components/layouts/authenticated-layout";
 import { ExploreHeader } from "app/components/explore/explore-header";
 import { CategoryFilter } from "app/components/explore/category-filter";
-import { CircleCard } from "app/components/explore/circle-card";
+import { EnrichedCircleCard } from "app/components/explore/enriched-circle-card";
 import { EmptyState } from "app/components/explore/empty-state";
 import { CreateCircleCTA } from "app/components/explore/create-circle-cta";
-import { mockPublicCircles } from "app/lib/mock-data";
+import { useEnrichedCircles } from "app/hooks/use-enriched-circles";
+import { useAuth } from "app/context/auth-context";
 import type { Circle, CircleCategory } from "app/types/feed";
 import { Home, Compass, PlusCircle, Wallet, User } from "lucide-react";
 
@@ -23,15 +24,28 @@ export function meta({}: Route.MetaArgs) {
 
 export default function Explore() {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [searchQuery, setSearchQuery] = useState("");
-  const [activeCategory, setActiveCategory] = useState<CircleCategory | "all">(
+  const [activeCategory, setActiveCategory] = useState<CircleCategory | "all" | "my-circles">(
     "all"
   );
   const [sortBy, setSortBy] = useState("popular");
 
+  // Determine if showing "My Circles" or "Explore"
+  const showMyCircles = activeCategory === "my-circles";
+
+  // Fetch enriched circles from API + Lens + Contract data
+  // If "My Circles": Show only circles user is a member of (onlyUser)
+  // If "Explore": Exclude circles user is already a member of (excludeUser)
+  const { circles: enrichedCircles, isLoading, error } = useEnrichedCircles({
+    category: activeCategory !== "all" && activeCategory !== "my-circles" ? activeCategory : undefined,
+    onlyUser: showMyCircles ? user?.lensAccount?.address : undefined,
+    excludeUser: showMyCircles ? undefined : user?.lensAccount?.address,
+  });
+
   // Filter and sort circles
   const filteredCircles = useMemo(() => {
-    let circles = [...mockPublicCircles];
+    let circles = [...enrichedCircles];
 
     // Filter by search query
     if (searchQuery.trim()) {
@@ -43,10 +57,8 @@ export default function Explore() {
       );
     }
 
-    // Filter by category
-    if (activeCategory !== "all") {
-      circles = circles.filter((circle) => circle.category === activeCategory);
-    }
+    // Note: Category filtering is already handled by the backend API
+    // We don't need to filter by category again here
 
     // Sort circles
     switch (sortBy) {
@@ -72,22 +84,24 @@ export default function Explore() {
     }
 
     return circles;
-  }, [searchQuery, activeCategory, sortBy]);
+  }, [searchQuery, sortBy, enrichedCircles]);
 
   // Calculate category counts
   const categoryCounts = useMemo(() => {
     const counts: Record<string, number> = {
-      all: mockPublicCircles.length,
+      all: enrichedCircles.length,
     };
 
-    mockPublicCircles.forEach((circle) => {
-      if (circle.category) {
-        counts[circle.category] = (counts[circle.category] || 0) + 1;
+    enrichedCircles.forEach((circle) => {
+      if (circle.categories) {
+        circle.categories.forEach((cat) => {
+          counts[cat] = (counts[cat] || 0) + 1;
+        });
       }
     });
 
     return counts;
-  }, []);
+  }, [enrichedCircles]);
 
   // Get badge for circles
   const getBadge = (circle: Circle): "trending" | "new" | "nearly-complete" | undefined => {
@@ -113,8 +127,8 @@ export default function Explore() {
     // TODO: Implement share functionality
   };
 
-  const handleCircleClick = (circleId: string) => {
-    navigate(`/circle/${circleId}`);
+  const handleCircleClick = (lensGroupAddress: string) => {
+    navigate(`/circle/${lensGroupAddress}`);
   };
 
   const handleCreateCircle = () => {
@@ -183,36 +197,67 @@ export default function Explore() {
 
       {/* Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        {/* Result count */}
-        {searchQuery && (
-          <p className="text-sm text-neutral-600 mb-4" role="status" aria-live="polite">
-            Found {filteredCircles.length} circles
-            {searchQuery && ` matching "${searchQuery}"`}
-          </p>
-        )}
-
-        {/* Circles Grid */}
-        {filteredCircles.length > 0 ? (
+        {/* Loading State */}
+        {isLoading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-            {filteredCircles.map((circle) => (
-              <CircleCard
-                key={circle.id}
-                circle={circle}
-                badge={getBadge(circle)}
-                onJoin={handleJoinCircle}
-                onShare={handleShareCircle}
-                onClick={handleCircleClick}
-              />
+            {[1, 2, 3].map((i) => (
+              <div
+                key={i}
+                className="border-2 border-neutral-200 rounded-3xl p-5 space-y-4 animate-pulse"
+              >
+                <div className="flex items-start gap-3">
+                  <div className="size-12 rounded-2xl bg-neutral-200" />
+                  <div className="flex-1 space-y-2">
+                    <div className="h-5 bg-neutral-200 rounded w-3/4" />
+                    <div className="h-4 bg-neutral-200 rounded w-1/2" />
+                  </div>
+                </div>
+                <div className="h-4 bg-neutral-200 rounded w-1/3" />
+                <div className="space-y-2">
+                  <div className="h-6 bg-neutral-200 rounded w-1/2" />
+                  <div className="h-2.5 bg-neutral-100 rounded-full" />
+                  <div className="h-4 bg-neutral-200 rounded w-1/4" />
+                </div>
+                <div className="h-4 bg-neutral-200 rounded w-1/3" />
+                <div className="h-10 bg-neutral-200 rounded-full" />
+              </div>
             ))}
           </div>
         ) : (
-          <EmptyState
-            type={searchQuery ? "no-results" : "no-category"}
-            searchQuery={searchQuery}
-            onClearSearch={handleClearSearch}
-            onViewAll={handleViewAll}
-            onCreateCircle={handleCreateCircle}
-          />
+          <>
+            {/* Result count */}
+            {searchQuery && (
+              <p className="text-sm text-neutral-600 mb-4" role="status" aria-live="polite">
+                Found {filteredCircles.length} circles
+                {searchQuery && ` matching "${searchQuery}"`}
+              </p>
+            )}
+
+            {/* Circles Grid */}
+            {filteredCircles.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+                {filteredCircles.map((circle) => (
+                  <EnrichedCircleCard
+                    key={circle.id}
+                    circle={circle}
+                    badge={getBadge(circle)}
+                    isUserMember={showMyCircles}
+                    onJoin={handleJoinCircle}
+                    onShare={handleShareCircle}
+                    onClick={handleCircleClick}
+                  />
+                ))}
+              </div>
+            ) : (
+              <EmptyState
+                type={searchQuery ? "no-results" : "no-category"}
+                searchQuery={searchQuery}
+                onClearSearch={handleClearSearch}
+                onViewAll={handleViewAll}
+                onCreateCircle={handleCreateCircle}
+              />
+            )}
+          </>
         )}
 
         {/* Create Circle CTA */}

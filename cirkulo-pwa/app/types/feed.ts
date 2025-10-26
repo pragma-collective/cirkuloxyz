@@ -21,6 +21,7 @@ export interface Circle {
   circleType: "rotating" | "contribution" | "fundraising";
   currency?: "cusd" | "cbtc";
   poolAddress?: string; // Smart contract address for the pool
+  lensGroupAddress?: string; // Lens Protocol group address
   contributionSchedule: "weekly" | "bi-weekly" | "monthly";
   endDate?: string | null; // Optional for open-ended contribution circles
   goalName: string;
