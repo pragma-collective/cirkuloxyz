@@ -4,6 +4,7 @@
  */
 
 import type { SessionClient } from "@lens-protocol/client";
+import { refresh } from "@lens-protocol/client/actions";
 
 const API_BASE_URL = import.meta.env.VITE_LENS_API_URL || "http://localhost:8000/api";
 
@@ -19,16 +20,54 @@ export class ApiError extends Error {
 }
 
 /**
- * Get authentication token from the provided session client
+ * Decode JWT token to check expiration
  */
-function getAuthToken(sessionClient: SessionClient | null): string | null {
+function decodeJWT(token: string): { exp: number } | null {
+	try {
+		const parts = token.split('.');
+		if (parts.length !== 3) return null;
+		
+		const payload = JSON.parse(atob(parts[1]));
+		return payload;
+	} catch {
+		return null;
+	}
+}
+
+/**
+ * Check if a JWT token is expired or will expire soon
+ * @param token - JWT token to check
+ * @param bufferMinutes - Minutes before expiration to consider token as "expired" (default: 5)
+ * @returns true if token is expired or expiring soon
+ */
+function isTokenExpired(token: string, bufferMinutes: number = 5): boolean {
+	const decoded = decodeJWT(token);
+	if (!decoded?.exp) return false;
+	
+	const expiresAt = new Date(decoded.exp * 1000);
+	const now = new Date();
+	
+	// Calculate minutes until expiration
+	const minutesUntilExpiry = (expiresAt.getTime() - now.getTime()) / 1000 / 60;
+	
+	console.log(`[ApiClient] Token expires in ${minutesUntilExpiry.toFixed(2)} minutes`);
+	
+	// Token is expired or expiring soon if minutes until expiry is less than buffer
+	return minutesUntilExpiry < bufferMinutes;
+}
+
+/**
+ * Get authentication token from the provided session client
+ * Automatically refreshes the token if it's expired or expiring soon
+ */
+async function getAuthToken(sessionClient: SessionClient | null): Promise<string | null> {
 	if (!sessionClient) {
 		console.warn("[ApiClient] No active Lens session");
 		return null;
 	}
 
 	try {
-		// Get credentials from Lens session
+		// Get current credentials
 		const credentialsResult = sessionClient.getCredentials();
 		
 		if (credentialsResult.isErr()) {
@@ -42,7 +81,55 @@ function getAuthToken(sessionClient: SessionClient | null): string | null {
 			return null;
 		}
 
-		return credentials.accessToken;
+		// Check if ID token is expired or expiring soon (within 5 minutes)
+		if (isTokenExpired(credentials.idToken, 5)) {
+			console.log("[ApiClient] ID token is expired or expiring soon, refreshing...");
+			
+			// @TODO: verify if this is actually the correct way to refresh credentials since it is not in the documentation
+			// Refresh credentials using the refresh token
+			const refreshResult = await refresh(sessionClient, {
+				refreshToken: credentials.refreshToken,
+			});
+
+			if (refreshResult.isErr()) {
+				console.error("[ApiClient] Failed to refresh credentials:", refreshResult.error);
+				// Return the old token as fallback
+				return credentials.idToken;
+			}
+
+			const newCredentials = refreshResult.value;
+			
+			// Check if refresh returned an error
+			if (newCredentials.__typename === "ForbiddenError") {
+				console.error("[ApiClient] Refresh forbidden:", newCredentials.reason);
+				// Return the old token as fallback
+				return credentials.idToken;
+			}
+			
+			console.log("[ApiClient] Successfully refreshed credentials");
+			
+			// Log new token expiration
+			const decoded = decodeJWT(newCredentials.idToken);
+			if (decoded?.exp) {
+				const expiresAt = new Date(decoded.exp * 1000);
+				const now = new Date();
+				const minutesUntilExpiry = (expiresAt.getTime() - now.getTime()) / 1000 / 60;
+				console.log(`[ApiClient] New ID token expires in ${minutesUntilExpiry.toFixed(2)} minutes`);
+			}
+			
+			return newCredentials.idToken;
+		}
+
+		// Token is still valid, log remaining time
+		const decoded = decodeJWT(credentials.idToken);
+		if (decoded?.exp) {
+			const expiresAt = new Date(decoded.exp * 1000);
+			const now = new Date();
+			const minutesUntilExpiry = (expiresAt.getTime() - now.getTime()) / 1000 / 60;
+			console.log(`[ApiClient] ID token expires in ${minutesUntilExpiry.toFixed(2)} minutes`);
+		}
+
+		return credentials.idToken;
 	} catch (error) {
 		console.error("[ApiClient] Error getting auth token:", error);
 		return null;
@@ -68,7 +155,7 @@ export async function apiRequest<T>(
 
 	// Add authentication token if required
 	if (requiresAuth) {
-		const token = getAuthToken(sessionClient || null);
+		const token = await getAuthToken(sessionClient || null);
 		if (token) {
 			headers.set("Authorization", `Bearer ${token}`);
 		} else {
@@ -198,7 +285,7 @@ export async function markInviteAccepted(params: {
 	});
 
 	// Add authentication token
-	const token = getAuthToken(sessionClient);
+	const token = await getAuthToken(sessionClient);
 	if (token) {
 		headers.set("Authorization", `Bearer ${token}`);
 	} else {
