@@ -4,14 +4,16 @@ import { Card, CardContent, CardHeader, CardTitle } from "app/components/ui/card
 import { Trophy, Target, RefreshCw, Users, TrendingUp } from "lucide-react";
 import { cn } from "app/lib/utils";
 import { useYieldBalance } from "app/hooks/use-yield-balance";
+import { YieldDisplay } from "./yield-display";
 import { type Address } from "viem";
 
 export interface CircleProgressProps {
   circle: Circle;
+  memberAddress?: Address; // Optional: Show member-specific yield earnings
   className?: string;
 }
 
-export function CircleProgress({ circle, className }: CircleProgressProps) {
+export function CircleProgress({ circle, memberAddress, className }: CircleProgressProps) {
   // Fetch yield data for contribution pools
   const { poolTotalPrincipal, poolTotalYield, poolTotalValue, apy, isLoading: isLoadingYield } =
     circle.circleType === "contribution" && circle.poolAddress
@@ -114,6 +116,17 @@ export function CircleProgress({ circle, className }: CircleProgressProps) {
             </p>
             <p className="text-2xl font-bold text-neutral-900">{circle.memberCount}</p>
           </div>
+
+          {/* Member-Specific Yield Earnings */}
+          {memberAddress && circle.poolAddress && (
+            <div className="pt-4 border-t border-neutral-200">
+              <YieldDisplay
+                poolAddress={circle.poolAddress as Address}
+                memberAddress={memberAddress}
+                currency={circle.currency || "cusd"}
+              />
+            </div>
+          )}
         </CardContent>
       </Card>
     );

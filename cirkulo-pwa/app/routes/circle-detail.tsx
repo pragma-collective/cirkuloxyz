@@ -9,7 +9,6 @@ import { CircleMembersBar } from "app/components/circle/circle-members-bar";
 import { CircleFAB } from "app/components/circle/circle-fab";
 import { PostComposerSheet } from "app/components/circle/post-composer-sheet";
 import { CircleActivityFeed } from "app/components/circle/circle-activity-feed";
-import { YieldDisplay } from "app/components/circle/yield-display";
 import { UserAvatar } from "app/components/ui/user-avatar";
 import { Button } from "app/components/ui/button";
 import { mockCircles, mockCircleActivity } from "app/lib/mock-data";
@@ -597,6 +596,7 @@ export default function CircleDetail({ loaderData }: Route.ComponentProps) {
 			{/* Stats Drawer - Expandable */}
 			<CircleStatsDrawer
 				circle={circleWithBalance}
+				memberAddress={auth.address as `0x${string}` | undefined}
 				isOpen={isStatsOpen}
 				onClose={() => setIsStatsOpen(false)}
 			/>
@@ -608,18 +608,8 @@ export default function CircleDetail({ loaderData }: Route.ComponentProps) {
 				loading={isLoadingMembers}
 				onMembersClick={handleMembers}
 			/>
-					{/* Yield Display - Show for contribution/savings pools if user is a member */}
-					{circleWithBalance.circleType === "contribution" && isMember && auth.address && circleWithBalance.poolAddress && (
-						<div className="card-enter">
-							<YieldDisplay
-								poolAddress={circleWithBalance.poolAddress as `0x${string}`}
-								memberAddress={auth.address as `0x${string}`}
-								currency={circleWithBalance.currency || "cusd"}
-							/>
-						</div>
-					)}
 
-					{/* Members Preview */}
+			{/* Members Preview */}
 					<button
 						onClick={() => navigate(`/circle/${circleId}/members`)}
 						className="flex items-center gap-3 p-4 bg-white rounded-xl border border-neutral-200 hover:border-primary-300 hover:shadow-sm transition-all"

@@ -3,15 +3,18 @@ import { X } from "lucide-react";
 import type { Circle } from "app/types/feed";
 import { CircleProgress } from "./circle-progress";
 import { cn } from "app/lib/utils";
+import type { Address } from "viem";
 
 export interface CircleStatsDrawerProps {
   circle: Circle;
+  memberAddress?: Address; // Optional: Show member-specific yield earnings
   isOpen: boolean;
   onClose: () => void;
 }
 
 export function CircleStatsDrawer({
   circle,
+  memberAddress,
   isOpen,
   onClose,
 }: CircleStatsDrawerProps) {
@@ -88,7 +91,7 @@ export function CircleStatsDrawer({
         {/* Content */}
         <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="max-w-6xl mx-auto">
-            <CircleProgress circle={circle} />
+            <CircleProgress circle={circle} memberAddress={memberAddress} />
           </div>
         </div>
 
