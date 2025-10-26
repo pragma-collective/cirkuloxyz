@@ -1,7 +1,7 @@
 /**
  * Lens Protocol Client
  *
- * Provides access to Lens Protocol testnet for social identity and session management.
+ * Provides access to Lens Protocol mainnet for social identity and session management.
  *
  * ## Lens Protocol Session Management
  *
@@ -72,7 +72,7 @@
  * @see {@link https://docs.lens.xyz} - Lens Protocol documentation
  */
 
-import { PublicClient, testnet } from "@lens-protocol/client";
+import { PublicClient, mainnet } from "@lens-protocol/client";
 import { InMemoryStorageProvider } from "@lens-protocol/storage";
 
 /**
@@ -89,7 +89,7 @@ const storage =
 /**
  * Lens Protocol Public Client
  *
- * Configured for Lens testnet environment with localStorage persistence.
+ * Configured for Lens mainnet environment with localStorage persistence.
  * Use this client to:
  * - Login and create sessions: `lensClient.login({ accountOwner: ... })`
  * - Resume sessions: `lensClient.resumeSession()`
@@ -116,6 +116,6 @@ const storage =
  * ```
  */
 export const lensClient = PublicClient.create({
-	environment: testnet,
+	environment: mainnet,
 	storage,
 });

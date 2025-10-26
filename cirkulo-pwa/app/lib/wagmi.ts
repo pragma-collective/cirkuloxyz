@@ -25,11 +25,11 @@ export const citreaTestnet = defineChain({
 	testnet: true,
 });
 
-// Export wagmi config with Citrea testnet and Lens testnet
+// Export wagmi config with Citrea testnet and Lens mainnet
 export const wagmiConfig = createConfig({
-	chains: [citreaTestnet, lensChains.testnet],
+	chains: [citreaTestnet, lensChains.mainnet],
 	transports: {
 		[citreaTestnet.id]: http(citreaTestnet.rpcUrls.default.http[0]),
-		[lensChains.testnet.id]: http(lensChains.testnet.rpcUrls.default.http[0]),
+		[lensChains.mainnet.id]: http(lensChains.mainnet.rpcUrls.default.http[0]),
 	},
 });
