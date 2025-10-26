@@ -1,7 +1,7 @@
 import { Card, CardContent } from "app/components/ui/card";
 import { Button } from "app/components/ui/button";
 import { UserAvatar } from "app/components/ui/user-avatar";
-import { Users, Clock, Plus, Share2, TrendingUp, Sparkles, Zap } from "lucide-react";
+import { Users, Clock, Plus, Share2, TrendingUp, Sparkles, Zap, Loader2 } from "lucide-react";
 import { cn } from "app/lib/utils";
 import type { Circle } from "app/types/feed";
 
@@ -12,6 +12,7 @@ export interface CircleCardProps {
   onClick?: (circleId: string) => void;
   badge?: "trending" | "new" | "nearly-complete";
   isUserMember?: boolean;
+  isJoining?: boolean;
 }
 
 const formatMoney = (amount: number): string => {
@@ -28,6 +29,7 @@ export function CircleCard({
   onClick,
   badge,
   isUserMember = false,
+  isJoining = false,
 }: CircleCardProps) {
   const badgeConfig = {
     trending: {
@@ -205,10 +207,20 @@ export function CircleCard({
               className="w-full"
               size="default"
               onClick={handleJoinClick}
+              disabled={isJoining}
               aria-label={`Join ${circle.name}`}
             >
-              <Plus className="size-4" />
-              Join Circle
+              {isJoining ? (
+                <>
+                  <Loader2 className="size-4 animate-spin" />
+                  Joining...
+                </>
+              ) : (
+                <>
+                  <Plus className="size-4" />
+                  Join Circle
+                </>
+              )}
             </Button>
           )}
 

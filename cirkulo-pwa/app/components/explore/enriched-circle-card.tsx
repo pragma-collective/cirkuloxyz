@@ -5,13 +5,14 @@ import type { Circle } from "app/types/feed";
 export interface EnrichedCircleCardProps extends Omit<CircleCardProps, "circle"> {
   circle: Circle;
   isUserMember?: boolean;
+  isJoining?: boolean;
 }
 
 /**
  * Wrapper around CircleCard that enriches circle data with contract amounts
  * Reads totalRaised and goalAmount from the DonationPool contract
  */
-export function EnrichedCircleCard({ circle, isUserMember = false, ...props }: EnrichedCircleCardProps) {
+export function EnrichedCircleCard({ circle, isUserMember = false, isJoining = false, ...props }: EnrichedCircleCardProps) {
   // Read contract data for this circle
   const { currentAmount, goalAmount, progress, isLoading } = useCircleContractData(circle.poolAddress);
 
@@ -24,5 +25,5 @@ export function EnrichedCircleCard({ circle, isUserMember = false, ...props }: E
     progress: isLoading ? circle.progress : progress,
   };
 
-  return <CircleCard circle={enrichedCircle} isUserMember={isUserMember} {...props} />;
+  return <CircleCard circle={enrichedCircle} isUserMember={isUserMember} isJoining={isJoining} {...props} />;
 }
