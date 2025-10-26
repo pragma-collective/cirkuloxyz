@@ -1,11 +1,12 @@
 /**
  * Lens Storage Upload Utility
  *
- * Uploads files to Lens Storage Nodes and returns lens:// URIs.
- * Lens Storage Nodes provide decentralized, permanent storage for user content.
+ * Uploads files to Grove Storage (Lens Protocol's storage solution) and returns lens:// URIs.
  *
  * @see https://docs.lens.xyz/docs/protocol/storage
  */
+
+import { storageClient } from "./grove-storage";
 
 /**
  * Upload a file to Lens Storage
@@ -19,45 +20,29 @@
  * const lensUri = await uploadToLensStorage(profilePhoto);
  * // Returns: "lens://4f91cab87ab5e4f5066f878b72..."
  */
-export async function uploadToLensStorage(file: File): Promise<string> {
-	// TODO: Implement actual Lens Storage Node upload
-	// This is a placeholder implementation for MVP
+export async function uploadToLensStorage(
+	fileOrJson: File | string,
+	walletClient?: any
+): Promise<string> {
+	// Handle JSON string (for metadata)
+	if (typeof fileOrJson === "string") {
+		try {
+			const { uri: metadataUri } = await storageClient.uploadAsJson(fileOrJson);
+			return metadataUri;
+		} catch (error) {
+			console.error("[Lens Storage] Upload failed:", error);
+			throw new Error(`Failed to upload metadata to Grove Storage: ${error instanceof Error ? error.message : "Unknown error"}`);
+		}
+	}
 
-	// For now, we'll create a data URL as a temporary solution
-	// In production, this should:
-	// 1. Upload to Lens Storage Node API
-	// 2. Get back a lens:// URI
-	// 3. Return that URI
-
-	return new Promise((resolve, reject) => {
-		const reader = new FileReader();
-
-		reader.onload = () => {
-			// Temporary: Use data URL
-			// TODO: Replace with actual Lens Storage upload
-			const dataUrl = reader.result as string;
-
-			// For testing, we'll return a mock lens:// URI
-			// In production, this would be the actual URI from Lens Storage
-			const mockLensUri = `lens://mock-${Date.now()}-${file.name}`;
-
-			console.warn(
-				"[Lens Storage] Using mock URI. Implement actual Lens Storage upload in production.",
-			);
-			console.log("[Lens Storage] Mock URI:", mockLensUri);
-			console.log("[Lens Storage] Data URL length:", dataUrl.length);
-
-			resolve(mockLensUri);
-		};
-
-		reader.onerror = () => {
-			reject(
-				new Error(`Failed to read file: ${reader.error?.message || "Unknown error"}`),
-			);
-		};
-
-		reader.readAsDataURL(file);
-	});
+	// Handle File object (for images, etc.)
+	try {
+		const { uri: fileUri } = await storageClient.uploadFile(fileOrJson);
+		return fileUri;
+	} catch (error) {
+		console.error("[Lens Storage] File upload failed:", error);
+		throw new Error(`Failed to upload file to Grove Storage: ${error instanceof Error ? error.message : "Unknown error"}`);
+	}
 }
 
 /**
