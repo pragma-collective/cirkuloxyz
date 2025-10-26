@@ -3,13 +3,23 @@ import type { Circle } from "app/types/feed";
 import { Card, CardContent, CardHeader, CardTitle } from "app/components/ui/card";
 import { Trophy, Target, RefreshCw, Users, TrendingUp } from "lucide-react";
 import { cn } from "app/lib/utils";
+import { useYieldBalance } from "app/hooks/use-yield-balance";
+import { YieldDisplay } from "./yield-display";
+import { type Address } from "viem";
 
 export interface CircleProgressProps {
   circle: Circle;
+  memberAddress?: Address; // Optional: Show member-specific yield earnings
   className?: string;
 }
 
-export function CircleProgress({ circle, className }: CircleProgressProps) {
+export function CircleProgress({ circle, memberAddress, className }: CircleProgressProps) {
+  // Fetch yield data for contribution pools
+  const { poolTotalPrincipal, poolTotalYield, poolTotalValue, apy, isLoading: isLoadingYield } =
+    circle.circleType === "contribution" && circle.poolAddress
+      ? useYieldBalance(circle.poolAddress as Address, "0x0", circle.currency || "cusd")
+      : { poolTotalPrincipal: 0n, poolTotalYield: 0n, poolTotalValue: 0n, apy: 0, isLoading: false };
+
   // Format currency based on token type
   const formatCurrency = (amount: number, currency?: "cusd" | "cbtc"): string => {
     if (currency === "cbtc") {
@@ -27,27 +37,94 @@ export function CircleProgress({ circle, className }: CircleProgressProps) {
     }).format(amount);
   };
 
-  // For contribution circles, show simple savings display (open-ended, no goal)
+  // Helper to convert bigint to number for display
+  const bigintToNumber = (value: bigint): number => {
+    return Number(value) / 1e18; // Convert from wei to ether
+  };
+
+  // For contribution circles, show yield-aware savings display
   if (circle.circleType === "contribution") {
+    // Use yield data if available, otherwise fall back to circle data
+    const displayValue = poolTotalValue > 0n ? bigintToNumber(poolTotalValue) : circle.currentAmount;
+    const displayPrincipal = poolTotalPrincipal > 0n ? bigintToNumber(poolTotalPrincipal) : circle.currentAmount;
+    const displayYield = poolTotalYield > 0n ? bigintToNumber(poolTotalYield) : 0;
+    const hasYieldData = poolTotalValue > 0n;
+
     return (
       <Card className={cn("bg-white/90 backdrop-blur-sm border-0 shadow-lg", className)}>
         <CardHeader>
-          <CardTitle className="text-xl sm:text-2xl">Collective Savings</CardTitle>
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-xl sm:text-2xl">Collective Savings</CardTitle>
+            {/* APY Badge - Always show for contribution circles */}
+            <div className={cn(
+              "px-3 py-1.5 rounded-full border-2 flex items-center gap-1.5",
+              circle.currency === "cbtc"
+                ? "bg-warning-50 border-warning-300 text-warning-900"
+                : "bg-success-50 border-success-300 text-success-900"
+            )}>
+              <TrendingUp className="size-4" />
+              <span className="text-sm font-bold">{apy}% APY</span>
+            </div>
+          </div>
         </CardHeader>
         <CardContent className="space-y-6">
           {/* Large Total Display */}
           <div className="text-center space-y-3">
             <div className="text-5xl sm:text-6xl font-bold text-neutral-900">
-              {formatCurrency(circle.currentAmount, circle.currency)}
+              {formatCurrency(displayValue, circle.currency)}
             </div>
-            <p className="text-sm text-neutral-600">Total Saved by Group</p>
+            <p className="text-sm text-neutral-600">
+              {hasYieldData ? "Total Pool Value (Principal + Yield)" : "Total Saved by Group"}
+            </p>
           </div>
+
+          {/* Principal vs Yield Breakdown - Always show if pool has any deposits */}
+          {hasYieldData && (
+            <div className="grid grid-cols-2 gap-3">
+              <div className="bg-neutral-50 rounded-xl p-4 text-center">
+                <p className="text-xs text-neutral-600 mb-1">Principal</p>
+                <p className="text-xl font-bold text-neutral-900">
+                  {formatCurrency(displayPrincipal, circle.currency)}
+                </p>
+              </div>
+              <div className={cn(
+                "rounded-xl p-4 text-center",
+                circle.currency === "cbtc" ? "bg-warning-50" : "bg-success-50"
+              )}>
+                <p className={cn(
+                  "text-xs mb-1",
+                  circle.currency === "cbtc" ? "text-warning-700" : "text-success-700"
+                )}>
+                  Yield Earned
+                </p>
+                <p className={cn(
+                  "text-xl font-bold",
+                  circle.currency === "cbtc" ? "text-warning-900" : "text-success-900"
+                )}>
+                  +{formatCurrency(displayYield, circle.currency)}
+                </p>
+              </div>
+            </div>
+          )}
 
           {/* Members Count */}
           <div className="bg-neutral-50 rounded-xl p-4 text-center">
-            <p className="text-xs text-neutral-600 mb-1">Members</p>
+            <p className="text-xs text-neutral-600 mb-1">
+              {hasYieldData ? "Members Earning Yield" : "Members"}
+            </p>
             <p className="text-2xl font-bold text-neutral-900">{circle.memberCount}</p>
           </div>
+
+          {/* Member-Specific Yield Earnings */}
+          {memberAddress && circle.poolAddress && (
+            <div className="pt-4 border-t border-neutral-200">
+              <YieldDisplay
+                poolAddress={circle.poolAddress as Address}
+                memberAddress={memberAddress}
+                currency={circle.currency || "cusd"}
+              />
+            </div>
+          )}
         </CardContent>
       </Card>
     );

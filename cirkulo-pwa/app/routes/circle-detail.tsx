@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
 import type { Route } from "./+types/circle-detail";
 import { useNavigate, useParams } from "react-router";
 import { AuthenticatedLayout } from "app/components/layouts/authenticated-layout";
@@ -9,9 +9,10 @@ import { CircleMembersBar } from "app/components/circle/circle-members-bar";
 import { CircleFAB } from "app/components/circle/circle-fab";
 import { PostComposerSheet } from "app/components/circle/post-composer-sheet";
 import { CircleActivityFeed } from "app/components/circle/circle-activity-feed";
-import { mockCircles } from "app/lib/mock-data";
+import { UserAvatar } from "app/components/ui/user-avatar";
+import { Button } from "app/components/ui/button";
+import { mockCircles, mockCircleActivity } from "app/lib/mock-data";
 import type { FeedItem } from "app/types/feed";
-import { Button } from "~/components/ui/button";
 import { Home, Compass, PlusCircle, Wallet, User, Loader2, AlertCircle } from "lucide-react";
 import { mapGroupToCircle } from "app/lib/map-group-to-circle";
 import { useFetchCircle } from "~/hooks/use-fetch-circle";
@@ -23,7 +24,7 @@ import { evmAddress } from "@lens-protocol/client";
 import { lensClient } from "app/lib/lens";
 import { useReadContract } from "wagmi";
 import { formatEther, type Address } from "viem";
-import { savingsPoolAbi, donationPoolAbi, roscaPoolAbi } from "app/lib/pool-abis";
+import { savingsPoolAbi, donationPoolAbi, roscaPoolAbi, erc20Abi } from "app/lib/pool-abis";
 import { citreaTestnet } from "app/lib/wagmi";
 import { useAuth } from "~/context/auth-context";
 import { useLensSession } from "~/context/lens-context";
@@ -197,6 +198,30 @@ export default function CircleDetail({ loaderData }: Route.ComponentProps) {
 		},
 		chainId: citreaTestnet.id,
 	});
+
+	// Read receipt token address from pool contract
+	const { data: receiptTokenAddress } = useReadContract({
+		address: circle?.poolAddress as Address,
+		abi: savingsPoolAbi,
+		functionName: "receiptToken",
+		query: {
+			enabled: !!circle && circle.circleType === "contribution",
+		},
+		chainId: citreaTestnet.id,
+	});
+
+	// Read user's receipt token balance (xshCUSD or xshCBTC)
+	const { data: receiptTokenBalance } = useReadContract({
+		address: receiptTokenAddress as Address,
+		abi: erc20Abi,
+		functionName: "balanceOf",
+		args: auth.user?.walletAddress ? [auth.user.walletAddress as Address] : undefined,
+		query: {
+			enabled: !!receiptTokenAddress && !!auth.user?.walletAddress,
+		},
+		chainId: citreaTestnet.id,
+	});
+
 
 	// Update circle with on-chain balance data
 	const circleWithBalance = useMemo(() => {
@@ -595,6 +620,7 @@ export default function CircleDetail({ loaderData }: Route.ComponentProps) {
 			{/* Stats Drawer - Expandable */}
 			<CircleStatsDrawer
 				circle={circleWithBalance}
+				memberAddress={auth.user?.walletAddress as `0x${string}` | undefined}
 				isOpen={isStatsOpen}
 				onClose={() => setIsStatsOpen(false)}
 			/>
@@ -606,6 +632,46 @@ export default function CircleDetail({ loaderData }: Route.ComponentProps) {
 				loading={isLoadingMembers}
 				onMembersClick={handleMembers}
 			/>
+
+			{/* Members Preview */}
+					<button
+						onClick={() => navigate(`/circle/${circleId}/members`)}
+						className="flex items-center gap-3 p-4 bg-white rounded-xl border border-neutral-200 hover:border-primary-300 hover:shadow-sm transition-all"
+					>
+						<div className="flex -space-x-2">
+							{circleWithBalance.members.slice(0, 4).map((member) => (
+								<UserAvatar
+									key={member.id}
+									user={member}
+									size="md"
+									className="size-10 ring-2 ring-white"
+								/>
+							))}
+						</div>
+						<div className="flex-1 text-left">
+							<p className="text-sm font-semibold text-neutral-900">
+								{circleWithBalance.memberCount} Members
+							</p>
+							{circleWithBalance.memberCount > 4 && (
+								<p className="text-xs text-neutral-600">
+									and {circleWithBalance.memberCount - 4} others
+								</p>
+							)}
+						</div>
+						<svg
+							className="size-5 text-neutral-400"
+							fill="none"
+							viewBox="0 0 24 24"
+							stroke="currentColor"
+						>
+							<path
+								strokeLinecap="round"
+								strokeLinejoin="round"
+								strokeWidth={2}
+								d="M9 5l7 7-7 7"
+							/>
+						</svg>
+					</button>
 
 			{/* Quick Actions Bar */}
 			<CircleActionsBar

@@ -21,6 +21,7 @@ import {
   Calendar,
   CalendarDays,
   ArrowLeft,
+  TrendingUp,
 } from "lucide-react";
 import { cn } from "app/lib/utils";
 import { useDynamicContext } from "@dynamic-labs/sdk-react-core";
@@ -854,6 +855,86 @@ export default function CreateCircle() {
                     },
                   ]}
                 />
+
+                {/* Yield Feature Callout - Only for contribution/savings circles */}
+                {formData.circleType === "contribution" && (
+                  <div className="bg-gradient-to-br from-success-50 to-success-100 rounded-xl p-4 sm:p-6 border-2 border-success-300">
+                    {/* Header with icon */}
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className="p-2.5 sm:p-3 bg-gradient-to-br from-success-500 to-success-600 rounded-xl flex-shrink-0">
+                        <TrendingUp className="size-6 sm:size-7 text-white" strokeWidth={2.5} />
+                      </div>
+                      <div className="flex-1">
+                        <h3 className="text-base sm:text-lg font-bold text-success-900">
+                          Your Savings Will Earn Yield 📈
+                        </h3>
+                      </div>
+                    </div>
+
+                    {/* Description */}
+                    <p className="text-sm text-success-800 leading-relaxed mb-4">
+                      All contributions automatically earn passive income.
+                      Your funds grow over time with <strong>no additional actions required</strong>.
+                    </p>
+
+                    {/* APY Card - Vertical layout on mobile */}
+                    <div className="bg-white/60 rounded-lg p-4 border border-success-200 mb-4">
+                      {/* Currency Icon & Label */}
+                      <div className="flex items-center gap-2 mb-3">
+                        {formData.currency === "cbtc" ? (
+                          <span className="text-2xl sm:text-3xl">₿</span>
+                        ) : (
+                          <span className="text-2xl sm:text-3xl">💵</span>
+                        )}
+                        <div>
+                          <p className="text-xs text-success-700 font-medium">
+                            {formData.currency === "cbtc" ? "cBTC Pools" : "CUSD Pools"}
+                          </p>
+                          <p className="text-lg sm:text-xl text-success-900 font-bold">
+                            {formData.currency === "cbtc" ? "3.0% APY" : "5.0% APY"}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Example Earnings */}
+                      <div className="pt-3 border-t border-success-200">
+                        <p className="text-xs text-success-700 mb-1">Example earnings on 1,000:</p>
+                        <p className="text-base sm:text-lg text-success-900 font-bold">
+                          {formData.currency === "cbtc"
+                            ? "+0.03 cBTC per year"
+                            : "+$50.00 per year"}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* How it works - Expandable */}
+                    <details className="group">
+                      <summary className="text-xs sm:text-sm text-success-700 cursor-pointer hover:text-success-900 font-medium flex items-center justify-between list-none">
+                        <span>How does yield work?</span>
+                        <span className="group-open:rotate-180 transition-transform">▼</span>
+                      </summary>
+                      <div className="mt-3 text-xs sm:text-sm text-success-800 space-y-2.5 pl-3 border-l-2 border-success-300">
+                        <p>
+                          Your contributions are deposited into a secure yield-generating vault
+                          that earns interest over time.
+                        </p>
+                        <p>
+                          <strong>CUSD (5% APY):</strong> Higher yield on stablecoin deposits,
+                          perfect for maximizing returns.
+                        </p>
+                        <p>
+                          <strong>cBTC (3% APY):</strong> Conservative Bitcoin yield,
+                          earn passive income while holding Bitcoin.
+                        </p>
+                        <div className="pt-2 space-y-1 text-success-900 font-semibold">
+                          <p>✓ Withdraw anytime with your principal + earned yield</p>
+                          <p>✓ Completely transparent on-chain tracking</p>
+                          <p>✓ No hidden fees or lock-up periods</p>
+                        </div>
+                      </div>
+                    </details>
+                  </div>
+                )}
 
                 {/* Contribution Amount - Only for rotating circles */}
                 {formData.circleType === "rotating" && (

@@ -1,15 +1,17 @@
 import { expect } from "chai";
 import { ethers, deployments } from "hardhat";
-import { XershaFactory, ROSCAPool, SavingsPool, DonationPool, MockCUSD } from "../typechain-types";
+import { XershaFactory, ROSCAPool, YieldSavingsPool, DonationPool, MockCUSD, MockYieldVault } from "../typechain-types";
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import { time } from "@nomicfoundation/hardhat-network-helpers";
 
 describe("XershaFactory", function () {
   let xershaFactory: XershaFactory;
   let roscaImpl: ROSCAPool;
-  let savingsImpl: SavingsPool;
+  let savingsImpl: YieldSavingsPool;
   let donationImpl: DonationPool;
   let mockToken: MockCUSD;
+  let cbtcVault: MockYieldVault;
+  let cusdVault: MockYieldVault;
   let deployer: SignerWithAddress;
   let user1: SignerWithAddress;
   let user2: SignerWithAddress;
@@ -27,17 +29,22 @@ describe("XershaFactory", function () {
     mockToken = await MockCUSDFactory.deploy();
     tokenAddress = await mockToken.getAddress();
 
+    // Deploy yield vaults
+    const MockYieldVaultFactory = await ethers.getContractFactory("MockYieldVault");
+    cbtcVault = await MockYieldVaultFactory.deploy(ethers.ZeroAddress, true, 300); // 3% APY
+    cusdVault = await MockYieldVaultFactory.deploy(tokenAddress, false, 500); // 5% APY
+
     // Deploy implementation contracts
     const ROSCAPoolFactory = await ethers.getContractFactory("ROSCAPool");
     roscaImpl = await ROSCAPoolFactory.deploy();
 
-    const SavingsPoolFactory = await ethers.getContractFactory("SavingsPool");
-    savingsImpl = await SavingsPoolFactory.deploy();
+    const YieldSavingsPoolFactory = await ethers.getContractFactory("YieldSavingsPool");
+    savingsImpl = await YieldSavingsPoolFactory.deploy();
 
     const DonationPoolFactory = await ethers.getContractFactory("DonationPool");
     donationImpl = await DonationPoolFactory.deploy();
 
-    // Deploy XershaFactory with implementation addresses
+    // Deploy XershaFactory with implementation addresses and vaults
     const XershaFactoryFactory = await ethers.getContractFactory("XershaFactory");
     xershaFactory = await XershaFactoryFactory.deploy(
       deployer.address,               // owner
@@ -45,6 +52,8 @@ describe("XershaFactory", function () {
       await roscaImpl.getAddress(),
       await savingsImpl.getAddress(),
       await donationImpl.getAddress(),
+      await cbtcVault.getAddress(),   // cBTC vault
+      await cusdVault.getAddress(),   // CUSD vault
     );
 
     // Use a simple address as circleId (can be any non-zero address for cross-chain reference)
@@ -275,6 +284,9 @@ describe("XershaFactory", function () {
       const poolAddress = await xershaFactory.circleToPool(circleId);
       const pool = await ethers.getContractAt("ROSCAPool", poolAddress);
 
+      // Get receipt token address
+      const cusdReceiptToken = await xershaFactory.cusdReceiptToken();
+
       // Attempt to initialize again should fail
       await expect(
         pool.initialize(
@@ -285,11 +297,15 @@ describe("XershaFactory", function () {
           ethers.parseEther("0.2"),
           tokenAddress,
           false,
+          cusdReceiptToken, // receipt token
         ),
       ).to.be.revertedWith("Already initialized");
     });
 
     it("Should prevent initialization of implementation contracts", async function () {
+      // Get receipt token address
+      const cusdReceiptToken = await xershaFactory.cusdReceiptToken();
+
       // Attempt to initialize the implementation directly should fail
       await expect(
         roscaImpl.initialize(
@@ -300,6 +316,7 @@ describe("XershaFactory", function () {
           ethers.parseEther("0.1"),
           tokenAddress,
           false,
+          cusdReceiptToken, // receipt token
         ),
       ).to.be.revertedWith("Already initialized");
     });

@@ -33,6 +33,7 @@ import {
 import { cn } from "app/lib/utils";
 import { useAuth } from "app/context/auth-context";
 import { useFetchMyCircles } from "app/hooks/use-fetch-my-circles";
+import { useReceiptTokenBalances } from "app/hooks/use-receipt-token-balances";
 
 export function meta({}: Route.MetaArgs) {
   return [
@@ -58,6 +59,9 @@ export default function Profile() {
 
   // Extract circles data
   const userCircles = circlesResponse?.data || [];
+
+  // Fetch receipt token balances (xshCUSD + xshCBTC)
+  const { balances: receiptBalances, isLoading: isLoadingReceipts } = useReceiptTokenBalances();
 
   // Format currency
   const formatCurrency = (amount: number): string => {
@@ -251,12 +255,16 @@ export default function Profile() {
 
               <button
                 className="flex flex-col items-center gap-1 hover:opacity-70 transition-opacity"
-                onClick={() => console.log("Total Saved clicked")}
-                aria-label={`${formatCurrency(mockUserStats.totalSaved)} total saved`}
+                onClick={() => navigate("/wallet")}
+                aria-label={`${receiptBalances ? `$${receiptBalances.totalUsdValue}` : '$0'} total saved`}
               >
-                <span className="text-xl sm:text-2xl font-bold text-neutral-900">
-                  {formatCurrency(mockUserStats.totalSaved)}
-                </span>
+                {isLoadingReceipts ? (
+                  <Loader2 className="size-6 text-neutral-400 animate-spin" />
+                ) : (
+                  <span className="text-xl sm:text-2xl font-bold text-neutral-900">
+                    ${receiptBalances?.totalUsdValue || '0.00'}
+                  </span>
+                )}
                 <span className="text-xs sm:text-sm text-neutral-600">
                   Saved
                 </span>
@@ -321,23 +329,34 @@ export default function Profile() {
                 </div>
               </div>
 
-              {/* Total Saved */}
-              <div className="card-enter rounded-2xl p-4 sm:p-6 bg-gradient-to-br from-success-400 to-success-600 text-white shadow-lg hover-scale cursor-pointer group">
+              {/* Total Saved - Receipt Tokens */}
+              <div
+                className="card-enter rounded-2xl p-4 sm:p-6 bg-gradient-to-br from-success-400 to-success-600 text-white shadow-lg hover-scale cursor-pointer group"
+                onClick={() => navigate("/wallet")}
+              >
                 <div className="flex flex-col items-center text-center gap-2 sm:gap-3">
                   <div className="text-3xl sm:text-4xl group-hover:scale-110 transition-transform">
                     💰
                   </div>
                   <div>
-                    <p className="text-2xl sm:text-3xl font-bold">
-                      {formatCurrency(mockUserStats.totalSaved)}
-                    </p>
-                    <p className="text-sm sm:text-base font-medium opacity-90 mt-1">
-                      Total Saved
-                    </p>
+                    {isLoadingReceipts ? (
+                      <Loader2 className="size-8 text-white animate-spin mx-auto" />
+                    ) : (
+                      <>
+                        <p className="text-2xl sm:text-3xl font-bold">
+                          ${receiptBalances?.totalUsdValue || '0.00'}
+                        </p>
+                        <p className="text-sm sm:text-base font-medium opacity-90 mt-1">
+                          Total Saved
+                        </p>
+                      </>
+                    )}
                   </div>
-                  <p className="text-xs opacity-75 mt-1">
-                    Amazing progress!
-                  </p>
+                  {!isLoadingReceipts && receiptBalances && (
+                    <p className="text-xs opacity-75 mt-1">
+                      {parseFloat(receiptBalances.totalUsdValue) > 0 ? 'Amazing progress!' : 'Start saving!'}
+                    </p>
+                  )}
                 </div>
               </div>
 
