@@ -9,6 +9,9 @@ import { EmptyState } from "app/components/explore/empty-state";
 import { CreateCircleCTA } from "app/components/explore/create-circle-cta";
 import { useEnrichedCircles } from "app/hooks/use-enriched-circles";
 import { useAuth } from "app/context/auth-context";
+import { useDynamicContext } from "@dynamic-labs/sdk-react-core";
+import { useJoinPublicGroup } from "app/hooks/use-join-public-group";
+import { toast } from "app/lib/toast";
 import type { Circle, CircleCategory } from "app/types/feed";
 import { Home, Compass, PlusCircle, Wallet, User } from "lucide-react";
 
@@ -24,12 +27,17 @@ export function meta({}: Route.MetaArgs) {
 
 export default function Explore() {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, sessionClient } = useAuth();
+  const { primaryWallet } = useDynamicContext();
   const [searchQuery, setSearchQuery] = useState("");
   const [activeCategory, setActiveCategory] = useState<CircleCategory | "all" | "my-circles">(
     "all"
   );
   const [sortBy, setSortBy] = useState("popular");
+  const [joiningCircleId, setJoiningCircleId] = useState<string | null>(null);
+
+  // Join public group mutation
+  const { mutateAsync: joinPublicGroup } = useJoinPublicGroup();
 
   // Determine if showing "My Circles" or "Explore"
   const showMyCircles = activeCategory === "my-circles";
@@ -117,9 +125,46 @@ export default function Explore() {
   };
 
   // Handlers
-  const handleJoinCircle = (circleId: string) => {
-    console.log("Join circle:", circleId);
-    // TODO: Implement join circle functionality
+  const handleJoinCircle = async (circleId: string) => {
+    // Find the circle by ID
+    const circle = enrichedCircles.find((c) => c.id === circleId);
+    if (!circle || !circle.lensGroupAddress) {
+      toast.error("Circle not found");
+      return;
+    }
+
+    // Check authentication
+    if (!sessionClient || !primaryWallet) {
+      toast.error("Please connect your wallet");
+      return;
+    }
+
+    try {
+      setJoiningCircleId(circleId);
+
+      // Get wallet client
+      // @ts-expect-error - getWalletClient exists on Dynamic wallet at runtime
+      const walletClient = await primaryWallet.getWalletClient();
+      if (!walletClient) {
+        throw new Error("Could not access wallet client");
+      }
+
+      // Join the public group
+      const result = await joinPublicGroup({
+        groupAddress: circle.lensGroupAddress,
+        sessionClient,
+        walletClient,
+        memberAddress: primaryWallet.address,
+      });
+
+      // Navigate to circle detail page
+      navigate(`/circle/${result.groupAddress}`);
+    } catch (error) {
+      console.error("[Explore] Error joining circle:", error);
+      // Error toast is already shown by the mutation hook
+    } finally {
+      setJoiningCircleId(null);
+    }
   };
 
   const handleShareCircle = (circleId: string) => {
@@ -242,6 +287,7 @@ export default function Explore() {
                     circle={circle}
                     badge={getBadge(circle)}
                     isUserMember={showMyCircles}
+                    isJoining={joiningCircleId === circle.id}
                     onJoin={handleJoinCircle}
                     onShare={handleShareCircle}
                     onClick={handleCircleClick}
