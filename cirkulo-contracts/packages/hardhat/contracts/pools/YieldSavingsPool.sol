@@ -8,6 +8,8 @@ import "@openzeppelin/contracts/utils/Pausable.sol";
 import "../interfaces/IXershaPool.sol";
 import "../interfaces/IYieldVault.sol";
 import "../libraries/TokenTransfer.sol";
+import "../tokens/XershaCUSD.sol";
+import "../tokens/XershaCBTC.sol";
 
 /**
  * @title YieldSavingsPool
@@ -41,6 +43,9 @@ contract YieldSavingsPool is IXershaPool, ReentrancyGuard, Pausable {
 
     /// @notice Yield vault where deposits are stored
     IYieldVault public yieldVault;
+
+    /// @notice Receipt token (xshCUSD or xshCBTC) minted to users on deposit
+    address public receiptToken;
 
     /// @notice Individual principal balances for each member (excluding yield)
     mapping(address => uint256) public principalBalances;
@@ -129,6 +134,7 @@ contract YieldSavingsPool is IXershaPool, ReentrancyGuard, Pausable {
      * @param _tokenAddress Address of the ERC20 token to use for savings (zero address if native)
      * @param _isNativeToken Whether this pool uses native token (cBTC) or ERC20 token
      * @param _yieldVault Address of the yield vault
+     * @param _receiptToken Address of the receipt token (xshCUSD or xshCBTC)
      */
     function initialize(
         address _creator,
@@ -137,7 +143,8 @@ contract YieldSavingsPool is IXershaPool, ReentrancyGuard, Pausable {
         address _backendManager,
         address _tokenAddress,
         bool _isNativeToken,
-        address _yieldVault
+        address _yieldVault,
+        address _receiptToken
     ) external {
         require(!initialized, "Already initialized");
         initialized = true;
@@ -151,6 +158,7 @@ contract YieldSavingsPool is IXershaPool, ReentrancyGuard, Pausable {
 
         require(_backendManager != address(0), "Invalid backend manager");
         require(_yieldVault != address(0), "Invalid yield vault");
+        require(_receiptToken != address(0), "Invalid receipt token");
 
         creator = _creator;
         backendManager = _backendManager;
@@ -159,6 +167,7 @@ contract YieldSavingsPool is IXershaPool, ReentrancyGuard, Pausable {
         tokenAddress = _tokenAddress;
         isNativeToken = _isNativeToken;
         yieldVault = IYieldVault(_yieldVault);
+        receiptToken = _receiptToken;
         isActive = true;
         createdAt = block.timestamp;
 
@@ -215,6 +224,9 @@ contract YieldSavingsPool is IXershaPool, ReentrancyGuard, Pausable {
             shareBalances[msg.sender] += depositAmount; // Virtual 1:1 shares for display
             totalPrincipal += depositAmount;
             totalSaved += depositAmount;
+
+            // Mint receipt tokens to user's wallet
+            XershaCBTC(receiptToken).mint(msg.sender, depositAmount);
         } else {
             // CUSD: Full vault integration
             IERC20(tokenAddress).safeIncreaseAllowance(address(yieldVault), depositAmount);
@@ -225,6 +237,9 @@ contract YieldSavingsPool is IXershaPool, ReentrancyGuard, Pausable {
             shareBalances[msg.sender] += sharesReceived;
             totalPrincipal += depositAmount;
             totalSaved += depositAmount;
+
+            // Mint receipt tokens to user's wallet
+            XershaCUSD(receiptToken).mint(msg.sender, depositAmount);
         }
 
         emit Deposited(msg.sender, depositAmount);
@@ -258,6 +273,9 @@ contract YieldSavingsPool is IXershaPool, ReentrancyGuard, Pausable {
             totalPrincipal -= amount;
             totalSaved -= amount;
 
+            // Burn receipt tokens from user's wallet
+            XershaCBTC(receiptToken).burn(msg.sender, amount);
+
             // Send principal amount directly from pool (pool received it during deposit)
             TokenTransfer.sendTokens(tokenAddress, isNativeToken, msg.sender, amount);
 
@@ -281,6 +299,17 @@ contract YieldSavingsPool is IXershaPool, ReentrancyGuard, Pausable {
             shareBalances[msg.sender] -= sharesToRedeem;
             totalPrincipal -= principalReduction;
             totalSaved -= principalReduction;
+
+            // Sync yield to receipt tokens before burning
+            // Calculate current yield and mint it if not already minted
+            uint256 currentReceiptBalance = XershaCUSD(receiptToken).balanceOf(msg.sender);
+            uint256 yieldToMint = totalBalance > currentReceiptBalance ? totalBalance - currentReceiptBalance : 0;
+            if (yieldToMint > 0) {
+                XershaCUSD(receiptToken).mintYield(msg.sender, yieldToMint);
+            }
+
+            // Now burn receipt tokens from user's wallet (proportionally including yield)
+            XershaCUSD(receiptToken).burn(msg.sender, amount);
 
             // Send tokens to member
             TokenTransfer.sendTokens(tokenAddress, isNativeToken, msg.sender, receivedAmount);

@@ -146,23 +146,106 @@ const deployXershaFactory: DeployFunction = async function (hre: HardhatRuntimeE
   console.log("\nYield Vaults:");
   console.log("  cBTC Vault (3% APY):", await xershaFactoryContract.cBTCYieldVault());
   console.log("  CUSD Vault (5% APY):", await xershaFactoryContract.cusdYieldVault());
+  console.log("\nReceipt Tokens (Portfolio Tracking):");
+  console.log("  xshCUSD:", await xershaFactoryContract.cusdReceiptToken());
+  console.log("  xshCBTC:", await xershaFactoryContract.cbtcReceiptToken());
   console.log("\n💰 All savings pools now earn yield automatically!");
   console.log("   cBTC pools: 3% APY");
   console.log("   CUSD pools: 5% APY");
+  console.log("\n💎 Receipt tokens minted to user wallets:");
+  console.log("   Users receive xshCUSD/xshCBTC on deposits");
+  console.log("   Tokens burned on withdrawals");
+  console.log("   Single balanceOf() shows total across all pools");
   console.log("=====================================\n");
 
   // Whitelist CUSD Vault as minter (for existing CUSD token)
   if (existingCUSDAddress) {
-    console.log("📋 Whitelisting CUSD Vault as minter...");
-    const cusdTokenContract = await hre.ethers.getContractAt("MockCUSD", existingCUSDAddress, deployer);
+    console.log("\n📋 Checking CUSD Vault minter status...");
+
+    // Full ABI for the existing CUSDToken contract
+    const cusdTokenAbi = [
+      {
+        "inputs": [
+          {
+            "internalType": "address",
+            "name": "minter",
+            "type": "address"
+          },
+          {
+            "internalType": "bool",
+            "name": "status",
+            "type": "bool"
+          }
+        ],
+        "name": "setMinterStatus",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+      },
+      {
+        "inputs": [
+          {
+            "internalType": "address",
+            "name": "",
+            "type": "address"
+          }
+        ],
+        "name": "whitelistedMinters",
+        "outputs": [
+          {
+            "internalType": "bool",
+            "name": "",
+            "type": "bool"
+          }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+      },
+      {
+        "inputs": [],
+        "name": "owner",
+        "outputs": [
+          {
+            "internalType": "address",
+            "name": "",
+            "type": "address"
+          }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+      }
+    ];
+
+    // Get signer - use CUSD token owner if available, otherwise deployer
+    let signer;
+    const cusdTokenOwnerPrivateKey = process.env.CUSD_TOKEN_OWNER_PRIVATE_KEY;
+
+    if (cusdTokenOwnerPrivateKey) {
+      console.log("Using CUSD_TOKEN_OWNER_PRIVATE_KEY for whitelisting");
+      signer = new hre.ethers.Wallet(cusdTokenOwnerPrivateKey, hre.ethers.provider);
+    } else {
+      const [deployerSigner] = await hre.ethers.getSigners();
+      signer = deployerSigner;
+    }
+
+    const cusdTokenContract = new hre.ethers.Contract(existingCUSDAddress, cusdTokenAbi, signer);
 
     try {
-      const tx = await cusdTokenContract.setMinterStatus(cusdVault.address, true);
-      await tx.wait();
-      console.log("✅ CUSD Vault whitelisted as minter!");
+      // Check if vault is already whitelisted
+      const isWhitelisted = await cusdTokenContract.whitelistedMinters(cusdVault.address);
+
+      if (isWhitelisted) {
+        console.log("✅ CUSD Vault already whitelisted as minter");
+      } else {
+        console.log("Whitelisting CUSD Vault as minter...");
+        const tx = await cusdTokenContract.setMinterStatus(cusdVault.address, true);
+        await tx.wait();
+        console.log("✅ CUSD Vault whitelisted successfully");
+      }
     } catch (error: any) {
-      console.log("❌ Failed to whitelist vault:", error.message);
-      console.log("⚠️  You may need to manually whitelist the vault:");
+      console.log("❌ Error whitelisting vault:", error.message);
+      console.log("⚠️  Make sure CUSD_TOKEN_OWNER_PRIVATE_KEY is set in .env");
+      console.log("⚠️  Or manually whitelist the vault:");
       console.log(`   await cusdToken.setMinterStatus("${cusdVault.address}", true)\n`);
     }
   }

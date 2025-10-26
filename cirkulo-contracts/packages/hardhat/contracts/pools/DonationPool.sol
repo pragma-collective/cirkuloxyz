@@ -6,6 +6,8 @@ import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/utils/Pausable.sol";
 import "../interfaces/IXershaPool.sol";
 import "../libraries/TokenTransfer.sol";
+import "../tokens/XershaCUSD.sol";
+import "../tokens/XershaCBTC.sol";
 
 /**
  * @title DonationPool
@@ -46,6 +48,9 @@ contract DonationPool is IXershaPool, ReentrancyGuard, Pausable {
 
     /// @notice Total amount raised so far
     uint256 public totalRaised;
+
+    /// @notice Receipt token (xshCUSD or xshCBTC) minted to users on donation
+    address public receiptToken;
 
     /// @notice Individual donation amounts per member
     mapping(address => uint256) public donations;
@@ -138,6 +143,7 @@ contract DonationPool is IXershaPool, ReentrancyGuard, Pausable {
      * @param _deadline Deadline as Unix timestamp
      * @param _tokenAddress Address of the ERC20 token to use for donations (zero address if native)
      * @param _isNativeToken Whether this pool uses native token (cBTC) or ERC20 token
+     * @param _receiptToken Address of the receipt token (xshCUSD or xshCBTC)
      */
     function initialize(
         address _creator,
@@ -148,7 +154,8 @@ contract DonationPool is IXershaPool, ReentrancyGuard, Pausable {
         uint256 _goalAmount,
         uint256 _deadline,
         address _tokenAddress,
-        bool _isNativeToken
+        bool _isNativeToken,
+        address _receiptToken
     ) external {
         require(!initialized, "Already initialized");
         initialized = true;
@@ -157,6 +164,7 @@ contract DonationPool is IXershaPool, ReentrancyGuard, Pausable {
         require(_goalAmount > 0, "Goal must be positive");
         require(_deadline > block.timestamp, "Deadline must be future");
         require(_backendManager != address(0), "Invalid backend manager");
+        require(_receiptToken != address(0), "Invalid receipt token");
 
         // Validate token address based on token type
         if (_isNativeToken) {
@@ -174,6 +182,7 @@ contract DonationPool is IXershaPool, ReentrancyGuard, Pausable {
         deadline = _deadline;
         tokenAddress = _tokenAddress;
         isNativeToken = _isNativeToken;
+        receiptToken = _receiptToken;
         isActive = true;
 
         // Creator automatically becomes a member
@@ -238,6 +247,13 @@ contract DonationPool is IXershaPool, ReentrancyGuard, Pausable {
         donations[msg.sender] += donationAmount;
         totalRaised += donationAmount;
 
+        // Mint receipt tokens to donor's wallet
+        if (isNativeToken) {
+            XershaCBTC(receiptToken).mint(msg.sender, donationAmount);
+        } else {
+            XershaCUSD(receiptToken).mint(msg.sender, donationAmount);
+        }
+
         emit DonationMade(msg.sender, donationAmount);
 
         // Check if goal reached
@@ -266,6 +282,19 @@ contract DonationPool is IXershaPool, ReentrancyGuard, Pausable {
         uint256 amount = isNativeToken
             ? address(this).balance
             : IERC20(tokenAddress).balanceOf(address(this));
+
+        // Burn receipt tokens from all donors since funds are being released
+        for (uint256 i = 0; i < donors.length; i++) {
+            address donor = donors[i];
+            uint256 donorAmount = donations[donor];
+            if (donorAmount > 0) {
+                if (isNativeToken) {
+                    XershaCBTC(receiptToken).burn(donor, donorAmount);
+                } else {
+                    XershaCUSD(receiptToken).burn(donor, donorAmount);
+                }
+            }
+        }
 
         TokenTransfer.sendTokens(tokenAddress, isNativeToken, beneficiary, amount);
 
@@ -299,6 +328,13 @@ contract DonationPool is IXershaPool, ReentrancyGuard, Pausable {
         uint256 amount = donations[msg.sender];
         donations[msg.sender] = 0;
         totalRaised -= amount;
+
+        // Burn receipt tokens from donor's wallet
+        if (isNativeToken) {
+            XershaCBTC(receiptToken).burn(msg.sender, amount);
+        } else {
+            XershaCUSD(receiptToken).burn(msg.sender, amount);
+        }
 
         TokenTransfer.sendTokens(tokenAddress, isNativeToken, msg.sender, amount);
 

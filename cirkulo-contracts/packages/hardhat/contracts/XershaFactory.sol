@@ -6,6 +6,8 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "./pools/ROSCAPool.sol";
 import "./pools/YieldSavingsPool.sol";
 import "./pools/DonationPool.sol";
+import "./tokens/XershaCUSD.sol";
+import "./tokens/XershaCBTC.sol";
 
 /**
  * @title XershaFactory
@@ -41,6 +43,12 @@ contract XershaFactory is Ownable {
 
     /// @notice Yield vault for CUSD pools (5% APY)
     address public cusdYieldVault;
+
+    /// @notice Receipt token for CUSD deposits
+    XershaCUSD public cusdReceiptToken;
+
+    /// @notice Receipt token for cBTC deposits
+    XershaCBTC public cbtcReceiptToken;
 
     /// @notice Mapping from circle contract address to pool address
     mapping(address => address) public circleToPool;
@@ -118,6 +126,10 @@ contract XershaFactory is Ownable {
         donationImplementation = _donationImpl;
         cBTCYieldVault = _cBTCYieldVault;
         cusdYieldVault = _cusdYieldVault;
+
+        // Deploy receipt tokens
+        cusdReceiptToken = new XershaCUSD();
+        cbtcReceiptToken = new XershaCBTC();
     }
 
     // ========== Pool Creation Functions ==========
@@ -147,6 +159,9 @@ contract XershaFactory is Ownable {
         // Clone the ROSCA implementation
         address clone = Clones.clone(roscaImplementation);
 
+        // Select appropriate receipt token based on currency
+        address receiptToken = isNativeToken ? address(cbtcReceiptToken) : address(cusdReceiptToken);
+
         // Initialize the clone
         ROSCAPool(clone).initialize(
             msg.sender,
@@ -155,8 +170,16 @@ contract XershaFactory is Ownable {
             backendManager,
             contributionAmount,
             tokenAddress,
-            isNativeToken
+            isNativeToken,
+            receiptToken
         );
+
+        // Authorize pool to mint/burn receipt tokens
+        if (isNativeToken) {
+            cbtcReceiptToken.addAuthorizedPool(clone);
+        } else {
+            cusdReceiptToken.addAuthorizedPool(clone);
+        }
 
         _registerPool(circleId, clone, PoolType.ROSCA);
 
@@ -190,6 +213,9 @@ contract XershaFactory is Ownable {
         // Select appropriate yield vault based on token type
         address vaultAddress = isNativeToken ? cBTCYieldVault : cusdYieldVault;
 
+        // Select appropriate receipt token based on currency
+        address receiptToken = isNativeToken ? address(cbtcReceiptToken) : address(cusdReceiptToken);
+
         // Initialize the clone with yield vault
         YieldSavingsPool(payable(clone)).initialize(
             msg.sender,
@@ -198,8 +224,16 @@ contract XershaFactory is Ownable {
             backendManager,
             tokenAddress,
             isNativeToken,
-            vaultAddress
+            vaultAddress,
+            receiptToken
         );
+
+        // Authorize pool to mint/burn receipt tokens
+        if (isNativeToken) {
+            cbtcReceiptToken.addAuthorizedPool(clone);
+        } else {
+            cusdReceiptToken.addAuthorizedPool(clone);
+        }
 
         _registerPool(circleId, clone, PoolType.SAVINGS);
 
@@ -238,6 +272,9 @@ contract XershaFactory is Ownable {
         // Clone the Donation implementation
         address clone = Clones.clone(donationImplementation);
 
+        // Select appropriate receipt token based on currency
+        address receiptToken = isNativeToken ? address(cbtcReceiptToken) : address(cusdReceiptToken);
+
         // Initialize the clone
         DonationPool(clone).initialize(
             msg.sender,
@@ -248,8 +285,16 @@ contract XershaFactory is Ownable {
             goalAmount,
             deadline,
             tokenAddress,
-            isNativeToken
+            isNativeToken,
+            receiptToken
         );
+
+        // Authorize pool to mint/burn receipt tokens
+        if (isNativeToken) {
+            cbtcReceiptToken.addAuthorizedPool(clone);
+        } else {
+            cusdReceiptToken.addAuthorizedPool(clone);
+        }
 
         _registerPool(circleId, clone, PoolType.DONATION);
 

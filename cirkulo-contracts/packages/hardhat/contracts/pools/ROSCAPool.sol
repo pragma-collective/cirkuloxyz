@@ -6,6 +6,8 @@ import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/utils/Pausable.sol";
 import "../interfaces/IXershaPool.sol";
 import "../libraries/TokenTransfer.sol";
+import "../tokens/XershaCUSD.sol";
+import "../tokens/XershaCBTC.sol";
 
 /**
  * @title ROSCAPool
@@ -49,6 +51,9 @@ contract ROSCAPool is IXershaPool, ReentrancyGuard, Pausable {
 
     /// @notice Fixed contribution amount per round in wei
     uint256 public contributionAmount;
+
+    /// @notice Receipt token (xshCUSD or xshCBTC) minted to users on contribution
+    address public receiptToken;
 
     /// @notice Array of all members in the pool
     address[] public members;
@@ -145,6 +150,7 @@ contract ROSCAPool is IXershaPool, ReentrancyGuard, Pausable {
      * @param _contributionAmount Fixed contribution amount per round
      * @param _tokenAddress Address of the ERC20 token to use for contributions (zero address if native)
      * @param _isNativeToken Whether this pool uses native token (cBTC) or ERC20 token
+     * @param _receiptToken Address of the receipt token (xshCUSD or xshCBTC)
      */
     function initialize(
         address _creator,
@@ -153,13 +159,15 @@ contract ROSCAPool is IXershaPool, ReentrancyGuard, Pausable {
         address _backendManager,
         uint256 _contributionAmount,
         address _tokenAddress,
-        bool _isNativeToken
+        bool _isNativeToken,
+        address _receiptToken
     ) external {
         require(!initialized, "Already initialized");
         initialized = true;
 
         require(_contributionAmount > 0, "Invalid contribution amount");
         require(_backendManager != address(0), "Invalid backend manager");
+        require(_receiptToken != address(0), "Invalid receipt token");
 
         // Validate token address based on token type
         if (_isNativeToken) {
@@ -175,6 +183,7 @@ contract ROSCAPool is IXershaPool, ReentrancyGuard, Pausable {
         contributionAmount = _contributionAmount;
         tokenAddress = _tokenAddress;
         isNativeToken = _isNativeToken;
+        receiptToken = _receiptToken;
 
         // Creator automatically becomes a member
         members.push(_creator);
@@ -258,6 +267,13 @@ contract ROSCAPool is IXershaPool, ReentrancyGuard, Pausable {
 
         TokenTransfer.receiveTokens(tokenAddress, isNativeToken, contributionAmount);
 
+        // Mint receipt tokens to user's wallet
+        if (isNativeToken) {
+            XershaCBTC(receiptToken).mint(msg.sender, contributionAmount);
+        } else {
+            XershaCUSD(receiptToken).mint(msg.sender, contributionAmount);
+        }
+
         emit ContributionMade(msg.sender, currentRound, contributionAmount);
 
         if (_everyonePaid()) {
@@ -281,6 +297,17 @@ contract ROSCAPool is IXershaPool, ReentrancyGuard, Pausable {
         hasReceivedPayout[recipient] = true;
 
         uint256 payoutAmount = contributionAmount * members.length;
+
+        // Burn receipt tokens equal to recipient's total contributions so far
+        // In ROSCA, payout includes others' contributions, but we only burn what the recipient put in
+        uint256 recipientContributions = totalContributed[recipient];
+        if (recipientContributions > 0) {
+            if (isNativeToken) {
+                XershaCBTC(receiptToken).burn(recipient, recipientContributions);
+            } else {
+                XershaCUSD(receiptToken).burn(recipient, recipientContributions);
+            }
+        }
 
         TokenTransfer.sendTokens(tokenAddress, isNativeToken, recipient, payoutAmount);
 

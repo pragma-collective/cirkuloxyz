@@ -284,6 +284,9 @@ describe("XershaFactory", function () {
       const poolAddress = await xershaFactory.circleToPool(circleId);
       const pool = await ethers.getContractAt("ROSCAPool", poolAddress);
 
+      // Get receipt token address
+      const cusdReceiptToken = await xershaFactory.cusdReceiptToken();
+
       // Attempt to initialize again should fail
       await expect(
         pool.initialize(
@@ -294,11 +297,15 @@ describe("XershaFactory", function () {
           ethers.parseEther("0.2"),
           tokenAddress,
           false,
+          cusdReceiptToken, // receipt token
         ),
       ).to.be.revertedWith("Already initialized");
     });
 
     it("Should prevent initialization of implementation contracts", async function () {
+      // Get receipt token address
+      const cusdReceiptToken = await xershaFactory.cusdReceiptToken();
+
       // Attempt to initialize the implementation directly should fail
       await expect(
         roscaImpl.initialize(
@@ -309,6 +316,7 @@ describe("XershaFactory", function () {
           ethers.parseEther("0.1"),
           tokenAddress,
           false,
+          cusdReceiptToken, // receipt token
         ),
       ).to.be.revertedWith("Already initialized");
     });
