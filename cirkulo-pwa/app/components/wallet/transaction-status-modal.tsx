@@ -134,9 +134,8 @@ export function TransactionStatusModal({
                   </p>
                 )}
 
-                {/* TODO: Replace with real block explorer URL */}
                 <a
-                  href={`https://explorer.citrea.xyz/tx/${txHash}`}
+                  href={`https://explorer.testnet.citrea.xyz/tx/${txHash}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-center justify-center gap-2 w-full px-4 py-2 border-2 border-neutral-200 rounded-xl hover:border-neutral-300 transition-colors text-neutral-900 font-medium"

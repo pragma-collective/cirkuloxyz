@@ -8,10 +8,10 @@ import { Button } from "~/components/ui/button";
 import { TransactionSummary } from "~/components/wallet/transaction-summary";
 import { TransactionStatusModal } from "~/components/wallet/transaction-status-modal";
 import { sendTransactionSchema, type SendTransactionFormData } from "~/schemas/send-transaction-schema";
-import { useFeeEstimator } from "~/hooks/use-fee-estimator";
 import { useEnsResolver } from "~/hooks/use-ens-resolver";
 import { useSendTransaction } from "~/hooks/use-send-transaction";
 import { useTokenPrice } from "~/hooks/use-token-price";
+import { useWalletBalances } from "~/hooks/use-wallet-balances";
 import { cn } from "~/lib/utils";
 
 export function meta({}: Route.MetaArgs) {
@@ -23,12 +23,6 @@ export function meta({}: Route.MetaArgs) {
     },
   ];
 }
-
-// Mock balances - TODO: Replace with real wallet balances
-const MOCK_BALANCES = {
-  CBTC: 0.05234,
-  CUSD: 4200.0,
-};
 
 export default function SendPage() {
   const navigate = useNavigate();
@@ -57,14 +51,15 @@ export default function SendPage() {
   const amountValue = watch("amount");
 
   // Hooks
-  const { estimatedFee } = useFeeEstimator(selectedToken);
+  const { balances, isLoading: isLoadingBalances } = useWalletBalances();
   const { ensName } = useEnsResolver(recipientValue);
   const { sendTransaction, status, txHash, error, reset } = useSendTransaction();
   const { formatUSD } = useTokenPrice(selectedToken);
 
-  // Calculate total
-  const amountNum = parseFloat(amountValue) || 0;
-  const total = amountNum + estimatedFee;
+  // Get current balance for selected token
+  const currentBalance = selectedToken === "CBTC"
+    ? parseFloat(balances?.cbtc.amount || "0")
+    : parseFloat(balances?.cusd.amount || "0");
 
   // Handle token selection
   const handleTokenSelect = (token: "CBTC" | "CUSD") => {
@@ -78,12 +73,11 @@ export default function SendPage() {
   const handleReview = handleSubmit((data) => {
     // Additional validation: check if amount exceeds balance
     const amount = parseFloat(data.amount);
-    const balance = MOCK_BALANCES[selectedToken];
 
-    if (amount + estimatedFee > balance) {
+    if (amount > currentBalance) {
       setError("amount", {
         type: "manual",
-        message: "Insufficient balance (including network fee)",
+        message: "Insufficient balance",
       });
       return;
     }
@@ -269,8 +263,6 @@ export default function SendPage() {
                   token={selectedToken}
                   amount={amountValue}
                   recipient={recipientValue}
-                  fee={estimatedFee}
-                  total={total}
                   ensName={ensName}
                 />
               </div>
@@ -284,10 +276,16 @@ export default function SendPage() {
                 {/* Balance Display */}
                 <div className="flex items-center justify-center gap-2 text-sm text-neutral-600">
                   <span>Balance:</span>
-                  <span className="font-semibold text-neutral-900">
-                    {MOCK_BALANCES[selectedToken].toFixed(selectedToken === "CBTC" ? 8 : 2)} {selectedToken}
-                  </span>
-                  <span className="text-neutral-500">({formatUSD(MOCK_BALANCES[selectedToken])})</span>
+                  {isLoadingBalances ? (
+                    <span className="font-semibold text-neutral-400">Loading...</span>
+                  ) : (
+                    <>
+                      <span className="font-semibold text-neutral-900">
+                        {currentBalance.toFixed(selectedToken === "CBTC" ? 8 : 2)} {selectedToken}
+                      </span>
+                      <span className="text-neutral-500">({formatUSD(currentBalance)})</span>
+                    </>
+                  )}
                 </div>
 
                 {/* Error Message */}
@@ -295,26 +293,6 @@ export default function SendPage() {
                   <div className="flex items-center gap-2 p-4 bg-error-50 border border-error-200 rounded-xl">
                     <AlertCircle className="size-5 text-error-600 shrink-0" />
                     <p className="text-sm text-error-700">{errors.amount.message}</p>
-                  </div>
-                )}
-
-                {/* Fee & Total (progressive disclosure) */}
-                {amountValue && parseFloat(amountValue) > 0 && !errors.amount && (
-                  <div className="bg-white/60 backdrop-blur-sm rounded-2xl p-4 space-y-3 border-2 border-neutral-200">
-                    <div className="flex justify-between text-sm">
-                      <span className="text-neutral-600">Network Fee</span>
-                      <span className="font-semibold text-neutral-900">
-                        {estimatedFee.toFixed(8)} {selectedToken}
-                      </span>
-                    </div>
-                    <div className="border-t-2 border-neutral-300" />
-                    <div className="flex justify-between">
-                      <span className="font-bold text-neutral-900">Total</span>
-                      <span className="text-xl font-bold text-neutral-900">
-                        {total.toFixed(8)} {selectedToken}
-                      </span>
-                    </div>
-                    <p className="text-xs text-center text-neutral-600">≈ {formatUSD(total)}</p>
                   </div>
                 )}
 
