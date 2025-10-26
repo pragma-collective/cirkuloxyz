@@ -344,8 +344,8 @@ export function getMockCUSDAddress(): `0x${string}` {
 }
 
 /**
- * Minimal ERC20 ABI for reading balances
- * Contains only the balanceOf function needed for wallet balance queries
+ * ERC20 ABI for token operations
+ * Contains balanceOf, decimals, and transfer functions
  */
 export const erc20Abi = [
   {
@@ -378,6 +378,30 @@ export const erc20Abi = [
       },
     ],
     stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [
+      {
+        internalType: "address",
+        name: "to",
+        type: "address",
+      },
+      {
+        internalType: "uint256",
+        name: "amount",
+        type: "uint256",
+      },
+    ],
+    name: "transfer",
+    outputs: [
+      {
+        internalType: "bool",
+        name: "",
+        type: "bool",
+      },
+    ],
+    stateMutability: "nonpayable",
     type: "function",
   },
 ] as const;

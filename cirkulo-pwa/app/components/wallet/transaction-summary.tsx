@@ -6,8 +6,6 @@ interface TransactionSummaryProps {
   token: "CBTC" | "CUSD";
   amount: string;
   recipient: string;
-  fee: number;
-  total: number;
   ensName?: string | null;
 }
 
@@ -15,8 +13,6 @@ export function TransactionSummary({
   token,
   amount,
   recipient,
-  fee,
-  total,
   ensName,
 }: TransactionSummaryProps) {
   const { formatUSD } = useTokenPrice(token);
@@ -75,32 +71,6 @@ export function TransactionSummary({
               {formatAddress(recipient)}
             </p>
           </div>
-        </div>
-      </div>
-
-      <div className="border-t border-neutral-200" aria-hidden="true" />
-
-      {/* Network Fee */}
-      <div className="flex items-center justify-between">
-        <p className="text-sm font-medium text-neutral-600">Network Fee</p>
-        <div className="text-right">
-          <p className="font-semibold text-neutral-900">
-            {fee.toFixed(8)} {token}
-          </p>
-          <p className="text-xs text-neutral-600">{formatUSD(fee)}</p>
-        </div>
-      </div>
-
-      <div className="border-t-2 border-neutral-300" aria-hidden="true" />
-
-      {/* Total */}
-      <div className="flex items-center justify-between">
-        <p className="text-base font-bold text-neutral-900">Total</p>
-        <div className="text-right">
-          <p className="text-xl font-bold text-neutral-900">
-            {total.toFixed(8)} {token}
-          </p>
-          <p className="text-sm text-neutral-600">{formatUSD(total)}</p>
         </div>
       </div>
     </div>
