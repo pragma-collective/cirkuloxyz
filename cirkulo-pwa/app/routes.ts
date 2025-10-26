@@ -37,6 +37,7 @@ export default [
 			route("wallet/send", "routes/wallet.send.tsx"),
 			route("wallet/receive", "routes/wallet.receive.tsx"),
 			route("wallet/on-ramp", "routes/wallet.on-ramp.tsx"),
+			route("wallet/transactions", "routes/wallet.transactions.tsx"),
 			route("circle/:id", "routes/circle-detail.tsx"),
 			route("circle/:id/contribute", "routes/circle.$id.contribute.tsx"),
 			route("circle/:id/members", "routes/circle-members.tsx"),

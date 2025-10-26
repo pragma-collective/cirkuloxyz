@@ -9,6 +9,7 @@ export interface TransactionListProps {
   isLoading?: boolean;
   hasBalance?: boolean;
   className?: string;
+  showViewAll?: boolean;
 }
 
 export function TransactionList({
@@ -16,6 +17,7 @@ export function TransactionList({
   isLoading = false,
   hasBalance = false,
   className,
+  showViewAll = true,
 }: TransactionListProps) {
   // Loading state
   if (isLoading) {
@@ -76,12 +78,14 @@ export function TransactionList({
         <h2 className="text-lg font-semibold text-stone-900">
           Recent Transactions
         </h2>
-        <Link
-          to="/wallet/transactions"
-          className="text-sm text-orange-600 hover:text-orange-700 font-medium"
-        >
-          View All →
-        </Link>
+        {showViewAll && (
+          <Link
+            to="/wallet/transactions"
+            className="text-sm text-orange-600 hover:text-orange-700 font-medium"
+          >
+            View All →
+          </Link>
+        )}
       </div>
 
       {/* Transaction Items */}
