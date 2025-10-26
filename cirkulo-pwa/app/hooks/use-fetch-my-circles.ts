@@ -37,10 +37,24 @@ export interface LensGroupData {
 }
 
 /**
- * Enriched circle with Lens group data
+ * Group member data
+ */
+export interface GroupMember {
+	address: string;
+	username: string | null;
+	metadata: {
+		name?: string;
+		picture?: string;
+		[key: string]: any;
+	} | null;
+}
+
+/**
+ * Enriched circle with Lens group data and members
  */
 export interface EnrichedCircle extends CircleData {
 	lensGroup: LensGroupData;
+	members: GroupMember[];
 }
 
 /**

@@ -263,3 +263,33 @@ export async function getGroupsByMember(memberAddress: string) {
 		return null;
 	}
 }
+
+/**
+ * Fetch all members of a group
+ * @param groupAddress - The group's address
+ * @returns Array of group members or null if error
+ */
+export async function getGroupMembers(groupAddress: string) {
+	try {
+		console.log(`📡 Fetching members for group ${groupAddress}`);
+
+		const result = await fetchGroupMembers(lensClient, {
+			group: evmAddress(groupAddress),
+		});
+
+		if (result.isErr()) {
+			console.error(
+				"Error fetching group members from Lens Protocol:",
+				result.error,
+			);
+			return null;
+		}
+
+		console.log(`✅ Found ${result.value.items.length} members in group`);
+
+		return result.value.items;
+	} catch (error) {
+		console.error("Error fetching group members:", error);
+		return null;
+	}
+}
