@@ -48,14 +48,30 @@ Calls `setAppSponsorship` on Lens Protocol to link your app with sponsorship. Af
 **Fund Sponsorship:**
 Sends GRASS tokens to the sponsorship contract. The contract uses these funds to pay gas fees for your users' transactions.
 
-## Network
+## Network Configuration
 
-Currently configured for **Lens Testnet** (Chain ID: 37111).
+The app supports both **Lens Testnet** and **Lens Mainnet**.
 
-**To use mainnet:**
-1. Edit `src/main.tsx` - Change chain definition to Lens mainnet
-2. Edit `src/App.tsx` - Change `testnet` to `production` for Lens client
-3. Use GHO tokens instead of GRASS for funding
+**Default:** Testnet (Chain ID: 37111)
+
+**To switch to mainnet:**
+1. Copy `.env.example` to `.env`
+2. Set `VITE_USE_MAINNET=true` in `.env`
+3. Restart the dev server (`pnpm dev`)
+
+**Environment Variables:**
+```bash
+# .env file
+VITE_USE_MAINNET=true   # Use Lens mainnet (Chain ID: 7560)
+# or
+VITE_USE_MAINNET=false  # Use Lens testnet (Chain ID: 37111) - default
+```
+
+**Network Details:**
+- **Testnet**: Chain ID 37111, RPC: https://rpc.testnet.lens.dev, Currency: GRASS
+- **Mainnet**: Chain ID 232, RPC: https://rpc.lens.xyz, Currency: GHO
+- **Explorer (Testnet)**: https://block-explorer.testnet.lens.dev
+- **Explorer (Mainnet)**: https://explorer.lens.xyz
 
 ## Important Notes
 

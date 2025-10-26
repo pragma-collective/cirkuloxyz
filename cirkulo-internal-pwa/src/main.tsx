@@ -26,11 +26,34 @@ const lensTestnet = defineChain({
   },
 })
 
+// Define Lens Mainnet with EIP-712 support
+const lensMainnet = defineChain({
+  id: 232,
+  name: 'Lens Chain Mainnet',
+  nativeCurrency: { name: 'GHO', symbol: 'GHO', decimals: 18 },
+  rpcUrls: {
+    default: { http: ['https://rpc.lens.xyz'] },
+  },
+  blockExplorers: {
+    default: { name: 'Lens Explorer', url: 'https://explorer.lens.xyz' },
+  },
+  contracts: {
+    multicall3: {
+      address: '0xcA11bde05977b3631167028862bE2a173976CA11',
+      blockCreated: 0,
+    },
+  },
+})
+
+// Determine which network to use based on environment variable
+const useMainnet = import.meta.env.VITE_USE_MAINNET === 'true'
+const selectedChain = useMainnet ? lensMainnet : lensTestnet
+
 const config = createConfig({
-  chains: [lensTestnet],
+  chains: [selectedChain],
   connectors: [injected()],
   transports: {
-    [lensTestnet.id]: http(),
+    [selectedChain.id]: http(),
   },
 })
 

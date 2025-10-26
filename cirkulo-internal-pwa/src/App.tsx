@@ -1,9 +1,14 @@
 import { useState, useEffect } from 'react'
 import { useAccount, useConnect, useDisconnect, useWalletClient } from 'wagmi'
-import { PublicClient, testnet, evmAddress } from '@lens-protocol/client'
+import { PublicClient, testnet, mainnet, evmAddress } from '@lens-protocol/client'
 import { setAppSponsorship } from '@lens-protocol/client/actions'
 import { signMessageWith } from '@lens-protocol/client/viem'
 import { formatEther } from 'viem'
+
+// Determine which Lens environment to use
+const useMainnet = import.meta.env.VITE_USE_MAINNET === 'true'
+const lensEnvironment = useMainnet ? mainnet : testnet
+const currencySymbol = useMainnet ? 'GHO' : 'GRASS'
 
 export default function App() {
   const { address, isConnected } = useAccount()
@@ -41,7 +46,7 @@ export default function App() {
 
     try {
       console.log('Creating Lens client...')
-      const client = PublicClient.create({ environment: testnet })
+      const client = PublicClient.create({ environment: lensEnvironment })
 
       console.log('Calling client.login...')
       const result = await client.login({
@@ -153,7 +158,7 @@ export default function App() {
         address: sponsorshipAddress as `0x${string}`,
       })
       const formattedBalance = formatEther(balance)
-      console.log('Balance:', formattedBalance, 'GRASS')
+      console.log('Balance:', formattedBalance, currencySymbol)
       setSponsorshipBalance(formattedBalance)
     } catch (error: any) {
       console.error('Error fetching balance:', error)
@@ -189,10 +194,10 @@ export default function App() {
     }
 
     setIsFunding(true)
-    setStatus(`Funding sponsorship with ${fundAmount} GRASS...`)
+    setStatus(`Funding sponsorship with ${fundAmount} ${currencySymbol}...`)
 
     try {
-      console.log(`Funding sponsorship ${sponsorshipAddress} with ${fundAmount} GRASS`)
+      console.log(`Funding sponsorship ${sponsorshipAddress} with ${fundAmount} ${currencySymbol}`)
 
       // Parse amount to wei (18 decimals)
       const valueInWei = BigInt(Math.floor(parseFloat(fundAmount) * 1e18))
@@ -218,7 +223,7 @@ export default function App() {
       console.log('Transaction receipt:', receipt)
 
       if (receipt.status === 'success') {
-        setStatus(`🎉 Success! Sponsorship funded with ${fundAmount} GRASS. Transaction: ${txHash}`)
+        setStatus(`🎉 Success! Sponsorship funded with ${fundAmount} ${currencySymbol}. Transaction: ${txHash}`)
         setFundAmount('') // Clear input
         // Refresh balance
         await fetchSponsorshipBalance()
@@ -368,7 +373,7 @@ export default function App() {
                 2. Fund Sponsorship
               </h2>
               <p className="text-gray-600 mb-6">
-                Add GRASS tokens to enable gas-free transactions for users
+                Add {currencySymbol} tokens to enable gas-free transactions for users
               </p>
 
               <div className="space-y-6">
@@ -392,7 +397,7 @@ export default function App() {
                   <div className="p-4 bg-blue-50 rounded-lg">
                     <p className="text-sm font-medium text-blue-900">Current Balance</p>
                     <p className="text-2xl font-bold text-blue-700">
-                      {parseFloat(sponsorshipBalance).toFixed(4)} GRASS
+                      {parseFloat(sponsorshipBalance).toFixed(4)} {currencySymbol}
                     </p>
                   </div>
                 )}
@@ -406,7 +411,7 @@ export default function App() {
                     <div className="space-y-4">
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Amount (GRASS)
+                          Amount ({currencySymbol})
                         </label>
                         <input
                           type="number"
@@ -418,10 +423,10 @@ export default function App() {
                           className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                         />
                         <p className="mt-1 text-xs text-gray-500">
-                          Enter amount in GRASS tokens (e.g., 0.1 = 0.1 GRASS, 1 = 1 GRASS)
+                          Enter amount in {currencySymbol} tokens (e.g., 0.1 = 0.1 {currencySymbol}, 1 = 1 {currencySymbol})
                         </p>
                         <p className="mt-1 text-xs text-amber-600">
-                          💡 Tip: Start with 1-10 GRASS for testing
+                          💡 Tip: Start with 1-10 {currencySymbol} for testing
                         </p>
                       </div>
 
@@ -437,8 +442,8 @@ export default function App() {
                     <div className="mt-4 p-3 bg-gray-50 rounded-lg text-sm text-gray-700">
                       <p className="font-medium mb-1">Cost Estimates</p>
                       <ul className="list-disc list-inside space-y-1 text-xs">
-                        <li>~0.001-0.01 GRASS per transaction</li>
-                        <li>1 GRASS ≈ 100-1000 sponsored transactions</li>
+                        <li>~0.001-0.01 {currencySymbol} per transaction</li>
+                        <li>1 {currencySymbol} ≈ 100-1000 sponsored transactions</li>
                         <li>Monitor balance in Lens dashboard</li>
                       </ul>
                     </div>
