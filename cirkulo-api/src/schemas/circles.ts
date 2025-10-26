@@ -280,3 +280,77 @@ export const getMyCirclesRoute = createRoute({
 		},
 	},
 });
+
+// Get Public Circles Query Schema
+export const PublicCirclesQuerySchema = z.object({
+	category: categoryEnum.optional().describe("Filter by category"),
+	exclude_user: z
+		.string()
+		.regex(/^0x[a-fA-F0-9]{40}$/, "Invalid Ethereum address")
+		.optional()
+		.describe("Exclude circles where this user is already a member"),
+	only_user: z
+		.string()
+		.regex(/^0x[a-fA-F0-9]{40}$/, "Invalid Ethereum address")
+		.optional()
+		.describe("Only show circles where this user is a member"),
+});
+
+// Get Public Circles Response Schema
+export const GetPublicCirclesResponseSchema = z.object({
+	success: z.boolean().describe("Whether the request was successful"),
+	data: z
+		.array(
+			z.object({
+				id: z.string().describe("Database ID"),
+				circleName: z.string().describe("Circle name"),
+				poolAddress: z.string().describe("Pool contract address"),
+				lensGroupAddress: z.string().describe("Lens group address"),
+				poolDeploymentTxHash: z
+					.string()
+					.nullable()
+					.describe("Pool deployment transaction hash"),
+				circleType: circleTypeEnum.describe("Circle type"),
+				currency: currencyEnum.describe("Currency type"),
+				categories: z
+					.array(z.string())
+					.nullable()
+					.describe("Circle categories"),
+				creatorAddress: z.string().describe("Creator's address"),
+				createdAt: z.string().describe("Creation timestamp"),
+				updatedAt: z.string().describe("Last update timestamp"),
+			}),
+		)
+		.describe("Array of public fundraising circles"),
+});
+
+// Get Public Circles Route Definition
+export const getPublicCirclesRoute = createRoute({
+	method: "get",
+	path: "/explore",
+	tags: ["Circles"],
+	summary: "Get public fundraising circles",
+	description:
+		"Retrieves all public fundraising/donation circles. Optionally filter by category. No authentication required.",
+	request: {
+		query: PublicCirclesQuerySchema,
+	},
+	responses: {
+		200: {
+			description: "Public circles retrieved successfully",
+			content: {
+				"application/json": {
+					schema: GetPublicCirclesResponseSchema,
+				},
+			},
+		},
+		500: {
+			description: "Internal server error",
+			content: {
+				"application/json": {
+					schema: ErrorSchema,
+				},
+			},
+		},
+	},
+});

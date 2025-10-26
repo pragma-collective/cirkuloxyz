@@ -1,5 +1,5 @@
 import { OpenAPIHono } from "@hono/zod-openapi";
-import { eq, or } from "drizzle-orm";
+import { and, arrayContains, eq, or } from "drizzle-orm";
 import { db } from "../db";
 import { circles as circlesTable } from "../db/schema";
 import { getGroupsByMember } from "../lib/lens";
@@ -9,6 +9,7 @@ import {
 	createCircleRoute,
 	getCircleRoute,
 	getMyCirclesRoute,
+	getPublicCirclesRoute,
 } from "../schemas/circles";
 
 const circles = new OpenAPIHono<AuthContext>();
@@ -131,6 +132,104 @@ circles.openapi(createCircleRoute, async (c) => {
 		return c.json(
 			{
 				error: "Failed to create circle",
+				details: error instanceof Error ? error.message : "Unknown error",
+			},
+			500,
+		);
+	}
+});
+
+// Get public circles endpoint (no auth required)
+// NOTE: This MUST come before /{address} route to avoid route conflict
+circles.openapi(getPublicCirclesRoute, async (c) => {
+	try {
+		// Get optional filters from query params
+		const { category, exclude_user, only_user } = c.req.valid("query");
+
+		console.log(
+			`Fetching public fundraising circles${category ? ` with category: ${category}` : ""}${exclude_user ? ` excluding user: ${exclude_user}` : ""}${only_user ? ` only for user: ${only_user}` : ""}`,
+		);
+
+		// Build query conditions
+		const conditions = [eq(circlesTable.circleType, "fundraising")];
+
+		// Add category filter if provided
+		if (category) {
+			conditions.push(arrayContains(circlesTable.categories, [category]));
+		}
+
+		// Get user's group addresses if filtering by user
+		let userGroupAddresses: string[] = [];
+		if (exclude_user || only_user) {
+			const targetUser = exclude_user || only_user;
+			const userGroups = await getGroupsByMember(targetUser!);
+			if (userGroups && userGroups.length > 0) {
+				userGroupAddresses = userGroups.map((group) => group.address);
+				console.log(
+					`User is member of ${userGroupAddresses.length} groups`,
+				);
+			}
+		}
+
+		// Fetch public fundraising circles from database
+		let publicCircles = await db
+			.select()
+			.from(circlesTable)
+			.where(and(...conditions));
+
+		// Apply user-based filtering
+		if (userGroupAddresses.length > 0) {
+			if (only_user) {
+				// Only show circles user IS a member of
+				publicCircles = publicCircles.filter((circle) =>
+					userGroupAddresses.some(
+						(addr) =>
+							addr.toLowerCase() === circle.lensGroupAddress.toLowerCase(),
+					),
+				);
+			} else if (exclude_user) {
+				// Exclude circles user is already a member of
+				publicCircles = publicCircles.filter(
+					(circle) =>
+						!userGroupAddresses.some(
+							(addr) =>
+								addr.toLowerCase() === circle.lensGroupAddress.toLowerCase(),
+						),
+				);
+			}
+		}
+
+		console.log(`✅ Found ${publicCircles.length} public circles`);
+
+		// Return circles data
+		return c.json(
+			{
+				success: true,
+				data: publicCircles.map((circle) => ({
+					id: circle.id,
+					circleName: circle.circleName,
+					poolAddress: circle.poolAddress,
+					lensGroupAddress: circle.lensGroupAddress,
+					poolDeploymentTxHash: circle.poolDeploymentTxHash,
+					circleType: circle.circleType as
+						| "contribution"
+						| "rotating"
+						| "fundraising",
+					currency: circle.currency as "cusd" | "cbtc",
+					categories: circle.categories || null,
+					creatorAddress: circle.creatorAddress,
+					createdAt: circle.createdAt.toISOString(),
+					updatedAt: circle.updatedAt.toISOString(),
+				})),
+			},
+			200,
+		);
+	} catch (error) {
+		console.error("Error fetching public circles:", error);
+
+		return c.json(
+			{
+				error: "Failed to fetch public circles",
 				details: error instanceof Error ? error.message : "Unknown error",
 			},
 			500,
