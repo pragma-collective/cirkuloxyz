@@ -11,6 +11,10 @@
 
 ---
 
+## Showcase
+
+[ETHGlobal Showcase](https://ethglobal.com/showcase/xersha-hh5ch)
+
 ## The Problem
 
 Traditional banking and savings face critical challenges:
